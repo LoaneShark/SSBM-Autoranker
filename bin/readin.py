@@ -40,17 +40,17 @@ def readin(tourney,type="slug"):
 		print("Error: invalid tourney identifier type")
 		return None
 
-	t,ps = read_phases(slug)
+	t,ps,pdata = read_phases(slug)
 
 	#t,ps = read_phases("the-big-house-8")
 	tid = t[0]
-	es,ws,ls,rs,br,ns = read_sets(tid,ps)
+	es,ws,ls,rs,br,ns = read_sets(tid,ps,pdata)
 
 	print_results(rs,ns)
 	return es,ns,rs,ws,ls,br
 
 # reads the match data for a given phase
-def read_sets(t_id,phases):
+def read_sets(t_id,phases,phase_data):
 	entrants = {}
 	wins = {}
 	losses = {}
@@ -78,7 +78,12 @@ def read_sets(t_id,phases):
 				load_succ = False
 		if not load_succ:
 			data = json.loads(pull_phase(phase))
-			groupname = data['entities']['groups']['displayIdentifier']
+
+			wave_id = data['entities']['groups']['phaseId']
+			if phase_data[wave_id][1] == 1:
+				groupname = phase_data[wave_id][0]
+			else:
+				groupname = data['entities']['groups']['displayIdentifier']
 			names['g_%d'%phase] = groupname
 			if v >= 3:
 				print("Reading group: %s | %d"%(groupname,phase)) 
@@ -154,7 +159,7 @@ def read_sets(t_id,phases):
 	return entrants,wins,losses,results,bracket,names
 
 # reads the phase data for a given tournament
-def read_phases(tourney,getBracket=False):
+def read_phases(tourney):
 	if v == 2:
 		start = timer()
 	waves = {}
@@ -181,20 +186,17 @@ def read_phases(tourney,getBracket=False):
 	phase_ids = [phase['id'] for phase in tdata['entities']['phase'] if phase['eventId'] in event_ids]
 	group_ids = [group['id'] for group in tdata['entities']['groups'] if group['phaseId'] in phase_ids]
 
-	for w in tdata['entities']['groups']:
+	for w in tdata['entities']['phase']:
 		if w['id'] not in waves:
-			waves[w['id']] = [w['phaseId'],w['winnersTargetPhaseId'],w['losersTargetPhaseId']]
+			waves[w['id']] = [w['name'],w['groupCount'],w['phaseOrder'],w['eventId'],w['typeId'],w['isExhibition']]
 	#print(t_id)
 	#print(event_ids)
 	#print(phase_ids)
 	#print(group_ids)
 	if v == 2:
 		print("{:.3f}".format(timer()-start) + " s")
-
-	if getBracket:
-		return (t_info,group_ids,waves)
-	else:
-		return (t_info,group_ids)
+	
+	return (t_info,group_ids,waves)
 
 # returns the full JSON data for a phase given its ID number
 def pull_phase(num):
