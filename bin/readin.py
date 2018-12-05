@@ -27,7 +27,7 @@ def readin():
 	print("Henlo")
 
 # reads the match data for a given phase
-def read_sets(phases):
+def read_sets(t_id,phases):
 	entrants = {}
 	wins = {}
 	losses = {}
@@ -43,7 +43,7 @@ def read_sets(phases):
 			try:
 				if v >= lv:
 					print("Loading %d..."%phase)
-				entrants,wins,losses,results,bracket,names = load_all(phase)
+				entrants,wins,losses,results,bracket,names = load_all(t_id,phase)
 				load_succ = True
 			except FileNotFoundError:
 				if v >= lv:
@@ -90,7 +90,7 @@ def read_sets(phases):
 			if save_res:
 				if v >= lv:
 					print("Saving %d..."%phase)
-				save_all(phase,[entrants,wins,losses,results,bracket,names])
+				save_all(t_id,phase,[entrants,wins,losses,results,bracket,names])
 
 		if v >= 3:
 			print("{:.0f}".format(1000*(timer()-pstart)) + " ms")
@@ -139,27 +139,29 @@ def pull_phase(num):
 	return tempdata.decode("UTF-8")
 
 # used to save datasets/hashtables
-def save_obj(phase,obj, name):
-	if not os.path.exists('obj/%d'%phase):
-		os.mkdir(str('obj/%d'%phase))
-	with open('obj/'+ str(phase) + '/' + name + '.pkl', 'wb') as f:
+def save_obj(t_id,phase,obj, name):
+	if not os.path.isdir('obj/%d'%t_id):
+		os.mkdir(str('obj/%d'%t_id))
+	if not os.path.isdir('obj/%d/%d'%(t_id,phase)):
+		os.mkdir(str('obj/%d/%d'%(t_id,phase)))
+	with open('obj/'+str(t_id)+'/'+str(phase)+'/'+name +'.pkl','wb') as f:
 		pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
 
 # used to load datasets/hashtables
-def load_obj(phase,name):
-	with open('obj/' + str(phase) + '/' + name + '.pkl', 'rb') as f:
+def load_obj(t_id,phase,name):
+	with open('obj/'+str(t_id)+'/'+str(phase)+'/'+name+'.pkl','rb') as f:
 		return pickle.load(f)
 
 # saves all params for the load_sets function
-def save_all(phase,params):
+def save_all(t_id,phase,params):
 	names = ["entrants","wins","losses","results","bracket","names"]
 	for param,name in zip(params,names):
-		save_obj(phase,param,name)
+		save_obj(t_id,phase,param,name)
 
 # load all params for the load_sets function
-def load_all(phase):
+def load_all(t_id,phase):
 	names = ["entrants","wins","losses","results","bracket","names"]
-	return [load_obj(phase,name) for name in names]
+	return [load_obj(t_id,phase,name) for name in names]
 
 # prints smash.gg query pulls as pretty JSON .txt files
 def clean_data(infile, outfile):
@@ -184,7 +186,7 @@ if __name__ == "__main__":
 
 	#pull_phase(764818)
 	tid,ps = read_phases("the-big-house-8")
-	es,ws,ls,rs,br,ns = read_sets(ps)
+	es,ws,ls,rs,br,ns = read_sets(tid,ps)
 
 	print_results(rs,ns)
 
