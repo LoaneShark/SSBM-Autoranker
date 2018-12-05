@@ -1,11 +1,14 @@
 import matplotlib.pyplot as plt 
 from six.moves.urllib.request import urlopen
+#import six.moves.urllib.parse as urlparse
+#import httplib
+import requests
 import numpy as np 
 import scipy as sp 
 import json
 import argparse
 from timeit import default_timer as timer
-import os,pickle
+import os,pickle,time
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-v','--verbosity',help='verbosity',default=0)
@@ -14,17 +17,37 @@ parser.add_argument('-l','--load',help='load results toggle (default off)[WIP]',
 args = parser.parse_args()
 v = int(args.verbosity)
 # verbosity for save/load statements
-lv = 3
+lv = 6
 save_res = args.save
 load_res = args.load
 
 ## TODO: - Finish readin
 ## 		 - Read set data and results (W/L, game count, etc.)
 ## 		 - Figure out what to do with the data // what data do we want
-## 		 - Save and load results
+## 		 - Pretty printer
+## 			- Print relevant IDs
+## 			- see below about final placing
+## 		 - Calculate absolute final placing (not just within pool)
+## 		 - Convert data to absolute player id terms for better main file processing; pass on relevant info
+## 		 - garbage collection // reduce filesize of stored files
 
-def readin():
-	print("Henlo")
+def readin(tourney,type="slug"):
+	if type == "slug":
+		slug = tourney
+	elif type == "ss":
+		slug = get_slug(tourney)
+	else:
+		print("Error: invalid tourney identifier type")
+		return None
+
+	t,ps = read_phases(slug)
+
+	#t,ps = read_phases("the-big-house-8")
+	tid = t[0]
+	es,ws,ls,rs,br,ns = read_sets(tid,ps)
+
+	print_results(rs,ns)
+	return es,ns,rs,ws,ls,br
 
 # reads the match data for a given phase
 def read_sets(t_id,phases):
@@ -35,6 +58,9 @@ def read_sets(t_id,phases):
 	bracket = {}
 	names = {}
 	end_buff = False
+
+	if load_res and v >= 3:
+		print("Loading cached files...")
 
 	for phase in phases:
 		pstart = timer()
@@ -52,8 +78,10 @@ def read_sets(t_id,phases):
 				load_succ = False
 		if not load_succ:
 			data = json.loads(pull_phase(phase))
+			groupname = data['entities']['groups']['displayIdentifier']
+			names['g_%d'%phase] = groupname
 			if v >= 3:
-				print("Reading group: %s | %d"%(data['entities']['groups']['displayIdentifier'],phase)) 
+				print("Reading group: %s | %d"%(groupname,phase)) 
 			seedata = data['entities']['seeds']
 
 			#i = 0
@@ -62,30 +90,59 @@ def read_sets(t_id,phases):
 					#print(x.items())
 					#print("\n")
 				e_id = x['entrantId']
-				tag = x['mutations']['entrants'][str(e_id)]['name']
-				names[e_id] = tag
+				part_id = x['mutations']['entrants'][str(e_id)]['participantIds'][0]
+				abs_id = x['mutations']['entrants'][str(e_id)]['playerIds'][str(part_id)]
+				tag = x['mutations']['participants'][str(part_id)]['gamerTag']
+				prefix = x['mutations']['participants'][str(part_id)]['prefix']
+				names[e_id] = (prefix,tag)
+
+				continfo = x['mutations']['participants'][str(part_id)]['contactInfo']
+				if 'nameFirst' in continfo:
+					f_name = continfo['nameFirst']
+				else:
+					f_name = "N/A"
+				if 'nameLast' in continfo:
+					l_name = continfo['nameLast']
+				else:
+					l_name = "N/A"
+				if 'state' in continfo:
+					state = continfo['state']
+				else:
+					state = "N/A"
+				if 'country' in continfo:
+					country = continfo['country']
+				else:
+					country = 'N/A'
+				metainfo = (f_name,l_name,state,country)
+
 				res = x['placement']
 				if x['isDisqualified']:
 					res = -1
 
-				if v >= 4:
+				if v >= 6:
 					print(e_id,tag,res)
-				if v >= 5 and e_id in results:
+				if v >= 7 and e_id in results:
 					print(results[e_id])
 
-				flatten = lambda l: [item for sublist in l for item in sublist]
-				if x['progressionSeedId'] == 'null' or x['progressionSeedId'] == None:
-					if e_id in results:
-						results[e_id] = [res,[results[e_id][1]].extend(phase)]
-					else:
-						results[e_id] = [res,phase]
+				#flatten = lambda l: [item for sublist in l for item in sublist]
+				#if x['progressionSeedId'] == 'null' or x['progressionSeedId'] == None:
+				if e_id in results:
+					if v >= 8:
+						print(results[e_id][1])
+					results[e_id][0] = res
+					results[e_id][1].extend([phase])
 				else:
-					if e_id in results:
-						results[e_id] = [res,[results[e_id][1].extend(x['progressingPhaseGroupId'])]]
-					else:
-						results[e_id] = [res,[phase,x['progressingPhaseGroupId']]]
-				#i = i+1
-				entrants[e_id] = (x['mutations']['entrants'][str(e_id)]['name'],x['mutations']['entrants'][str(e_id)]['playerIds'][str(x['mutations']['entrants'][str(e_id)]['participantIds'][0])])
+					results[e_id] = [res,[phase]]
+				#else:
+				#	if e_id in results:
+				#		p = results[e_id][1]
+				#		results[e_id][0] = res
+				#		results[e_id][1].extend([x['progressingPhaseGroupId']])
+				#	else:
+				#		results[e_id] = [res,[phase,x['progressingPhaseGroupId']]]
+				
+				#entrants[i] = (names[i], player_id[i])
+				entrants[e_id] = (names[e_id],abs_id,metainfo)
 			
 			if save_res:
 				if v >= lv:
@@ -109,6 +166,13 @@ def read_phases(tourney,getBracket=False):
 	tdata = json.loads(tfile.decode("UTF-8"))
 
 	t_id = tdata['entities']['tournament']['id']
+	t_name = tdata['entities']['tournament']['name']
+	t_ss = tdata['entities']['tournament']['shortSlug']
+	t_type = tdata['entities']['tournament']['tournamentType']
+	# date tuple in (year, month, day) format
+	t_date = time.localtime(tdata['entities']['tournament']['startAt'])[:3]
+	t_region = (tdata['entities']['tournament']['addrState'],tdata['entities']['tournament']['countryCode'])
+	t_info = (t_id,t_name,t_ss,t_type,t_date,t_region)
 
 	if v >= 1:
 		print("Reading tournament: %s | %d"%(tdata['entities']['tournament']['name'],t_id))
@@ -128,9 +192,9 @@ def read_phases(tourney,getBracket=False):
 		print("{:.3f}".format(timer()-start) + " s")
 
 	if getBracket:
-		return (t_id,group_ids,waves)
+		return (t_info,group_ids,waves)
 	else:
-		return (t_id,group_ids)
+		return (t_info,group_ids)
 
 # returns the full JSON data for a phase given its ID number
 def pull_phase(num):
@@ -171,24 +235,52 @@ def clean_data(infile, outfile):
 	o_f.write(json.dumps(data,indent=4))
 	o_f.close()
 
+# returns the full slug (needed to pull tourney data) given the short slug
+def get_slug(ss):
+	url = "https://smash.gg/%s"%ss
+	full_url = unshorten_url(url)
+
+	idx = (full_url.split('/')).index("tournament")
+	return full_url.split('/')[idx+1]
+
+# unshortens a shortened url, if shortened
+# (used to get slugs from short slugs)
+def unshorten_url(url):
+	session = requests.Session()
+	resp = session.head(url, allow_redirects=True)
+	return resp.url
+
 # prints tournament results by player's final placing
-def print_results(res,tags):
+def print_results(res,names):
 	res_l = [item for item in res.items()]
 
-	res_s = sorted(res_l, key=lambda l: l[0])
+	res_s = sorted(res_l, key=lambda l: (len(l[1][1]),0-l[1][0]), reverse=True)
 
+	print("\nSponsor\t\t","Tag\t\t\t","Player ID\t","Placing\t","Bracket")
 	for player in res_s:
-		print(tags[player[0]],player)
+		if names[player[0]][0] == "" or names[player[0]][0] == None:
+			sp = "  "
+		else:
+			sp = names[player[0]][0]
+			if len(sp) > 12:
+				sp = sp[:8] + "... |"
+			else:
+				sp = names[player[0]][0] + " |"
+		tag = names[player[0]][1]
+		if len(tag) > 24:
+			tag = tag[:21]+"..."
+		print("{:>13.13}".format(sp),"{:<24.24}".format(names[player[0]][1]),"\t",player[0],"\t",player[1][0],"\t",[names['g_%d'%group] for group in player[1][1]])
 	return(res_s)
 
 if __name__ == "__main__":
+	readin('summit7',type='ss')
+
+	#print(get_slug('tbh8'))
+
+
+
 	#read_sets("sets.txt")
-
 	#pull_phase(764818)
-	tid,ps = read_phases("the-big-house-8")
-	es,ws,ls,rs,br,ns = read_sets(tid,ps)
-
-	print_results(rs,ns)
 
 	#clean_data("phases.txt","phasesclean.txt")
 	#clean_data("sets.txt","setsclean.txt")
