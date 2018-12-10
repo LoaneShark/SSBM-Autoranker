@@ -17,7 +17,10 @@ parser.add_argument('-s','--save',help='save results toggle (default on)[WIP]',d
 parser.add_argument('-l','--load',help='load results toggle (default off)[WIP]',default=False)
 parser.add_argument('-f','--force_first',help='force the first criteria-matching event to be the only event',default=True)
 parser.add_argument('-g','--game',help='Melee=1, P:M=2, Wii U=3, 64=4, Ultimate=1386',default=1)
-parser.add_argument('-d','--teamsize',help='1 for singles bracket, 2 for doubles',default=1)
+parser.add_argument('-t','--teamsize',help='1 for singles bracket, 2 for doubles',default=1)
+parser.add_argument('-d','--displaysize',help='lowest placing shown on pretty printer output (or -1 for all entrants)',default=64)
+parser.add_argument('-sl','--slug',help='tournament URL slug',default='the-big-house-8')
+parser.add_argument('-ss','--short_slug',help='shorthand tournament URL slug',default=None)
 args = parser.parse_args()
 v = int(args.verbosity)
 # verbosity for save/load statements
@@ -30,18 +33,20 @@ game = int(args.game)
 if game not in [1,2,3,4,5,1386] and False:		#SSB = 4 	SSBM = 1	SSBB = 5 	P:M = 2		SSB4 = 3 	SSBU = 1386
 	print("Invalid game number provided. Forcing melee (id=1) instead.")
 	game = 1
+disp_num = int(args.displaysize)
+t_slug = args.slug
+t_ss = args.short_slug
+if t_ss == None:
+	t_slug = t_slug
+else:
+	t_slug = get_slug(t_ss)
 
 ## TODO: - Finish readin
 ## 		 - Read set data and results (W/L, game count, etc.)
 ## 		 - Figure out what to do with the data // what data do we want
-## 		 - Pretty printer
-## 			- Print relevant IDs
-## 			- see below about final placing
-## 		 - Calculate absolute final placing (not just within pool)
 ## 		 - Convert data to absolute player id terms for better main file processing; pass on relevant info
 ## 		 - garbage collection // reduce filesize of stored files
 ## 		 - ignore irrelevant/side/casual/exhibition brackets (like at summit, e.g.)
-## 		 - add region information for metadata
 
 def readin(tourney,type="slug"):
 	if type == "slug":
@@ -58,7 +63,7 @@ def readin(tourney,type="slug"):
 	tid = t[0]
 	es,ws,ls,rs,br,ns = read_groups(tid,ps,pdata)
 
-	print_results(rs,ns,es)
+	print_results(rs,ns,es,ls,max_place=disp_num)
 	return es,ns,rs,ws,ls,br
 
 # reads the match data for a given phase
@@ -66,7 +71,7 @@ def read_groups(t_id,groups,phase_data):
 	entrants = {}
 	wins = {}
 	losses = {}
-	placings = {}
+	paths = {}
 	bracket = {}
 	names = {}
 	end_buff = False
@@ -81,35 +86,35 @@ def read_groups(t_id,groups,phase_data):
 			try:
 				if v >= lv:
 					print("Loading %d..."%group)
-				entrants,wins,losses,placings,bracket,names = load_all(t_id,group)
+				entrants,wins,losses,paths,bracket,names = load_all(t_id,group)
 				load_succ = True
 			except FileNotFoundError:
 				if v >= lv:
 					print("Phase group %d not found locally"%group)
 				end_buff = True
 				load_succ = False
+
 		if not load_succ:
-			
-			entrants,names,placings = read_entrants(group,phase_data)
+
+			data = json.loads(pull_phase(group))
+
+			read_entrants(data,phase_data,entrants,names,paths)
+			read_sets(data,phase_data,wins,losses,bracket,paths)
 
 			if save_res:
 				if v >= lv:
 					print("Saving %d..."%group)
-				save_all(t_id,group,[entrants,wins,losses,placings,bracket,names])
+				save_all(t_id,group,[entrants,wins,losses,paths,bracket,names])
 
-		if v >= 3:
-			print("{:.0f}".format(1000*(timer()-pstart)) + " ms")
-	return entrants,wins,losses,placings,bracket,names
+			if v >= 3:
+				print("{:.0f}".format(1000*(timer()-pstart)) + " ms")
+	return entrants,wins,losses,paths,bracket,names
 
 # reads in and returns data for all entrants in a given phase group
-def read_entrants(group,phase_data):
-	entrants = {}
-	names = {}
-	placings = {}
-
-	data = json.loads(pull_phase(group))
-
+def read_entrants(data,phase_data,entrants,names,xpath):
+	group = data['entities']['groups']['id']
 	wave_id = data['entities']['groups']['phaseId']
+
 	if phase_data[wave_id][1] == 1:
 		groupname = phase_data[wave_id][0]
 	else:
@@ -124,58 +129,96 @@ def read_entrants(group,phase_data):
 		#if i < 10:
 			#print(x.items())
 			#print("\n")
-		e_id = x['entrantId']
-		part_id = x['mutations']['entrants'][str(e_id)]['participantIds'][0]
-		abs_id = x['mutations']['entrants'][str(e_id)]['playerIds'][str(part_id)]
-		tag = x['mutations']['participants'][str(part_id)]['gamerTag']
-		prefix = x['mutations']['participants'][str(part_id)]['prefix']
+		e_id,abs_id,tag,prefix,metainfo = read_names(x)
 		names[e_id] = (prefix,tag)
 
-		continfo = x['mutations']['participants'][str(part_id)]['contactInfo']
-		if 'nameFirst' in continfo:
-			f_name = continfo['nameFirst']
-		else:
-			f_name = "N/A"
-		if 'nameLast' in continfo:
-			l_name = continfo['nameLast']
-		else:
-			l_name = "N/A"
-		if 'state' in continfo:
-			state = continfo['state']
-		else:
-			state = "N/A"
-		if 'country' in continfo:
-			country = continfo['country']
-		else:
-			country = 'N/A'
-		metainfo = (f_name,l_name,state,country)
+		#res = x['placement']
+		#if x['isDisqualified']:
+		#	res = -1
+		res = 900
 
-		res = x['placement']
-		if x['isDisqualified']:
-			res = -1
-
-		if v >= 6:
-			print(e_id,tag,res)
-		if v >= 7 and e_id in placings:
-			print(placings[e_id])
+		if v >= 7:
+			print(e_id,tag)
+		if v >= 8 and e_id in xpath:
+			print(xpath[e_id])
 
 		#flatten = lambda l: [item for sublist in l for item in sublist]
 		#if x['progressionSeedId'] == 'null' or x['progressionSeedId'] == None:
-		if e_id in placings:
+		if e_id in xpath:
 			if v >= 8:
-				print(placings[e_id][1])
-			placings[e_id][0] = res
-			placings[e_id][1].extend([group])
+				print(xpath[e_id][1])
+			xpath[e_id][0] = res
+			xpath[e_id][1].extend([group])
 		else:
-			placings[e_id] = [res,[group]]
+			xpath[e_id] = [res,[group]]
 
-		
 		#entrants[i] = (names[i], player_id[i])
 		entrants[e_id] = (names[e_id],abs_id,metainfo)
-		return entrants,names,placings
-			
-def read_sets(group,phase_data):
-	x = 5
+	return entrants,names,xpath
+		
+# returns sponsor, gamertag, and player meta info for a given entrant	
+def read_names(x):
+	e_id = x['entrantId']
+	part_id = x['mutations']['entrants'][str(e_id)]['participantIds'][0]
+	abs_id = x['mutations']['entrants'][str(e_id)]['playerIds'][str(part_id)]
+	tag = x['mutations']['participants'][str(part_id)]['gamerTag']
+	prefix = x['mutations']['participants'][str(part_id)]['prefix']
+
+	continfo = x['mutations']['participants'][str(part_id)]['contactInfo']
+	if 'nameFirst' in continfo:
+		f_name = continfo['nameFirst']
+	else:
+		f_name = "N/A"
+	if 'nameLast' in continfo:
+		l_name = continfo['nameLast']
+	else:
+		l_name = "N/A"
+	if 'state' in continfo:
+		state = continfo['state']
+	else:
+		state = "N/A"
+	if 'country' in continfo:
+		country = continfo['country']
+	else:
+		country = 'N/A'
+	metainfo = (f_name,l_name,state,country)
+
+	return e_id,abs_id,tag,prefix,metainfo
+
+# reads the sets for a given phase group and returns match results
+def read_sets(data,phase_data,wins,losses,bracket,xpath):
+	setdata = data['entities']['sets']
+	group = data['entities']['groups']['id']
+
+	for match in setdata:
+		e1,e2 = match['entrant1Id'],match['entrant2Id']
+		w_id,l_id = match['winnerId'],match['loserId']
+		set_id = match['id']
+		is_bye = False
+
+		if w_id == None or l_id == None:
+			is_bye = True
+
+		if not is_bye:
+			if v >= 6:
+				print(set_id,match['phaseGroupId'],match['identifier'],[w_id,l_id],[e1,e2])
+			if w_id not in wins:
+				wins[w_id] = [(l_id,[set_id,group])]
+			else:
+				wins[w_id].extend([(l_id,[set_id,group])])
+			if l_id not in losses:
+				losses[l_id] = [(w_id,[set_id,group])]
+			else:
+				losses[l_id].extend([(w_id,[set_id,group])])
+
+			# always update final placement (assume they progressed -- people can't backtrack in bracket)
+			xpath[w_id][0] = min(xpath[w_id][0],match['wOverallPlacement'])
+			xpath[l_id][0] = min(xpath[l_id][0],match['lOverallPlacement'])
+		else:
+			if v >= 6:
+				print(set_id,match['phaseGroupId'],match['identifier'],["bye","bye"],[e1,e2])
+
+	return wins,losses,bracket
 
 # reads the phase data for a given tournament
 def read_phases(tourney):
@@ -297,30 +340,51 @@ def unshorten_url(url):
 	return resp.url
 
 # prints tournament results by player's final placing
-def print_results(res,names,entrants):
-	res_l = [item for item in res.items()]
+def print_results(res,names,entrants,losses,max_place=64):
+	maxlen = 0
 
+	res_l = [item for item in res.items()]
 	res_s = sorted(res_l, key=lambda l: (len(l[1][1]),0-l[1][0]), reverse=True)
 
-	print("\nSponsor\t\t","Tag\t\t\t","Player ID\t","Placing\t","Bracket")
+	lsbuff = "\t"*(len(res_s[0][1][1])-len(res_s[-1][1][1])+1)
+	num_rounds = len(res_s[0][1][1])
+	print("\n{:>13.13}".format("Sponsor |"),"{:<24.24}".format("Tag"),"ID #\t","Place\t",("{:<%d.%d}"%(11*num_rounds,11*num_rounds)).format("Bracket"),"Losses\n")
 	for player in res_s:
-		if names[player[0]][0] == "" or names[player[0]][0] == None:
-			sp = "  "
+		if player[1][0] > max_place and max_place > 0:
+			break
 		else:
-			sp = names[player[0]][0]
-			if len(sp) > 12:
-				sp = sp[:8] + "... |"
+			if names[player[0]][0] == "" or names[player[0]][0] == None:
+				sp = "  "
 			else:
-				sp = names[player[0]][0] + " |"
-		tag = names[player[0]][1]
-		if len(tag) > 24:
-			tag = tag[:21]+"..."
-		print("{:>13.13}".format(sp),"{:<24.24}".format(names[player[0]][1]),"\t","{:>12.12}".format(str(entrants[player[0]][1])),"\t",player[1][0],"\t",[names['g_%d'%group] for group in player[1][1]])
+				sp = names[player[0]][0]
+				if len(sp) > 12:
+					sp = sp[:8] + "... |"
+				else:
+					sp = names[player[0]][0] + " |"
+			tag = names[player[0]][1]
+			if len(tag) > 24:
+				tag = tag[:21]+"..."
+
+			if player[0] in losses:
+				#print(losses)
+				ls = [names[loss[0]][1] for loss in losses[player[0]]]
+			else:
+				ls = None
+
+			if len(player[1][1]) > maxlen:
+				maxlen = len(player[1][1])
+			lsbuff = "\t"*(maxlen-len(player[1][1])+1)
+			#if len(player[1][1]) > 2:
+			#	lsbuff = "\t"
+			#else:
+			#	lsbuff = "\t\t\t"
+
+			print("{:>13.13}".format(sp),"{:<24.24}".format(names[player[0]][1]),"{:>7.7}".format(str(entrants[player[0]][1])),"  {:<5.5}".format(str(player[1][0])),"\t",("{:<%d.%d}"%(11*num_rounds,11*num_rounds)).format(str([names['g_%d'%group] for group in player[1][1]])),ls)
 	return(res_s)
 
 if __name__ == "__main__":
 	#readin('summit7',type='ss')
-	readin('tbh8',type='ss')
+	readin(t_slug)
 
 	#print(get_slug('tbh8'))
 
