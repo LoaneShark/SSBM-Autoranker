@@ -1,0 +1,1755 @@
+{
+    "entities": {
+        "tournament": {
+            "id": 84422,
+            "seriesId": null,
+            "ownerId": 1249,
+            "srcTournamentId": null,
+            "state": 1,
+            "progressMeter": 0,
+            "name": "Smash Summit 7",
+            "slug": "tournament/smash-summit-7",
+            "shortSlug": "summit",
+            "venueFee": null,
+            "processingFee": 5,
+            "processingBase": null,
+            "tiebreakOrder": null,
+            "timezone": "US/Pacific",
+            "private": false,
+            "published": true,
+            "testMode": false,
+            "sandboxMode": false,
+            "publicSeeding": false,
+            "tournamentType": 1,
+            "hasOnlineEvents": false,
+            "includeQRCode": false,
+            "approved": true,
+            "startAt": 1542301200,
+            "endAt": 1542603600,
+            "startedAt": null,
+            "completedAt": null,
+            "registrationClosesAt": null,
+            "eventRegistrationClosesAt": null,
+            "teamCreationClosesAt": null,
+            "stripeMode": null,
+            "paypalMode": null,
+            "paypalApp": "smashgg",
+            "city": "Los Angeles",
+            "addrState": "CA",
+            "postalCode": null,
+            "countryCode": "US",
+            "mapsPlaceId": "ChIJE9on3F3HwoAR9AhGJW_fL-I",
+            "lat": 34.0522342,
+            "lng": -118.2436849,
+            "monitoringRequestedBy": null,
+            "submissionState": 3,
+            "links": [],
+            "venueName": null,
+            "venueAddress": "Los Angeles, CA, USA",
+            "region": null,
+            "hashtag": null,
+            "showCity": null,
+            "attendeeLocationInfo": 3,
+            "attendeeContactInfo": 1,
+            "attendeeFieldConfig": {
+                "nameFirst": {
+                    "visible": true,
+                    "required": true
+                },
+                "nameLast": {
+                    "visible": true,
+                    "required": true
+                },
+                "phoneNumber": {
+                    "visible": false,
+                    "required": false
+                }
+            },
+            "attendeeRequirements": null,
+            "notifyAdmins": false,
+            "publicAttendees": true,
+            "hideAdmins": false,
+            "registrationMarkdown": null,
+            "gettingThere": null,
+            "rules": null,
+            "prizes": null,
+            "contactInfo": null,
+            "includeInstructions": false,
+            "emailInstructions": null,
+            "includeDirections": false,
+            "emailDirections": null,
+            "includeMap": false,
+            "includeQRCheckIn": true,
+            "qrCodeRedirect": null,
+            "qrCodeRedirectType": "default",
+            "emailNote": null,
+            "includeNote": false,
+            "contactEmail": null,
+            "contactTwitter": null,
+            "contactPhone": null,
+            "currency": "USD",
+            "onsitePaymentMode": null,
+            "stripePublishableKey": null,
+            "paypalPayerId": null,
+            "customEmailText": null,
+            "registrationOptions": [],
+            "limitsByType": [],
+            "publishing": {
+                "publish": true,
+                "registration": false,
+                "attendees": true,
+                "seeding": {
+                    "382397": true,
+                    "456149": true,
+                    "456154": true,
+                    "456155": true,
+                    "456156": true,
+                    "456157": true,
+                    "457756": true,
+                    "460142": true
+                },
+                "bracket": {
+                    "382397": true,
+                    "456149": true,
+                    "456154": true,
+                    "456155": true,
+                    "456156": true,
+                    "456157": true,
+                    "457756": true,
+                    "460142": true
+                },
+                "feedback": [],
+                "live": false,
+                "fantasy": true,
+                "testmode": false,
+                "pools_ordering": "alphabetical",
+                "hide_spectators": true,
+                "feature_tab": {
+                    "details": false
+                }
+            },
+            "trackingPixels": [],
+            "generatedTabs": {
+                "shop": {
+                    "shop/compendium-35": {
+                        "name": "Compendium",
+                        "adminOnly": false
+                    }
+                }
+            },
+            "defaultTab": "shop",
+            "fees": [],
+            "customMarkdown": [],
+            "videoUrl": "https://www.youtube.com/watch?v=tcqHWGHvwlQ",
+            "details": null,
+            "images": [
+                {
+                    "id": 1290607,
+                    "width": 500,
+                    "height": 500,
+                    "ratio": 1,
+                    "type": "profile",
+                    "url": "https://images.smash.gg/images/tournament/84422/image-d2dd15720465b1db23e5cf911be91442.jpg",
+                    "isOriginal": true,
+                    "entity": null,
+                    "entityId": null,
+                    "uploadedBy": null,
+                    "createdAt": null,
+                    "updatedAt": null
+                },
+                {
+                    "id": 1337431,
+                    "width": 1920,
+                    "height": 1080,
+                    "ratio": 1.78,
+                    "type": "banner",
+                    "url": "https://images.smash.gg/images/tournament/84422/image-b63483ec60d90cb76982835591aa052e.jpg",
+                    "isOriginal": true,
+                    "entity": null,
+                    "entityId": null,
+                    "uploadedBy": null,
+                    "createdAt": null,
+                    "updatedAt": null
+                }
+            ],
+            "scheduleId": 589268,
+            "expand": [
+                "event",
+                "groups",
+                "phase"
+            ],
+            "userData": [],
+            "eventIds": [
+                204728,
+                260802,
+                260805,
+                260806,
+                260807,
+                260808,
+                261931
+            ],
+            "regionDisplayName": "",
+            "onlineEvents": [],
+            "taskEvents": [],
+            "supportsPayPal": false,
+            "slugs": [
+                "smash-summit-7"
+            ],
+            "permissionType": "tournament"
+        },
+        "groups": [
+            {
+                "id": 724740,
+                "phaseId": 382397,
+                "waveId": null,
+                "poolRefId": null,
+                "groupTypeId": 4,
+                "title": null,
+                "identifier": "1",
+                "displayIdentifier": "1",
+                "state": 3,
+                "tiebreakOrder": [
+                    {
+                        "type": "wins",
+                        "inputs": []
+                    },
+                    {
+                        "type": "standing_last_opp",
+                        "inputs": []
+                    },
+                    {
+                        "type": "head_to_head",
+                        "inputs": []
+                    },
+                    {
+                        "type": "game_ratio",
+                        "inputs": []
+                    }
+                ],
+                "tiebreaks": null,
+                "bestOf": null,
+                "setsOnDeck": 3,
+                "rematchSeconds": 0,
+                "checkInState": 0,
+                "finalized": true,
+                "winnersTargetPhaseId": 460142,
+                "numProgressing": 8,
+                "losersTargetPhaseId": null,
+                "startAt": null,
+                "startedAt": null,
+                "seeds": [],
+                "sets": [],
+                "rounds": [],
+                "numRounds": 3,
+                "firstRoundTime": null,
+                "pointsPerMatchWin": 1,
+                "pointsPerGameWin": 0,
+                "pointsPerBye": 1,
+                "scheduleId": null,
+                "expand": [],
+                "hasSets": true,
+                "hasCustomWinnerByes": false,
+                "percentageComplete": "1.0000"
+            },
+            {
+                "id": 813876,
+                "phaseId": 382397,
+                "waveId": null,
+                "poolRefId": null,
+                "groupTypeId": 4,
+                "title": null,
+                "identifier": "2",
+                "displayIdentifier": "2",
+                "state": 3,
+                "tiebreakOrder": [
+                    {
+                        "type": "wins",
+                        "inputs": []
+                    },
+                    {
+                        "type": "standing_last_opp",
+                        "inputs": []
+                    },
+                    {
+                        "type": "head_to_head",
+                        "inputs": []
+                    },
+                    {
+                        "type": "game_ratio",
+                        "inputs": []
+                    }
+                ],
+                "tiebreaks": null,
+                "bestOf": null,
+                "setsOnDeck": 3,
+                "rematchSeconds": 0,
+                "checkInState": 0,
+                "finalized": true,
+                "winnersTargetPhaseId": 460142,
+                "numProgressing": 8,
+                "losersTargetPhaseId": null,
+                "startAt": null,
+                "startedAt": null,
+                "seeds": [],
+                "sets": [],
+                "rounds": [],
+                "numRounds": 3,
+                "firstRoundTime": null,
+                "pointsPerMatchWin": 1,
+                "pointsPerGameWin": 0,
+                "pointsPerBye": 1,
+                "scheduleId": 709324,
+                "expand": [],
+                "hasSets": true,
+                "hasCustomWinnerByes": false,
+                "percentageComplete": "1.0000"
+            },
+            {
+                "id": 816177,
+                "phaseId": 460142,
+                "waveId": null,
+                "poolRefId": null,
+                "groupTypeId": 2,
+                "title": null,
+                "identifier": "1",
+                "displayIdentifier": "1",
+                "state": 3,
+                "tiebreakOrder": [
+                    {
+                        "type": "wins",
+                        "inputs": []
+                    },
+                    {
+                        "type": "game_ratio",
+                        "inputs": []
+                    },
+                    {
+                        "type": "head_to_head",
+                        "inputs": []
+                    }
+                ],
+                "tiebreaks": null,
+                "bestOf": null,
+                "setsOnDeck": 3,
+                "rematchSeconds": 0,
+                "checkInState": 0,
+                "finalized": false,
+                "winnersTargetPhaseId": null,
+                "numProgressing": 1,
+                "losersTargetPhaseId": null,
+                "startAt": null,
+                "startedAt": null,
+                "seeds": [],
+                "sets": [],
+                "rounds": [],
+                "numRounds": null,
+                "firstRoundTime": null,
+                "pointsPerMatchWin": null,
+                "pointsPerGameWin": null,
+                "pointsPerBye": null,
+                "scheduleId": 712406,
+                "expand": [],
+                "hasSets": true,
+                "hasCustomWinnerByes": true,
+                "percentageComplete": "1.0000"
+            },
+            {
+                "id": 811396,
+                "phaseId": 456149,
+                "waveId": null,
+                "poolRefId": null,
+                "groupTypeId": 2,
+                "title": null,
+                "identifier": "1",
+                "displayIdentifier": "1",
+                "state": 3,
+                "tiebreakOrder": [
+                    {
+                        "type": "wins",
+                        "inputs": []
+                    },
+                    {
+                        "type": "game_ratio",
+                        "inputs": []
+                    },
+                    {
+                        "type": "head_to_head",
+                        "inputs": []
+                    }
+                ],
+                "tiebreaks": null,
+                "bestOf": null,
+                "setsOnDeck": 3,
+                "rematchSeconds": 0,
+                "checkInState": 0,
+                "finalized": false,
+                "winnersTargetPhaseId": null,
+                "numProgressing": 1,
+                "losersTargetPhaseId": null,
+                "startAt": null,
+                "startedAt": null,
+                "seeds": [],
+                "sets": [],
+                "rounds": [],
+                "numRounds": null,
+                "firstRoundTime": null,
+                "pointsPerMatchWin": null,
+                "pointsPerGameWin": null,
+                "pointsPerBye": null,
+                "scheduleId": null,
+                "expand": [],
+                "hasSets": true,
+                "hasCustomWinnerByes": false,
+                "percentageComplete": "1.0000"
+            },
+            {
+                "id": 811401,
+                "phaseId": 456154,
+                "waveId": null,
+                "poolRefId": null,
+                "groupTypeId": 1,
+                "title": null,
+                "identifier": "1",
+                "displayIdentifier": "1",
+                "state": 3,
+                "tiebreakOrder": [
+                    {
+                        "type": "wins",
+                        "inputs": []
+                    },
+                    {
+                        "type": "game_ratio",
+                        "inputs": []
+                    },
+                    {
+                        "type": "head_to_head",
+                        "inputs": []
+                    }
+                ],
+                "tiebreaks": null,
+                "bestOf": null,
+                "setsOnDeck": 3,
+                "rematchSeconds": 0,
+                "checkInState": 20,
+                "finalized": false,
+                "winnersTargetPhaseId": null,
+                "numProgressing": 1,
+                "losersTargetPhaseId": null,
+                "startAt": null,
+                "startedAt": null,
+                "seeds": [],
+                "sets": [],
+                "rounds": [],
+                "numRounds": null,
+                "firstRoundTime": null,
+                "pointsPerMatchWin": null,
+                "pointsPerGameWin": null,
+                "pointsPerBye": null,
+                "scheduleId": null,
+                "expand": [],
+                "hasSets": true,
+                "hasCustomWinnerByes": false,
+                "percentageComplete": "1.0000"
+            },
+            {
+                "id": 811402,
+                "phaseId": 456155,
+                "waveId": null,
+                "poolRefId": null,
+                "groupTypeId": 1,
+                "title": null,
+                "identifier": "1",
+                "displayIdentifier": "1",
+                "state": 3,
+                "tiebreakOrder": [
+                    {
+                        "type": "wins",
+                        "inputs": []
+                    },
+                    {
+                        "type": "game_ratio",
+                        "inputs": []
+                    },
+                    {
+                        "type": "head_to_head",
+                        "inputs": []
+                    }
+                ],
+                "tiebreaks": null,
+                "bestOf": null,
+                "setsOnDeck": 3,
+                "rematchSeconds": 0,
+                "checkInState": 0,
+                "finalized": false,
+                "winnersTargetPhaseId": null,
+                "numProgressing": 1,
+                "losersTargetPhaseId": null,
+                "startAt": null,
+                "startedAt": null,
+                "seeds": [],
+                "sets": [],
+                "rounds": [],
+                "numRounds": null,
+                "firstRoundTime": null,
+                "pointsPerMatchWin": null,
+                "pointsPerGameWin": null,
+                "pointsPerBye": null,
+                "scheduleId": null,
+                "expand": [],
+                "hasSets": true,
+                "hasCustomWinnerByes": false,
+                "percentageComplete": "1.0000"
+            },
+            {
+                "id": 811403,
+                "phaseId": 456156,
+                "waveId": null,
+                "poolRefId": null,
+                "groupTypeId": 2,
+                "title": null,
+                "identifier": "1",
+                "displayIdentifier": "1",
+                "state": 3,
+                "tiebreakOrder": [
+                    {
+                        "type": "wins",
+                        "inputs": []
+                    },
+                    {
+                        "type": "game_ratio",
+                        "inputs": []
+                    },
+                    {
+                        "type": "head_to_head",
+                        "inputs": []
+                    }
+                ],
+                "tiebreaks": null,
+                "bestOf": null,
+                "setsOnDeck": 3,
+                "rematchSeconds": 0,
+                "checkInState": 0,
+                "finalized": false,
+                "winnersTargetPhaseId": null,
+                "numProgressing": 1,
+                "losersTargetPhaseId": null,
+                "startAt": null,
+                "startedAt": null,
+                "seeds": [],
+                "sets": [],
+                "rounds": [],
+                "numRounds": null,
+                "firstRoundTime": null,
+                "pointsPerMatchWin": null,
+                "pointsPerGameWin": null,
+                "pointsPerBye": null,
+                "scheduleId": null,
+                "expand": [],
+                "hasSets": true,
+                "hasCustomWinnerByes": false,
+                "percentageComplete": "1.0000"
+            },
+            {
+                "id": 811404,
+                "phaseId": 456157,
+                "waveId": null,
+                "poolRefId": null,
+                "groupTypeId": 1,
+                "title": null,
+                "identifier": "1",
+                "displayIdentifier": "1",
+                "state": 3,
+                "tiebreakOrder": [
+                    {
+                        "type": "wins",
+                        "inputs": []
+                    },
+                    {
+                        "type": "game_ratio",
+                        "inputs": []
+                    },
+                    {
+                        "type": "head_to_head",
+                        "inputs": []
+                    }
+                ],
+                "tiebreaks": null,
+                "bestOf": null,
+                "setsOnDeck": 3,
+                "rematchSeconds": 0,
+                "checkInState": 0,
+                "finalized": false,
+                "winnersTargetPhaseId": null,
+                "numProgressing": 1,
+                "losersTargetPhaseId": null,
+                "startAt": null,
+                "startedAt": null,
+                "seeds": [],
+                "sets": [],
+                "rounds": [],
+                "numRounds": null,
+                "firstRoundTime": null,
+                "pointsPerMatchWin": null,
+                "pointsPerGameWin": null,
+                "pointsPerBye": null,
+                "scheduleId": null,
+                "expand": [],
+                "hasSets": true,
+                "hasCustomWinnerByes": false,
+                "percentageComplete": "1.0000"
+            },
+            {
+                "id": 813595,
+                "phaseId": 457756,
+                "waveId": null,
+                "poolRefId": null,
+                "groupTypeId": 1,
+                "title": null,
+                "identifier": "1",
+                "displayIdentifier": "1",
+                "state": 3,
+                "tiebreakOrder": [
+                    {
+                        "type": "wins",
+                        "inputs": []
+                    },
+                    {
+                        "type": "game_ratio",
+                        "inputs": []
+                    },
+                    {
+                        "type": "head_to_head",
+                        "inputs": []
+                    }
+                ],
+                "tiebreaks": null,
+                "bestOf": null,
+                "setsOnDeck": 3,
+                "rematchSeconds": 0,
+                "checkInState": 0,
+                "finalized": false,
+                "winnersTargetPhaseId": null,
+                "numProgressing": 1,
+                "losersTargetPhaseId": null,
+                "startAt": null,
+                "startedAt": null,
+                "seeds": [],
+                "sets": [],
+                "rounds": [],
+                "numRounds": null,
+                "firstRoundTime": null,
+                "pointsPerMatchWin": null,
+                "pointsPerGameWin": null,
+                "pointsPerBye": null,
+                "scheduleId": null,
+                "expand": [],
+                "hasSets": true,
+                "hasCustomWinnerByes": false,
+                "percentageComplete": "1.0000"
+            }
+        ],
+        "phase": [
+            {
+                "id": 382397,
+                "eventId": 204728,
+                "typeId": 1,
+                "phaseOrder": 1,
+                "name": "Pools",
+                "state": 3,
+                "pendingSeeds": 0,
+                "locked": false,
+                "isDefault": true,
+                "isExhibition": false,
+                "tier": 1,
+                "playGF": true,
+                "loserStartDirection": null,
+                "defaultLoserStartDirection": null,
+                "poolAvoidanceSetting": 0,
+                "manualPoolAvoidance": false,
+                "bracketInitializer": null,
+                "groupCount": 2,
+                "bracketMap": [],
+                "canAutoAssign": "0",
+                "createdAt": 1535338109,
+                "updatedAt": 1542517129,
+                "groups": [],
+                "checkInEnabled": false,
+                "preserveLosses": null,
+                "shuffleWinners": null,
+                "shuffleLosers": null,
+                "sequentialOrdering": null,
+                "playFullBrackets": null,
+                "entrantsIn": null,
+                "entrantsOut": null
+            },
+            {
+                "id": 460142,
+                "eventId": 204728,
+                "typeId": 1,
+                "phaseOrder": 2,
+                "name": "Bracket",
+                "state": 3,
+                "pendingSeeds": null,
+                "locked": false,
+                "isDefault": false,
+                "isExhibition": false,
+                "tier": 1,
+                "playGF": true,
+                "loserStartDirection": null,
+                "defaultLoserStartDirection": null,
+                "poolAvoidanceSetting": 1,
+                "manualPoolAvoidance": false,
+                "bracketInitializer": null,
+                "groupCount": 1,
+                "bracketMap": [],
+                "canAutoAssign": "0",
+                "createdAt": 1542322161,
+                "updatedAt": 1542600933,
+                "groups": [],
+                "checkInEnabled": false,
+                "preserveLosses": null,
+                "shuffleWinners": null,
+                "shuffleLosers": null,
+                "sequentialOrdering": null,
+                "playFullBrackets": null,
+                "entrantsIn": null,
+                "entrantsOut": null
+            },
+            {
+                "id": 456149,
+                "eventId": 260802,
+                "typeId": 1,
+                "phaseOrder": 1,
+                "name": "Bracket",
+                "state": 3,
+                "pendingSeeds": 0,
+                "locked": false,
+                "isDefault": true,
+                "isExhibition": false,
+                "tier": 1,
+                "playGF": true,
+                "loserStartDirection": null,
+                "defaultLoserStartDirection": null,
+                "poolAvoidanceSetting": 0,
+                "manualPoolAvoidance": false,
+                "bracketInitializer": null,
+                "groupCount": 1,
+                "bracketMap": [],
+                "canAutoAssign": "0",
+                "createdAt": 1542010270,
+                "updatedAt": 1542312941,
+                "groups": [],
+                "checkInEnabled": false,
+                "preserveLosses": null,
+                "shuffleWinners": null,
+                "shuffleLosers": null,
+                "sequentialOrdering": null,
+                "playFullBrackets": null,
+                "entrantsIn": null,
+                "entrantsOut": null
+            },
+            {
+                "id": 456154,
+                "eventId": 260805,
+                "typeId": 1,
+                "phaseOrder": 1,
+                "name": "Bracket",
+                "state": 3,
+                "pendingSeeds": 0,
+                "locked": false,
+                "isDefault": true,
+                "isExhibition": false,
+                "tier": 1,
+                "playGF": true,
+                "loserStartDirection": null,
+                "defaultLoserStartDirection": null,
+                "poolAvoidanceSetting": 0,
+                "manualPoolAvoidance": false,
+                "bracketInitializer": null,
+                "groupCount": 1,
+                "bracketMap": [],
+                "canAutoAssign": "0",
+                "createdAt": 1542010370,
+                "updatedAt": 1542313675,
+                "groups": [],
+                "checkInEnabled": false,
+                "preserveLosses": null,
+                "shuffleWinners": null,
+                "shuffleLosers": null,
+                "sequentialOrdering": null,
+                "playFullBrackets": null,
+                "entrantsIn": null,
+                "entrantsOut": null
+            },
+            {
+                "id": 456155,
+                "eventId": 260806,
+                "typeId": 1,
+                "phaseOrder": 1,
+                "name": "Bracket",
+                "state": 3,
+                "pendingSeeds": null,
+                "locked": false,
+                "isDefault": true,
+                "isExhibition": false,
+                "tier": 1,
+                "playGF": true,
+                "loserStartDirection": null,
+                "defaultLoserStartDirection": null,
+                "poolAvoidanceSetting": 0,
+                "manualPoolAvoidance": false,
+                "bracketInitializer": null,
+                "groupCount": 1,
+                "bracketMap": [],
+                "canAutoAssign": "0",
+                "createdAt": 1542011010,
+                "updatedAt": 1542334961,
+                "groups": [],
+                "checkInEnabled": false,
+                "preserveLosses": null,
+                "shuffleWinners": null,
+                "shuffleLosers": null,
+                "sequentialOrdering": null,
+                "playFullBrackets": null,
+                "entrantsIn": null,
+                "entrantsOut": null
+            },
+            {
+                "id": 456156,
+                "eventId": 260807,
+                "typeId": 1,
+                "phaseOrder": 1,
+                "name": "Bracket",
+                "state": 3,
+                "pendingSeeds": 0,
+                "locked": false,
+                "isDefault": true,
+                "isExhibition": false,
+                "tier": 1,
+                "playGF": true,
+                "loserStartDirection": null,
+                "defaultLoserStartDirection": null,
+                "poolAvoidanceSetting": 0,
+                "manualPoolAvoidance": false,
+                "bracketInitializer": null,
+                "groupCount": 1,
+                "bracketMap": [],
+                "canAutoAssign": "0",
+                "createdAt": 1542011105,
+                "updatedAt": 1542486345,
+                "groups": [],
+                "checkInEnabled": false,
+                "preserveLosses": null,
+                "shuffleWinners": null,
+                "shuffleLosers": null,
+                "sequentialOrdering": null,
+                "playFullBrackets": null,
+                "entrantsIn": null,
+                "entrantsOut": null
+            },
+            {
+                "id": 456157,
+                "eventId": 260808,
+                "typeId": 1,
+                "phaseOrder": 1,
+                "name": "Bracket",
+                "state": 3,
+                "pendingSeeds": 0,
+                "locked": false,
+                "isDefault": true,
+                "isExhibition": false,
+                "tier": 1,
+                "playGF": true,
+                "loserStartDirection": null,
+                "defaultLoserStartDirection": null,
+                "poolAvoidanceSetting": 0,
+                "manualPoolAvoidance": false,
+                "bracketInitializer": null,
+                "groupCount": 1,
+                "bracketMap": [],
+                "canAutoAssign": "0",
+                "createdAt": 1542011872,
+                "updatedAt": 1542327487,
+                "groups": [],
+                "checkInEnabled": false,
+                "preserveLosses": null,
+                "shuffleWinners": null,
+                "shuffleLosers": null,
+                "sequentialOrdering": null,
+                "playFullBrackets": null,
+                "entrantsIn": null,
+                "entrantsOut": null
+            },
+            {
+                "id": 457756,
+                "eventId": 261931,
+                "typeId": 1,
+                "phaseOrder": 1,
+                "name": "Bracket",
+                "state": 3,
+                "pendingSeeds": 0,
+                "locked": false,
+                "isDefault": true,
+                "isExhibition": false,
+                "tier": 1,
+                "playGF": true,
+                "loserStartDirection": null,
+                "defaultLoserStartDirection": null,
+                "poolAvoidanceSetting": 0,
+                "manualPoolAvoidance": false,
+                "bracketInitializer": null,
+                "groupCount": 1,
+                "bracketMap": [],
+                "canAutoAssign": "0",
+                "createdAt": 1542233260,
+                "updatedAt": 1542263352,
+                "groups": [],
+                "checkInEnabled": false,
+                "preserveLosses": null,
+                "shuffleWinners": null,
+                "shuffleLosers": null,
+                "sequentialOrdering": null,
+                "playFullBrackets": null,
+                "entrantsIn": null,
+                "entrantsOut": null
+            }
+        ],
+        "event": [
+            {
+                "id": 204728,
+                "tournamentId": 84422,
+                "state": 3,
+                "progressMeter": 0,
+                "videogameId": 1,
+                "name": "Melee Singles",
+                "description": "Melee Singles",
+                "slug": "tournament/smash-summit-7/event/melee-singles",
+                "entryFee": 0,
+                "entryCap": null,
+                "entrantSizeMin": 1,
+                "entrantSizeMax": 1,
+                "requiredCheckinNum": 1,
+                "teamNameAllowed": false,
+                "teamManagementDeadline": null,
+                "allowAutoReport": true,
+                "tmgEventType": null,
+                "templateId": null,
+                "gameName": null,
+                "playersPerEntry": null,
+                "exhibition": null,
+                "networkIds": null,
+                "platformIds": [
+                    "1",
+                    "26"
+                ],
+                "version": null,
+                "type": 1,
+                "formatType": 0,
+                "teamsFormat": null,
+                "entrantMode": 1,
+                "private": false,
+                "isOnline": false,
+                "hasTasks": false,
+                "hasDecks": false,
+                "enableSlippi": false,
+                "hasMatchmaking": false,
+                "isPlaceholder": false,
+                "checkInEnabled": false,
+                "checkInDuration": 0,
+                "checkInBuffer": 900,
+                "startAt": 1542301200,
+                "endAt": 1542603600,
+                "startedAt": null,
+                "completedAt": null,
+                "projectionMode": null,
+                "rulesetId": null,
+                "requiresVerification": null,
+                "pageConfig": {
+                    "header": [],
+                    "tabs": {
+                        "stats": {
+                            "title": "Stats",
+                            "path": "stats",
+                            "config": []
+                        }
+                    },
+                    "rules": null
+                },
+                "gameModeConfig": [],
+                "ffaPointConfig": null,
+                "ffaAutoBracketGenerationConfig": null,
+                "rulesetSettings": [],
+                "rulesMarkdown": null,
+                "matchRulesMarkdown": null,
+                "prizingInfo": {
+                    "enablePrizing": false,
+                    "markdown": null,
+                    "payoutType": null,
+                    "payoutTotal": null,
+                    "prizing": [
+                        {
+                            "id": 0,
+                            "placement": 1,
+                            "percent": 60
+                        },
+                        {
+                            "id": 1,
+                            "placement": 2,
+                            "percent": 30
+                        },
+                        {
+                            "id": 2,
+                            "placement": 3,
+                            "percent": 10
+                        }
+                    ]
+                },
+                "deckSubmissionDeadline": null,
+                "deckDeadlineHandled": false,
+                "stations": [],
+                "streams": [],
+                "waves": [],
+                "publishing": {
+                    "publish": true,
+                    "bracket": {
+                        "382397": true,
+                        "460142": true
+                    },
+                    "seeding": {
+                        "382397": true,
+                        "460142": true
+                    }
+                },
+                "images": [],
+                "scheduleId": 603614,
+                "platform": null,
+                "deadlineAction": null,
+                "expand": [],
+                "typeDisplayStr": "Melee Singles"
+            },
+            {
+                "id": 260802,
+                "tournamentId": 84422,
+                "state": 3,
+                "progressMeter": 0,
+                "videogameId": 1,
+                "name": "RvR Bo5 1 Stock",
+                "description": "RvR Bo5 1 Stock",
+                "slug": "tournament/smash-summit-7/event/rvr-bo5-1-stock",
+                "entryFee": 0,
+                "entryCap": null,
+                "entrantSizeMin": 1,
+                "entrantSizeMax": 1,
+                "requiredCheckinNum": 1,
+                "teamNameAllowed": false,
+                "teamManagementDeadline": null,
+                "allowAutoReport": true,
+                "tmgEventType": null,
+                "templateId": null,
+                "gameName": null,
+                "playersPerEntry": null,
+                "exhibition": null,
+                "networkIds": null,
+                "platformIds": [
+                    26
+                ],
+                "version": null,
+                "type": 1,
+                "formatType": null,
+                "teamsFormat": null,
+                "entrantMode": 1,
+                "private": false,
+                "isOnline": false,
+                "hasTasks": false,
+                "hasDecks": false,
+                "enableSlippi": false,
+                "hasMatchmaking": false,
+                "isPlaceholder": false,
+                "checkInEnabled": false,
+                "checkInDuration": 0,
+                "checkInBuffer": 900,
+                "startAt": 1542301200,
+                "endAt": 1542603600,
+                "startedAt": null,
+                "completedAt": null,
+                "projectionMode": null,
+                "rulesetId": null,
+                "requiresVerification": null,
+                "pageConfig": {
+                    "header": [],
+                    "tabs": {
+                        "stats": {
+                            "title": "Stats",
+                            "path": "stats",
+                            "config": []
+                        }
+                    },
+                    "rules": null
+                },
+                "gameModeConfig": [],
+                "ffaPointConfig": null,
+                "ffaAutoBracketGenerationConfig": null,
+                "rulesetSettings": [],
+                "rulesMarkdown": null,
+                "matchRulesMarkdown": null,
+                "prizingInfo": {
+                    "enablePrizing": false,
+                    "markdown": null,
+                    "payoutType": null,
+                    "payoutTotal": null,
+                    "prizing": [
+                        {
+                            "id": 0,
+                            "placement": 1,
+                            "percent": 60
+                        },
+                        {
+                            "id": 1,
+                            "placement": 2,
+                            "percent": 30
+                        },
+                        {
+                            "id": 2,
+                            "placement": 3,
+                            "percent": 10
+                        }
+                    ]
+                },
+                "deckSubmissionDeadline": null,
+                "deckDeadlineHandled": false,
+                "stations": [],
+                "streams": [],
+                "waves": [],
+                "publishing": {
+                    "publish": true,
+                    "bracket": {
+                        "456149": true
+                    },
+                    "seeding": {
+                        "456149": true
+                    }
+                },
+                "images": [],
+                "scheduleId": 706542,
+                "platform": null,
+                "deadlineAction": null,
+                "expand": [],
+                "typeDisplayStr": "Melee Singles"
+            },
+            {
+                "id": 260805,
+                "tournamentId": 84422,
+                "state": 3,
+                "progressMeter": 0,
+                "videogameId": 1969,
+                "name": "Slap City",
+                "description": "Slap City",
+                "slug": "tournament/smash-summit-7/event/slap-city",
+                "entryFee": 0,
+                "entryCap": null,
+                "entrantSizeMin": 1,
+                "entrantSizeMax": 1,
+                "requiredCheckinNum": 1,
+                "teamNameAllowed": false,
+                "teamManagementDeadline": null,
+                "allowAutoReport": true,
+                "tmgEventType": null,
+                "templateId": null,
+                "gameName": null,
+                "playersPerEntry": null,
+                "exhibition": null,
+                "networkIds": null,
+                "platformIds": [
+                    16
+                ],
+                "version": null,
+                "type": 1,
+                "formatType": null,
+                "teamsFormat": null,
+                "entrantMode": 1,
+                "private": false,
+                "isOnline": false,
+                "hasTasks": false,
+                "hasDecks": false,
+                "enableSlippi": false,
+                "hasMatchmaking": false,
+                "isPlaceholder": false,
+                "checkInEnabled": false,
+                "checkInDuration": 0,
+                "checkInBuffer": 900,
+                "startAt": 1542301200,
+                "endAt": 1542603600,
+                "startedAt": null,
+                "completedAt": null,
+                "projectionMode": null,
+                "rulesetId": null,
+                "requiresVerification": null,
+                "pageConfig": {
+                    "header": [],
+                    "tabs": {
+                        "stats": {
+                            "title": "Stats",
+                            "path": "stats",
+                            "config": []
+                        }
+                    },
+                    "rules": null
+                },
+                "gameModeConfig": [],
+                "ffaPointConfig": null,
+                "ffaAutoBracketGenerationConfig": null,
+                "rulesetSettings": [],
+                "rulesMarkdown": null,
+                "matchRulesMarkdown": null,
+                "prizingInfo": {
+                    "enablePrizing": false,
+                    "markdown": null,
+                    "payoutType": null,
+                    "payoutTotal": null,
+                    "prizing": [
+                        {
+                            "id": 0,
+                            "placement": 1,
+                            "percent": 60
+                        },
+                        {
+                            "id": 1,
+                            "placement": 2,
+                            "percent": 30
+                        },
+                        {
+                            "id": 2,
+                            "placement": 3,
+                            "percent": 10
+                        }
+                    ]
+                },
+                "deckSubmissionDeadline": null,
+                "deckDeadlineHandled": false,
+                "stations": [],
+                "streams": [],
+                "waves": [],
+                "publishing": {
+                    "publish": true,
+                    "bracket": {
+                        "456154": true
+                    },
+                    "seeding": {
+                        "456154": true
+                    }
+                },
+                "images": [],
+                "scheduleId": 706546,
+                "platform": null,
+                "deadlineAction": null,
+                "expand": [],
+                "typeDisplayStr": "Slap City Singles"
+            },
+            {
+                "id": 260806,
+                "tournamentId": 84422,
+                "state": 3,
+                "progressMeter": 0,
+                "videogameId": 1,
+                "name": "Draft Crews",
+                "description": "Draft Crews",
+                "slug": "tournament/smash-summit-7/event/draft-crews",
+                "entryFee": 0,
+                "entryCap": null,
+                "entrantSizeMin": 4,
+                "entrantSizeMax": 6,
+                "requiredCheckinNum": 1,
+                "teamNameAllowed": true,
+                "teamManagementDeadline": null,
+                "allowAutoReport": true,
+                "tmgEventType": null,
+                "templateId": null,
+                "gameName": null,
+                "playersPerEntry": null,
+                "exhibition": null,
+                "networkIds": null,
+                "platformIds": [
+                    26
+                ],
+                "version": null,
+                "type": 5,
+                "formatType": 0,
+                "teamsFormat": null,
+                "entrantMode": 1,
+                "private": false,
+                "isOnline": false,
+                "hasTasks": false,
+                "hasDecks": false,
+                "enableSlippi": false,
+                "hasMatchmaking": false,
+                "isPlaceholder": false,
+                "checkInEnabled": false,
+                "checkInDuration": 0,
+                "checkInBuffer": 900,
+                "startAt": 1542301200,
+                "endAt": 1542603600,
+                "startedAt": null,
+                "completedAt": null,
+                "projectionMode": null,
+                "rulesetId": null,
+                "requiresVerification": null,
+                "pageConfig": {
+                    "header": [],
+                    "tabs": {
+                        "stats": {
+                            "title": "Stats",
+                            "path": "stats",
+                            "config": []
+                        }
+                    },
+                    "rules": null
+                },
+                "gameModeConfig": [],
+                "ffaPointConfig": null,
+                "ffaAutoBracketGenerationConfig": null,
+                "rulesetSettings": [],
+                "rulesMarkdown": null,
+                "matchRulesMarkdown": null,
+                "prizingInfo": {
+                    "enablePrizing": false,
+                    "markdown": null,
+                    "payoutType": null,
+                    "payoutTotal": null,
+                    "prizing": [
+                        {
+                            "id": 0,
+                            "placement": 1,
+                            "percent": 60
+                        },
+                        {
+                            "id": 1,
+                            "placement": 2,
+                            "percent": 30
+                        },
+                        {
+                            "id": 2,
+                            "placement": 3,
+                            "percent": 10
+                        }
+                    ]
+                },
+                "deckSubmissionDeadline": null,
+                "deckDeadlineHandled": false,
+                "stations": [],
+                "streams": [],
+                "waves": [],
+                "publishing": {
+                    "publish": true,
+                    "bracket": {
+                        "456155": true
+                    },
+                    "seeding": {
+                        "456155": true
+                    }
+                },
+                "images": [],
+                "scheduleId": 706547,
+                "platform": null,
+                "deadlineAction": null,
+                "expand": [],
+                "typeDisplayStr": "Melee "
+            },
+            {
+                "id": 260807,
+                "tournamentId": 84422,
+                "state": 3,
+                "progressMeter": 0,
+                "videogameId": 1,
+                "name": "Melee Doubles",
+                "description": "Melee Doubles",
+                "slug": "tournament/smash-summit-7/event/melee-doubles",
+                "entryFee": 0,
+                "entryCap": null,
+                "entrantSizeMin": 2,
+                "entrantSizeMax": 2,
+                "requiredCheckinNum": 1,
+                "teamNameAllowed": false,
+                "teamManagementDeadline": null,
+                "allowAutoReport": true,
+                "tmgEventType": null,
+                "templateId": null,
+                "gameName": null,
+                "playersPerEntry": null,
+                "exhibition": null,
+                "networkIds": null,
+                "platformIds": [
+                    26
+                ],
+                "version": null,
+                "type": 5,
+                "formatType": null,
+                "teamsFormat": null,
+                "entrantMode": 1,
+                "private": false,
+                "isOnline": false,
+                "hasTasks": false,
+                "hasDecks": false,
+                "enableSlippi": false,
+                "hasMatchmaking": false,
+                "isPlaceholder": false,
+                "checkInEnabled": false,
+                "checkInDuration": 0,
+                "checkInBuffer": 900,
+                "startAt": 1542301200,
+                "endAt": 1542603600,
+                "startedAt": null,
+                "completedAt": null,
+                "projectionMode": null,
+                "rulesetId": null,
+                "requiresVerification": null,
+                "pageConfig": {
+                    "header": [],
+                    "tabs": {
+                        "stats": {
+                            "title": "Stats",
+                            "path": "stats",
+                            "config": []
+                        }
+                    },
+                    "rules": null
+                },
+                "gameModeConfig": [],
+                "ffaPointConfig": null,
+                "ffaAutoBracketGenerationConfig": null,
+                "rulesetSettings": [],
+                "rulesMarkdown": null,
+                "matchRulesMarkdown": null,
+                "prizingInfo": {
+                    "enablePrizing": false,
+                    "markdown": null,
+                    "payoutType": null,
+                    "payoutTotal": null,
+                    "prizing": [
+                        {
+                            "id": 0,
+                            "placement": 1,
+                            "percent": 60
+                        },
+                        {
+                            "id": 1,
+                            "placement": 2,
+                            "percent": 30
+                        },
+                        {
+                            "id": 2,
+                            "placement": 3,
+                            "percent": 10
+                        }
+                    ]
+                },
+                "deckSubmissionDeadline": null,
+                "deckDeadlineHandled": false,
+                "stations": [],
+                "streams": [],
+                "waves": [],
+                "publishing": {
+                    "publish": true,
+                    "bracket": {
+                        "456156": true
+                    },
+                    "seeding": {
+                        "456156": true
+                    }
+                },
+                "images": [],
+                "scheduleId": 706548,
+                "platform": null,
+                "deadlineAction": null,
+                "expand": [],
+                "typeDisplayStr": "Melee "
+            },
+            {
+                "id": 260808,
+                "tournamentId": 84422,
+                "state": 3,
+                "progressMeter": 0,
+                "videogameId": 1,
+                "name": "5 Character Classic Iron Man",
+                "description": "5 Character Classic Iron Man",
+                "slug": "tournament/smash-summit-7/event/5-character-classic-iron-man",
+                "entryFee": 0,
+                "entryCap": null,
+                "entrantSizeMin": 1,
+                "entrantSizeMax": 1,
+                "requiredCheckinNum": 1,
+                "teamNameAllowed": false,
+                "teamManagementDeadline": null,
+                "allowAutoReport": true,
+                "tmgEventType": null,
+                "templateId": null,
+                "gameName": null,
+                "playersPerEntry": null,
+                "exhibition": null,
+                "networkIds": null,
+                "platformIds": [
+                    26
+                ],
+                "version": null,
+                "type": 1,
+                "formatType": null,
+                "teamsFormat": null,
+                "entrantMode": 1,
+                "private": false,
+                "isOnline": false,
+                "hasTasks": false,
+                "hasDecks": false,
+                "enableSlippi": false,
+                "hasMatchmaking": false,
+                "isPlaceholder": false,
+                "checkInEnabled": false,
+                "checkInDuration": 0,
+                "checkInBuffer": 900,
+                "startAt": 1542301200,
+                "endAt": 1542603600,
+                "startedAt": null,
+                "completedAt": null,
+                "projectionMode": null,
+                "rulesetId": null,
+                "requiresVerification": null,
+                "pageConfig": {
+                    "header": [],
+                    "tabs": {
+                        "stats": {
+                            "title": "Stats",
+                            "path": "stats",
+                            "config": []
+                        }
+                    },
+                    "rules": null
+                },
+                "gameModeConfig": [],
+                "ffaPointConfig": null,
+                "ffaAutoBracketGenerationConfig": null,
+                "rulesetSettings": [],
+                "rulesMarkdown": null,
+                "matchRulesMarkdown": null,
+                "prizingInfo": {
+                    "enablePrizing": false,
+                    "markdown": null,
+                    "payoutType": null,
+                    "payoutTotal": null,
+                    "prizing": [
+                        {
+                            "id": 0,
+                            "placement": 1,
+                            "percent": 60
+                        },
+                        {
+                            "id": 1,
+                            "placement": 2,
+                            "percent": 30
+                        },
+                        {
+                            "id": 2,
+                            "placement": 3,
+                            "percent": 10
+                        }
+                    ]
+                },
+                "deckSubmissionDeadline": null,
+                "deckDeadlineHandled": false,
+                "stations": [],
+                "streams": [],
+                "waves": [],
+                "publishing": {
+                    "publish": true,
+                    "bracket": {
+                        "456157": true
+                    },
+                    "seeding": {
+                        "456157": true
+                    }
+                },
+                "images": [],
+                "scheduleId": 706549,
+                "platform": null,
+                "deadlineAction": null,
+                "expand": [],
+                "typeDisplayStr": "Melee Singles"
+            },
+            {
+                "id": 261931,
+                "tournamentId": 84422,
+                "state": 3,
+                "progressMeter": 0,
+                "videogameId": 1,
+                "name": "Caster Bracket",
+                "description": "Caster Bracket",
+                "slug": "tournament/smash-summit-7/event/caster-bracket",
+                "entryFee": 0,
+                "entryCap": null,
+                "entrantSizeMin": 1,
+                "entrantSizeMax": 1,
+                "requiredCheckinNum": 1,
+                "teamNameAllowed": false,
+                "teamManagementDeadline": null,
+                "allowAutoReport": true,
+                "tmgEventType": null,
+                "templateId": null,
+                "gameName": null,
+                "playersPerEntry": null,
+                "exhibition": null,
+                "networkIds": null,
+                "platformIds": [
+                    26
+                ],
+                "version": null,
+                "type": 1,
+                "formatType": null,
+                "teamsFormat": null,
+                "entrantMode": 1,
+                "private": false,
+                "isOnline": false,
+                "hasTasks": false,
+                "hasDecks": false,
+                "enableSlippi": false,
+                "hasMatchmaking": false,
+                "isPlaceholder": false,
+                "checkInEnabled": false,
+                "checkInDuration": 0,
+                "checkInBuffer": 900,
+                "startAt": 1542301200,
+                "endAt": 1542603600,
+                "startedAt": null,
+                "completedAt": null,
+                "projectionMode": null,
+                "rulesetId": null,
+                "requiresVerification": null,
+                "pageConfig": {
+                    "header": [],
+                    "tabs": {
+                        "stats": {
+                            "title": "Stats",
+                            "path": "stats",
+                            "config": []
+                        }
+                    },
+                    "rules": null
+                },
+                "gameModeConfig": [],
+                "ffaPointConfig": null,
+                "ffaAutoBracketGenerationConfig": null,
+                "rulesetSettings": [],
+                "rulesMarkdown": null,
+                "matchRulesMarkdown": null,
+                "prizingInfo": {
+                    "enablePrizing": false,
+                    "markdown": null,
+                    "payoutType": null,
+                    "payoutTotal": null,
+                    "prizing": [
+                        {
+                            "id": 0,
+                            "placement": 1,
+                            "percent": 60
+                        },
+                        {
+                            "id": 1,
+                            "placement": 2,
+                            "percent": 30
+                        },
+                        {
+                            "id": 2,
+                            "placement": 3,
+                            "percent": 10
+                        }
+                    ]
+                },
+                "deckSubmissionDeadline": null,
+                "deckDeadlineHandled": false,
+                "stations": [],
+                "streams": [],
+                "waves": [],
+                "publishing": {
+                    "publish": true,
+                    "bracket": {
+                        "457756": true
+                    },
+                    "seeding": {
+                        "457756": true
+                    }
+                },
+                "images": [],
+                "scheduleId": 708999,
+                "platform": null,
+                "deadlineAction": null,
+                "expand": [],
+                "typeDisplayStr": "Melee Singles"
+            }
+        ],
+        "videogame": [
+            {
+                "id": 1,
+                "abbrev": "Melee",
+                "name": "Super Smash Bros. Melee",
+                "displayName": "Melee",
+                "minPerEntry": 1,
+                "maxPerEntry": 2,
+                "approved": true,
+                "slug": "melee",
+                "isCardGame": null,
+                "characterTerm": null,
+                "stageTerm": null,
+                "gameTerm": null,
+                "initialStocks": null,
+                "images": [
+                    {
+                        "id": 6180,
+                        "width": 138,
+                        "height": 190,
+                        "ratio": 0.73,
+                        "type": "primary",
+                        "url": "https://images.smash.gg/images/videogame/1/image-f26ab87b8de31d78597a664d225e1c71.jpg",
+                        "isOriginal": true,
+                        "entity": null,
+                        "entityId": null,
+                        "uploadedBy": null,
+                        "createdAt": null,
+                        "updatedAt": null
+                    }
+                ],
+                "enabled": "1"
+            },
+            {
+                "id": 1969,
+                "abbrev": "SC",
+                "name": "Slap City",
+                "displayName": "Slap City",
+                "minPerEntry": null,
+                "maxPerEntry": null,
+                "approved": true,
+                "slug": "slap-city-5",
+                "isCardGame": false,
+                "characterTerm": "Character",
+                "stageTerm": "Stage",
+                "gameTerm": "Game",
+                "initialStocks": null,
+                "images": [
+                    {
+                        "id": 1225346,
+                        "width": 600,
+                        "height": 800,
+                        "ratio": 0.75,
+                        "type": "primary",
+                        "url": "https://images.smash.gg/images/videogame/1969/image-d730a2477511e5cfc3ed6dd4692e20d1.png",
+                        "isOriginal": true,
+                        "entity": null,
+                        "entityId": null,
+                        "uploadedBy": null,
+                        "createdAt": null,
+                        "updatedAt": null
+                    }
+                ],
+                "enabled": null
+            }
+        ]
+    },
+    "result": 84422,
+    "resultEntity": "tournament",
+    "actionRecords": []
+}
