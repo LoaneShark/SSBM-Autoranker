@@ -1,7 +1,6 @@
+## DEPENDENCY IMPORTS
 import matplotlib.pyplot as plt 
 from six.moves.urllib.request import urlopen
-#import six.moves.urllib.parse as urlparse
-#import httplib
 import requests
 import numpy as np 
 import scipy as sp 
@@ -10,7 +9,16 @@ import re
 import argparse
 from timeit import default_timer as timer
 import os,pickle,time
+from utils import *
 
+## TODO: - Finish readin
+## 		 - Read set data and results (W/L, game count, etc.)
+## 		 - Figure out what to do with the data // what data do we want
+## 		 - Convert data to absolute player id terms for better main file processing; pass on relevant info
+## 		 - garbage collection // reduce filesize of stored files
+## 		 - ignore irrelevant/side/casual/exhibition brackets (like at summit, e.g.)
+
+## ARGUMENT PARSING
 parser = argparse.ArgumentParser()
 parser.add_argument('-v','--verbosity',help='verbosity',default=0)
 parser.add_argument('-s','--save',help='save results toggle (default on)[WIP]',default=True)
@@ -21,7 +29,9 @@ parser.add_argument('-t','--teamsize',help='1 for singles bracket, 2 for doubles
 parser.add_argument('-d','--displaysize',help='lowest placing shown on pretty printer output (or -1 for all entrants)',default=64)
 parser.add_argument('-sl','--slug',help='tournament URL slug',default='the-big-house-8')
 parser.add_argument('-ss','--short_slug',help='shorthand tournament URL slug',default=None)
+parser.add_argument('-p','--print',help='print tournament final results to console as they are read in',default=False)
 args = parser.parse_args()
+
 v = int(args.verbosity)
 # verbosity for save/load statements
 lv = 6
@@ -40,14 +50,9 @@ if t_ss == None:
 	t_slug = t_slug
 else:
 	t_slug = get_slug(t_ss)
+print_res = args.print
 
-## TODO: - Finish readin
-## 		 - Read set data and results (W/L, game count, etc.)
-## 		 - Figure out what to do with the data // what data do we want
-## 		 - Convert data to absolute player id terms for better main file processing; pass on relevant info
-## 		 - garbage collection // reduce filesize of stored files
-## 		 - ignore irrelevant/side/casual/exhibition brackets (like at summit, e.g.)
-
+## MAIN FUNCTIONS
 def readin(tourney,type="slug"):
 	if type == "slug":
 		slug = tourney
@@ -59,12 +64,12 @@ def readin(tourney,type="slug"):
 
 	t,ps,pdata = read_phases(slug)
 
-	#t,ps = read_phases("the-big-house-8")
 	tid = t[0]
-	es,ws,ls,rs,br,ns = read_groups(tid,ps,pdata)
+	es,ws,ls,rs,ns = read_groups(tid,ps,pdata)
 
-	print_results(rs,ns,es,ls,max_place=disp_num)
-	return es,ns,rs,ws,ls,br
+	if print_res:
+		print_results(rs,ns,es,ls,max_place=disp_num)
+	return t,es,ns,rs,ws,ls
 
 # reads the match data for a given phase
 def read_groups(t_id,groups,phase_data):
@@ -86,7 +91,7 @@ def read_groups(t_id,groups,phase_data):
 			try:
 				if v >= lv:
 					print("Loading %d..."%group)
-				entrants,wins,losses,paths,bracket,names = load_all(t_id,group)
+				entrants,wins,losses,paths,names = load_all(t_id,group)
 				load_succ = True
 			except FileNotFoundError:
 				if v >= lv:
@@ -99,16 +104,16 @@ def read_groups(t_id,groups,phase_data):
 			data = json.loads(pull_phase(group))
 
 			read_entrants(data,phase_data,entrants,names,paths)
-			read_sets(data,phase_data,wins,losses,bracket,paths)
+			read_sets(data,phase_data,wins,losses,paths)
 
 			if save_res:
 				if v >= lv:
 					print("Saving %d..."%group)
-				save_all(t_id,group,[entrants,wins,losses,paths,bracket,names])
+				save_all(t_id,group,[entrants,wins,losses,paths,names])
 
 			if v >= 3:
 				print("{:.0f}".format(1000*(timer()-pstart)) + " ms")
-	return entrants,wins,losses,paths,bracket,names
+	return entrants,wins,losses,paths,names
 
 # reads in and returns data for all entrants in a given phase group
 def read_entrants(data,phase_data,entrants,names,xpath):
@@ -124,26 +129,16 @@ def read_entrants(data,phase_data,entrants,names,xpath):
 		print("Reading group: %s | %d"%(groupname,group)) 
 	seedata = data['entities']['seeds']
 
-	#i = 0
 	for x in seedata:
-		#if i < 10:
-			#print(x.items())
-			#print("\n")
 		e_id,abs_id,tag,prefix,metainfo = read_names(x)
 		names[e_id] = (prefix,tag)
 
-		#res = x['placement']
-		#if x['isDisqualified']:
-		#	res = -1
-		res = 900
-
+		res = 9000
 		if v >= 7:
 			print(e_id,tag)
 		if v >= 8 and e_id in xpath:
 			print(xpath[e_id])
 
-		#flatten = lambda l: [item for sublist in l for item in sublist]
-		#if x['progressionSeedId'] == 'null' or x['progressionSeedId'] == None:
 		if e_id in xpath:
 			if v >= 8:
 				print(xpath[e_id][1])
@@ -186,7 +181,7 @@ def read_names(x):
 	return e_id,abs_id,tag,prefix,metainfo
 
 # reads the sets for a given phase group and returns match results
-def read_sets(data,phase_data,wins,losses,bracket,xpath):
+def read_sets(data,phase_data,wins,losses,xpath):
 	setdata = data['entities']['sets']
 	group = data['entities']['groups']['id']
 
@@ -212,13 +207,15 @@ def read_sets(data,phase_data,wins,losses,bracket,xpath):
 				losses[l_id].extend([(w_id,[set_id,group])])
 
 			# always update final placement (assume they progressed -- people can't backtrack in bracket)
-			xpath[w_id][0] = min(xpath[w_id][0],match['wOverallPlacement'])
-			xpath[l_id][0] = min(xpath[l_id][0],match['lOverallPlacement'])
+			if not match['wOverallPlacement'] == None:
+				xpath[w_id][0] = min(xpath[w_id][0],match['wOverallPlacement'])
+			if not match['lOverallPlacement'] == None:
+				xpath[l_id][0] = min(xpath[l_id][0],match['lOverallPlacement'])
 		else:
 			if v >= 6:
 				print(set_id,match['phaseGroupId'],match['identifier'],["bye","bye"],[e1,e2])
 
-	return wins,losses,bracket
+	return wins,losses
 
 # reads the phase data for a given tournament
 def read_phases(tourney):
@@ -278,121 +275,15 @@ def read_phases(tourney):
 	
 	return (t_info,group_ids,waves)
 
-# returns true if the description contains explicit mention of melee/SSBM
-def has_melee(descr):
-	if descr == None:
-		return False
-	else:
-		return re.search('melee',descr,re.IGNORECASE) or re.search('SSBM',descr,re.IGNORECASE) or re.search('SSBMelee',descr,re.IGNORECASE)
-
-# returns the full JSON data for a phase given its ID number
-def pull_phase(num):
-	link = "https://api.smash.gg/phase_group/%d?expand[]=sets&expand[]=seeds"%num
-	tempdata = urlopen(link).read()
-	return tempdata.decode("UTF-8")
-
-# used to save datasets/hashtables
-def save_obj(t_id,phase,obj, name):
-	if not os.path.isdir('obj/%d'%t_id):
-		os.mkdir(str('obj/%d'%t_id))
-	if not os.path.isdir('obj/%d/%d'%(t_id,phase)):
-		os.mkdir(str('obj/%d/%d'%(t_id,phase)))
-	with open('obj/'+str(t_id)+'/'+str(phase)+'/'+name +'.pkl','wb') as f:
-		pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
-
-# used to load datasets/hashtables
-def load_obj(t_id,phase,name):
-	with open('obj/'+str(t_id)+'/'+str(phase)+'/'+name+'.pkl','rb') as f:
-		return pickle.load(f)
-
-# saves all params for the load_sets function
-def save_all(t_id,phase,params):
-	names = ["entrants","wins","losses","results","bracket","names"]
-	for param,name in zip(params,names):
-		save_obj(t_id,phase,param,name)
-
-# load all params for the load_sets function
-def load_all(t_id,phase):
-	names = ["entrants","wins","losses","results","bracket","names"]
-	return [load_obj(t_id,phase,name) for name in names]
-
-# prints smash.gg query pulls as pretty JSON .txt files
-def clean_data(infile, outfile):
-	with open(infile) as i_f:
-		data = json.loads(i_f.read())
-	o_f = open(outfile,"w")
-	o_f.write(json.dumps(data,indent=4))
-	o_f.close()
-
-# returns the full slug (needed to pull tourney data) given the short slug
-def get_slug(ss):
-	url = "https://smash.gg/%s"%ss
-	full_url = unshorten_url(url)
-
-	idx = (full_url.split('/')).index("tournament")
-	return full_url.split('/')[idx+1]
-
-# unshortens a shortened url, if shortened
-# (used to get slugs from short slugs)
-def unshorten_url(url):
-	session = requests.Session()
-	resp = session.head(url, allow_redirects=True)
-	return resp.url
-
-# prints tournament results by player's final placing
-def print_results(res,names,entrants,losses,max_place=64):
-	maxlen = 0
-
-	res_l = [item for item in res.items()]
-	res_s = sorted(res_l, key=lambda l: (len(l[1][1]),0-l[1][0]), reverse=True)
-
-	lsbuff = "\t"*(len(res_s[0][1][1])-len(res_s[-1][1][1])+1)
-	num_rounds = len(res_s[0][1][1])
-	print("\n{:>13.13}".format("Sponsor |"),"{:<24.24}".format("Tag"),"ID #\t","Place\t",("{:<%d.%d}"%(11*num_rounds,11*num_rounds)).format("Bracket"),"Losses\n")
-	for player in res_s:
-		if player[1][0] > max_place and max_place > 0:
-			break
-		else:
-			if names[player[0]][0] == "" or names[player[0]][0] == None:
-				sp = "  "
-			else:
-				sp = names[player[0]][0]
-				if len(sp) > 12:
-					sp = sp[:8] + "... |"
-				else:
-					sp = names[player[0]][0] + " |"
-			tag = names[player[0]][1]
-			if len(tag) > 24:
-				tag = tag[:21]+"..."
-
-			if player[0] in losses:
-				#print(losses)
-				ls = [names[loss[0]][1] for loss in losses[player[0]]]
-			else:
-				ls = None
-
-			if len(player[1][1]) > maxlen:
-				maxlen = len(player[1][1])
-			lsbuff = "\t"*(maxlen-len(player[1][1])+1)
-			#if len(player[1][1]) > 2:
-			#	lsbuff = "\t"
-			#else:
-			#	lsbuff = "\t\t\t"
-
-			print("{:>13.13}".format(sp),"{:<24.24}".format(names[player[0]][1]),"{:>7.7}".format(str(entrants[player[0]][1])),"  {:<5.5}".format(str(player[1][0])),"\t",("{:<%d.%d}"%(11*num_rounds,11*num_rounds)).format(str([names['g_%d'%group] for group in player[1][1]])),ls)
-	return(res_s)
-
 if __name__ == "__main__":
-	#readin('summit7',type='ss')
 	readin(t_slug)
 
+	#readin('summit7',type='ss')
 	#print(get_slug('tbh8'))
-
-
 
 	#read_sets("sets.txt")
 	#pull_phase(764818)
 
 	#clean_data("hbox tbh raw.txt","hbox tbh.txt")
 	#clean_data("hbox s7 raw.txt","hbox s7.txt")
-	#clean_data("sets.txt","setsclean.txt")
+	#clean_data("summitsets.txt","summitsetsclean.txt")
