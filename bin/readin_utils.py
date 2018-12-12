@@ -4,8 +4,7 @@ from six.moves.urllib.request import urlopen
 import requests
 import re,os,pickle,time,json
 
-## A series of helper functions for readin.py
-
+## AUXILIARY FUNCTIONS
 # returns the full slug (needed to pull tourney data) given the short slug
 def get_slug(ss):
 	url = "https://smash.gg/%s"%ss
@@ -76,7 +75,9 @@ def print_results(res,names,entrants,losses,max_place=64):
 
 	lsbuff = "\t"*(len(res_s[0][1][1])-len(res_s[-1][1][1])+1)
 	num_rounds = len(res_s[0][1][1])
-	print("\n{:>13.13}".format("Sponsor |"),"{:<24.24}".format("Tag"),"ID #\t","Place\t",("{:<%d.%d}"%(13*num_rounds,13*num_rounds)).format("Bracket"),"Losses\n")
+	roundnames = [names['g_%d'%group] for group in res_s[0][1][1]]
+	roundslen = sum([len(str(name)) for name in roundnames]) + 4*num_rounds
+	print("\n{:>13.13}".format("Sponsor |"),"{:<24.24}".format("Tag"),"ID #\t","Place\t",("{:<%d.%d}"%(roundslen+5,roundslen+5)).format("Bracket"),"Losses\n")
 	for player in res_s:
 		if player[1][0] > max_place and max_place > 0:
 			break
@@ -107,5 +108,5 @@ def print_results(res,names,entrants,losses,max_place=64):
 			#else:
 			#	lsbuff = "\t\t\t"
 
-			print("{:>13.13}".format(sp),"{:<24.24}".format(names[player[0]][1]),"{:>7.7}".format(str(entrants[player[0]][1])),"  {:<5.5}".format(str(player[1][0])),"\t",("{:<%d.%d}"%(13*num_rounds,13*num_rounds)).format(str([names['g_%d'%group] for group in player[1][1]])),ls)
+			print("{:>13.13}".format(sp),"{:<24.24}".format(names[player[0]][1]),"{:>7.7}".format(str(entrants[player[0]][1])),"  {:<5.5}".format(str(player[1][0])),"\t",("{:<%d.%d}"%(roundslen+5,roundslen+5)).format(str([names['g_%d'%group] for group in player[1][1]])),ls)
 	return(res_s)

@@ -1,1 +1,3 @@
 bin/obj/**
+bin/db/**
+bin/old

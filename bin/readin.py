@@ -9,20 +9,13 @@ import re
 import argparse
 from timeit import default_timer as timer
 import os,pickle,time
-from utils import *
-
-## TODO: - Finish readin
-## 		 - Read set data and results (W/L, game count, etc.)
-## 		 - Figure out what to do with the data // what data do we want
-## 		 - Convert data to absolute player id terms for better main file processing; pass on relevant info
-## 		 - garbage collection // reduce filesize of stored files
-## 		 - ignore irrelevant/side/casual/exhibition brackets (like at summit, e.g.)
+from readin_utils import *
 
 ## ARGUMENT PARSING
 parser = argparse.ArgumentParser()
 parser.add_argument('-v','--verbosity',help='verbosity',default=0)
-parser.add_argument('-s','--save',help='save results toggle (default on)[WIP]',default=True)
-parser.add_argument('-l','--load',help='load results toggle (default off)[WIP]',default=False)
+parser.add_argument('-s','--save',help='save results toggle (default on)',default=True)
+parser.add_argument('-l','--load',help='load results toggle (default off)',default=False)
 parser.add_argument('-f','--force_first',help='force the first criteria-matching event to be the only event',default=True)
 parser.add_argument('-g','--game',help='Melee=1, P:M=2, Wii U=3, 64=4, Ultimate=1386',default=1)
 parser.add_argument('-t','--teamsize',help='1 for singles bracket, 2 for doubles',default=1)
@@ -33,7 +26,7 @@ parser.add_argument('-p','--print',help='print tournament final results to conso
 args = parser.parse_args()
 
 v = int(args.verbosity)
-# verbosity for save/load statements
+# verbosity threshold for save/load statements
 lv = 6
 save_res = args.save
 load_res = args.load
@@ -44,12 +37,12 @@ if game not in [1,2,3,4,5,1386] and False:		#SSB = 4 	SSBM = 1	SSBB = 5 	P:M = 2
 	print("Invalid game number provided. Forcing melee (id=1) instead.")
 	game = 1
 disp_num = int(args.displaysize)
-t_slug = args.slug
-t_ss = args.short_slug
-if t_ss == None:
-	t_slug = t_slug
+t_slug_a = args.slug
+t_ss_a = args.short_slug
+if t_ss_a == None:
+	t_slug_a = t_slug_a
 else:
-	t_slug = get_slug(t_ss)
+	t_slug_a = get_slug(t_ss_a)
 print_res = args.print
 
 ## MAIN FUNCTIONS
@@ -70,6 +63,27 @@ def readin(tourney,type="slug"):
 	if print_res:
 		print_results(rs,ns,es,ls,max_place=disp_num)
 	return t,es,ns,rs,ws,ls
+
+def set_args(args):
+	v = int(args.verbosity)
+	# verbosity for save/load statements
+	lv = 6
+	save_res = args.save
+	load_res = args.load
+	force_first_event = args.force_first
+	teamsize = int(args.teamsize)
+	game = int(args.game)
+	if game not in [1,2,3,4,5,1386] and False:		#SSB = 4 	SSBM = 1	SSBB = 5 	P:M = 2		SSB4 = 3 	SSBU = 1386
+		print("Invalid game number provided. Forcing melee (id=1) instead.")
+		game = 1
+	disp_num = int(args.displaysize)
+	t_slug_a = args.slug
+	t_ss_a = args.short_slug
+	if t_ss_a == None:
+		t_slug_a = t_slug_a
+	else:
+		t_slug_a = get_slug(t_ss_a)
+	print_res = args.print
 
 # reads the match data for a given phase
 def read_groups(t_id,groups,phase_data):
@@ -148,7 +162,7 @@ def read_entrants(data,phase_data,entrants,names,xpath):
 			xpath[e_id] = [res,[group]]
 
 		#entrants[i] = (names[i], player_id[i])
-		entrants[e_id] = (names[e_id],abs_id,metainfo)
+		entrants[e_id] = (names[e_id],abs_id,e_id,metainfo)
 	return entrants,names,xpath
 		
 # returns sponsor, gamertag, and player meta info for a given entrant	
@@ -208,9 +222,9 @@ def read_sets(data,phase_data,wins,losses,xpath):
 
 			# always update final placement (assume they progressed -- people can't backtrack in bracket)
 			if not match['wOverallPlacement'] == None:
-				xpath[w_id][0] = min(xpath[w_id][0],match['wOverallPlacement'])
+				xpath[w_id][0] = match['wOverallPlacement']
 			if not match['lOverallPlacement'] == None:
-				xpath[l_id][0] = min(xpath[l_id][0],match['lOverallPlacement'])
+				xpath[l_id][0] = match['lOverallPlacement']
 		else:
 			if v >= 6:
 				print(set_id,match['phaseGroupId'],match['identifier'],["bye","bye"],[e1,e2])
@@ -232,11 +246,12 @@ def read_phases(tourney):
 	t_id = tdata['entities']['tournament']['id']
 	t_name = tdata['entities']['tournament']['name']
 	t_ss = tdata['entities']['tournament']['shortSlug']
+	t_slug = tdata['entities']['tournament']['slug'].split('/')[1]
 	t_type = tdata['entities']['tournament']['tournamentType']
 	# date tuple in (year, month, day) format
 	t_date = time.localtime(tdata['entities']['tournament']['startAt'])[:3]
 	t_region = (tdata['entities']['tournament']['addrState'],tdata['entities']['tournament']['countryCode'])
-	t_info = (t_id,t_name,t_ss,t_type,t_date,t_region)
+	t_info = (t_id,t_name,t_slug,t_ss,t_type,t_date,t_region)
 
 	if v >= 1:
 		print("Reading tournament: %s | %d"%(tdata['entities']['tournament']['name'],t_id))
@@ -276,7 +291,7 @@ def read_phases(tourney):
 	return (t_info,group_ids,waves)
 
 if __name__ == "__main__":
-	readin(t_slug)
+	readin(t_slug_a)
 
 	#readin('summit7',type='ss')
 	#print(get_slug('tbh8'))
@@ -286,4 +301,4 @@ if __name__ == "__main__":
 
 	#clean_data("hbox tbh raw.txt","hbox tbh.txt")
 	#clean_data("hbox s7 raw.txt","hbox s7.txt")
-	#clean_data("summitsets.txt","summitsetsclean.txt")
+	#clean_data("g5top8raw.txt","g5top8.txt")
