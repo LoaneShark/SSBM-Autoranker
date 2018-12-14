@@ -8,7 +8,7 @@ import argparse
 #import shutil
 from timeit import default_timer as timer
 ## UTIL IMPORTS
-import db_utils
+from db_utils import read_majors,set_db_args,save_db,load_db
 
 ## TODO: 
 ##	Shortterm
@@ -40,7 +40,14 @@ parser.add_argument('-c','--collect_garbage',help='delete phase data after tourn
 parser.add_argument('-ar','--use_arcadians',help='count arcadian events',default=False)
 args = parser.parse_args()
 
+game_idx = args.game
+to_load_db = args.load
+if args.load == "False":
+	to_load_db = False
+
 def main():
+	set_db_args(args)
+	tourneys,ids,p_info,records = read_majors(args.game,args.year)
 	return True
 
 if __name__ == "__main__":

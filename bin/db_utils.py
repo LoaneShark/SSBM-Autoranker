@@ -8,7 +8,7 @@ import argparse
 import shutil
 from timeit import default_timer as timer
 ## UTIL IMPORTS
-from readin import readin,set_args
+from readin import readin,set_readin_args
 from readin_utils import get_slug
 import scraper
 
@@ -54,20 +54,23 @@ if args.load == "False":
 if args.save == "False":
 	args.save == False
 	to_save_db = False
+db_slug = args.slug
+db_game = args.game
+db_year = args.year
 
 # main loop. calls scraper to get slugs for every major that happened
 # in the specified year for the specified game (per smash.gg numeric id value)
 # returns in the form of 4 dicts: tourneys,ids,p_info,records
-def read_majors(game_id=int(args.game),year=int(args.year)):
-	set_args(args)
+def read_majors(game_id=int(db_game),year=int(db_year)):
+	set_readin_args(args)
 	#slugs = ["genesis-5","summit6","shine2018","tbh8","summit7"]
 	fails = []
-	if args.slug == None:
+	if db_slug == None:
 		if to_load_db:
 			scrape_load = True
 			if v >= 3:
 				"Loading saved slugs..."
-			slugs = load_slugs(int(args.game),int(args.year))
+			slugs = load_slugs(int(db_game),int(db_year))
 			if slugs == False or slugs == []:
 				if v >= 3:
 					"Saved slugs not found."
@@ -78,11 +81,11 @@ def read_majors(game_id=int(args.game),year=int(args.year)):
 			scrape_load = False
 		fails = [event[1] for event in slugs if type(event) is tuple]
 		slugs = [event for event in slugs if type(event) is str]
-	elif type(args.slug) is list:
-		slugs = args.slug
+	elif type(db_slug) is list:
+		slugs = db_slug
 	else:
-		#print(type(args.slug))
-		slugs = [args.slug]
+		#print(type(db_slug))
+		slugs = [db_slug]
 	if v >= 3 and not scrape_load:
 		print("Scraped the following slugs:")
 		print(slugs)
@@ -90,8 +93,26 @@ def read_majors(game_id=int(args.game),year=int(args.year)):
 		print("The following majors could not be read (no smash.gg bracket found)")
 		print(fails)
 	if to_save_db:
-		save_slugs(slugs,int(args.game),int(args.year))
-	return(read_tourneys(slugs,ver=args.game))
+		save_slugs(slugs,int(db_game),int(db_year))
+	return(read_tourneys(slugs,ver=db_game))
+
+def set_db_args(args):
+	collect = args.collect_garbage
+	v = int(args.verbosity)
+	if not args.short_slug == None:
+		args.slug = get_slug(args.short_slug)
+	to_save_db = args.save
+	to_load_db = args.load
+	if args.load == "False":
+		args.load == False
+		to_load_db = False
+	if args.save == "False":
+		args.save == False
+		to_save_db = False
+	db_slug = args.slug
+	db_game = args.game
+	db_year = args.year
+
 
 ## AUXILIARY FUNCTIONS
 # loads database and stores any tournament data not already present given the url slug

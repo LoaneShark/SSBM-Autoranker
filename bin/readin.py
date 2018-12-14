@@ -78,7 +78,7 @@ def readin(tourney,t_type="slug"):
 	else:
 		return False
 
-def set_args(args):
+def set_readin_args(args):
 	v = int(args.verbosity)
 	# verbosity for save/load statements
 	lv = 6
