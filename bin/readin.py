@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 from six.moves.urllib.request import urlopen
 from six.moves.urllib.error import HTTPError
 import requests
-import numpy as np 
-import scipy as sp 
+#import numpy as np 
+#import scipy as sp 
 import json
 import re
 import argparse

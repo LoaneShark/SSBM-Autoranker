@@ -1,5 +1,5 @@
-import numpy as np 
-import scipy as sp 
+#import numpy as np 
+#import scipy as sp 
 from six.moves.urllib.request import urlopen
 #import lxml.html as lh
 #import pandas as pd

@@ -1,5 +1,5 @@
-import numpy as np 
-import scipy as sp 
+#import numpy as np 
+#import scipy as sp 
 from six.moves.urllib.request import urlopen
 import requests
 import re,os,pickle,time,json
