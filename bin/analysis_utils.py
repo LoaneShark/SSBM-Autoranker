@@ -243,7 +243,7 @@ def load_db(ver):
 			print("Loading DB...")
 		return [load_dict(name,ver) for name in ['tourneys','ids','p_info','records']]
 	else:
-		return [load_dict(name,ver,loc='blank') for name in ['tourneys','ids','p_info','records']]
+		return [load_dict(name,'blank',loc='db') for name in ['tourneys','ids','p_info','records']]
 
 # saves a single dict
 def save_dict(data,name,ver,loc='db'):
