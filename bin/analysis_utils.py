@@ -7,38 +7,98 @@ import json
 import argparse
 import shutil
 from timeit import default_timer as timer
+## UTIL IMPORTS
 from readin import readin,set_args
+from readin_utils import get_slug
+import scraper
 
 ## TODO: 
+##	Shortterm
 ## 		 - Figure out what to do with the data // what data do we want
 ## 		 - ignore irrelevant/side/casual/exhibition brackets (like at summit, e.g.)
+## 		 - ensure scraper is JUST SINGLES unless otherwise specified
+##
+##	Longterm
+## 		 - Challonge support (player matching by tag maybe needed -- no player ids provided!)
+## 		 - pre-smash.gg era support (see: challonge support)
+## 				- wtf do i do about evo's bitch-ass paper brackets
+## 		 - General doubles / crews support (see: scraper support/filtering out by event type)
+##
 
 ## ARGUMENT PARSING
 parser = argparse.ArgumentParser()
 parser.add_argument('-v','--verbosity',help='verbosity',default=0)
-parser.add_argument('-s','--save',help='save results toggle (default on)',default=True)
-parser.add_argument('-l','--load',help='load results toggle (default off)',default=False)
+parser.add_argument('-s','--save',help='save results toggle (default True)',default=True)
+parser.add_argument('-l','--load',help='load results toggle (default True)',default=True)
 parser.add_argument('-f','--force_first',help='force the first criteria-matching event to be the only event',default=True)
 parser.add_argument('-g','--game',help='Melee=1, P:M=2, Wii U=3, 64=4, Ultimate=1386',default=1)
+parser.add_argument('-y','--year',help='The year you want to analyze (for ssbwiki List of majors scraper)',default=2018)
 parser.add_argument('-t','--teamsize',help='1 for singles bracket, 2 for doubles',default=1)
 parser.add_argument('-d','--displaysize',help='lowest placing shown on pretty printer output (or -1 for all entrants)',default=64)
-parser.add_argument('-sl','--slug',help='tournament URL slug',default='the-big-house-8')
+parser.add_argument('-sl','--slug',help='tournament URL slug',default=None)
 parser.add_argument('-ss','--short_slug',help='shorthand tournament URL slug',default=None)
 parser.add_argument('-p','--print',help='print tournament final results to console as they are read in',default=False)
 parser.add_argument('-c','--collect_garbage',help='delete phase data after tournament is done being read in',default=True)
+parser.add_argument('-ar','--use_arcadians',help='count arcadian events',default=False)
 args = parser.parse_args()
 
 collect = args.collect_garbage
+v = int(args.verbosity)
+if not args.short_slug == None:
+	args.slug = get_slug(args.short_slug)
+to_save_db = args.save
+to_load_db = args.load
+if args.load == "False":
+	args.load == False
+	to_load_db = False
+if args.save == "False":
+	args.save == False
+	to_save_db = False
 
-def main():
+# main loop. calls scraper to get slugs for every major that happened
+# in the specified year for the specified game (per smash.gg numeric id value)
+# returns in the form of 4 dicts: tourneys,ids,p_info,records
+def read_majors(game_id=int(args.game),year=int(args.year)):
 	set_args(args)
-	slugs = ["genesis-5","summit6","shine2018","tbh8","summit7"]
-	read_tourneys(slugs)
+	#slugs = ["genesis-5","summit6","shine2018","tbh8","summit7"]
+	fails = []
+	if args.slug == None:
+		if to_load_db:
+			scrape_load = True
+			if v >= 3:
+				"Loading saved slugs..."
+			slugs = load_slugs(int(args.game),int(args.year))
+			if slugs == False or slugs == []:
+				if v >= 3:
+					"Saved slugs not found."
+				slugs = scraper.scrape(game_id,year,v)
+				scrape_load = False
+		else:
+			slugs = scraper.scrape(game_id,year,v)
+			scrape_load = False
+		fails = [event[1] for event in slugs if type(event) is tuple]
+		slugs = [event for event in slugs if type(event) is str]
+	elif type(args.slug) is list:
+		slugs = args.slug
+	else:
+		#print(type(args.slug))
+		slugs = [args.slug]
+	if v >= 3 and not scrape_load:
+		print("Scraped the following slugs:")
+		print(slugs)
+	if not fails == [] and v > 0:
+		print("The following majors could not be read (no smash.gg bracket found)")
+		print(fails)
+	if to_save_db:
+		save_slugs(slugs,int(args.game),int(args.year))
+	return(read_tourneys(slugs,ver=args.game))
 
 ## AUXILIARY FUNCTIONS
 # loads database and stores any tournament data not already present given the url slug
 def read_tourneys(slugs,ver='default'):
 	[tourneys,ids,p_info,records] = load_db(ver)
+	if v >= 3 and len(tourneys.keys())>1:
+		print("Loaded Tourneys: " + str([tourneys[t_id]['name'] for t_id in tourneys if not t_id == 'slugs']))
 	#print(tourneys)
 	#dicts = (tourneys,ids,p_info,records)
 	#print(tourneys,ids,p_info,records)
@@ -46,11 +106,13 @@ def read_tourneys(slugs,ver='default'):
 	for slug in slugs:
 		if slug not in tourneys['slugs']:
 			readins = readin(slug)
-			if store_data(readins,(tourneys,ids,p_info,records),slug):
-				save_db((tourneys,ids,p_info,records),ver)
-				t_id = tourneys['slugs'][readins[0][2]]
-				if collect:
-					delete_tourney(t_id)
+			if readins:
+				if store_data(readins,(tourneys,ids,p_info,records),slug):
+					if to_save_db:
+						save_db((tourneys,ids,p_info,records),ver)
+					t_id = tourneys['slugs'][readins[0][2]]
+					if collect:
+						delete_tourney(t_id)
 	return tourneys,ids,p_info,records
 
 # helper function to store all data from a call to readin
@@ -166,15 +228,27 @@ def store_tourney(slug,t_info,dicts):
 
 # used to save datasets/hashtables
 def save_db(dicts,ver,loc='db'):
-	for data,name in zip(dicts,['tourneys','ids','p_info','records']):
-		save_dict(data,name,ver,loc)
+	if to_save_db:
+		if v >= 3:
+			print("Saving DB...")
+		for data,name in zip(dicts,['tourneys','ids','p_info','records']):
+			save_dict(data,name,ver,loc)
+	else:
+		return False
 
 # used to load datasets/hashtables
 def load_db(ver):
-	return [load_dict(name,ver) for name in ['tourneys','ids','p_info','records']]
+	if to_load_db:
+		if v >= 3:
+			print("Loading DB...")
+		return [load_dict(name,ver) for name in ['tourneys','ids','p_info','records']]
+	else:
+		return [load_dict(name,ver,loc='blank') for name in ['tourneys','ids','p_info','records']]
 
 # saves a single dict
 def save_dict(data,name,ver,loc='db'):
+	if not os.path.isdir('%s'%loc):
+		os.mkdir(str('%s'%loc))
 	if not os.path.isdir('%s/%s'%(loc,ver)):
 		os.mkdir(str('%s/%s'%(loc,ver)))
 	#if not os.path.isdir('%s/%s/%s'%(loc,ver,name)):
@@ -195,7 +269,30 @@ def load_dict(name,ver,loc='db'):
 			return t
 		else:
 			save_dict({},name,ver,loc)
-			return {} 
+			return {}
+
+# saves the slugs pulled by scraper to avoid having to rescrape every time
+def save_slugs(slugs,game,year,loc='db'):
+	if to_save_db:
+		if v >= 4:
+			print("Saving scraped slugs...")
+		if not os.path.isdir('%s/%s'%(loc,game)):
+			os.mkdir(str('%s/%s'%(loc,game)))
+		if not os.path.isdir('%s/%s/slugs'%(loc,game)):
+			os.mkdir(str('%s/%s/slugs'%(loc,game)))
+		with open(str(loc)+'/'+str(game)+'/slugs/'+str(year) +'.pkl','wb') as f:
+			pickle.dump(slugs, f, pickle.HIGHEST_PROTOCOL)
+		return True
+	else:
+		return False
+
+# loads the slugs pulled by scraper to avoid having to rescrape every time
+def load_slugs(game,year,loc='db'):
+	try:
+		with open(str(loc)+'/'+str(game)+'/slugs/'+str(year)+'.pkl','rb') as f:
+			return pickle.load(f) 
+	except FileNotFoundError:
+		return False
 
 # deletes the json pulls and phase data stored by readin
 # (for use once a tourney has been imported fully, to remove garbage files from accumulating)
@@ -204,4 +301,4 @@ def delete_tourney(t_id):
 		shutil.rmtree('obj/%d'%t_id)
 
 if __name__ == "__main__":
-	main()
+	read_majors()

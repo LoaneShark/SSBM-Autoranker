@@ -20,6 +20,19 @@ def has_melee(descr):
 	else:
 		return re.search('melee',descr,re.IGNORECASE) or re.search('SSBM',descr,re.IGNORECASE) or re.search('SSBMelee',descr,re.IGNORECASE)
 
+def is_amateur(descr):
+	if descr == None:
+		return False
+	else:
+		return re.search('amateur',descr,re.IGNORECASE) or re.search('redemption',descr,re.IGNORECASE) or re.search('novice',descr,re.IGNORECASE) \
+		or re.search('beginner',descr,re.IGNORECASE)
+
+def is_arcadian(descr):
+	if descr == None:
+		return False
+	else:
+		return re.search('arcadian',descr,re.IGNORECASE) or re.search('unranked',descr,re.IGNORECASE)
+
 # returns the full JSON data for a phase given its ID number
 def pull_phase(num):
 	link = "https://api.smash.gg/phase_group/%d?expand[]=sets&expand[]=seeds"%num
