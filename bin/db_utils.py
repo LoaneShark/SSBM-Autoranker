@@ -57,6 +57,11 @@ if args.save == "False":
 db_slug = args.slug
 db_game = args.game
 db_year = args.year
+count_arcadians = args.use_arcadians
+if count_arcadians == -1:
+	only_arcadians = True
+else:
+	only_arcadians = False
 
 # main loop. calls scraper to get slugs for every major that happened
 # in the specified year for the specified game (per smash.gg numeric id value)
@@ -65,6 +70,8 @@ def read_majors(game_id=int(db_game),year=int(db_year)):
 	set_readin_args(args)
 	#slugs = ["genesis-5","summit6","shine2018","tbh8","summit7"]
 	fails = []
+	scrape_load = False
+	slug_given = False
 	if db_slug == None:
 		if to_load_db:
 			scrape_load = True
@@ -78,15 +85,16 @@ def read_majors(game_id=int(db_game),year=int(db_year)):
 				scrape_load = False
 		else:
 			slugs = scraper.scrape(game_id,year,v)
-			scrape_load = False
 		fails = [event[1] for event in slugs if type(event) is tuple]
 		slugs = [event for event in slugs if type(event) is str]
 	elif type(db_slug) is list:
 		slugs = db_slug
+		slug_given = True
 	else:
 		#print(type(db_slug))
 		slugs = [db_slug]
-	if v >= 3 and not scrape_load:
+		slug_given = True
+	if v >= 3 and not scrape_load and not slug_given:
 		print("Scraped the following slugs:")
 		print(slugs)
 	if not fails == [] and v > 0:
@@ -118,7 +126,7 @@ def set_db_args(args):
 # loads database and stores any tournament data not already present given the url slug
 def read_tourneys(slugs,ver='default'):
 	[tourneys,ids,p_info,records] = load_db(ver)
-	if v >= 3 and len(tourneys.keys())>1:
+	if v >= 4 and len(tourneys.keys())>1:
 		print("Loaded Tourneys: " + str([tourneys[t_id]['name'] for t_id in tourneys if not t_id == 'slugs']))
 	#print(tourneys)
 	#dicts = (tourneys,ids,p_info,records)
@@ -143,7 +151,7 @@ def store_data(readins,dicts,slug):
 
 	if store_players(entrants,names,t_info,dicts):
 		if store_records(wins,losses,paths,t_info,dicts):
-			if store_tourney(slug,t_info,dicts):
+			if store_tourney(slug,t_info,names['groups'],dicts):
 				return True
 	return False
 
@@ -176,6 +184,10 @@ def store_players(entrants,names,t_info,dicts):
 					p_info[abs_id]['team'] = names[e_id][0]
 			else:
 				p_info[abs_id]['team'] = names[e_id][0]
+			if 'aliases' not in p_info[abs_id]:
+				p_info[abs_id]['aliases'] = []
+			if names[e_id][1] not in p_info[abs_id]['aliases']:
+				p_info[abs_id]['aliases'].extend([names[e_id][1]])
 			p_info[abs_id]['tag'] = names[e_id][1]
 			for key,info in zip(['firstname','lastname','state','country'],entrants[e_id][3]):
 				if key in p_info[abs_id]:
@@ -205,9 +217,12 @@ def store_records(wins,losses,paths,t_info,dicts):
 					records[abs_id]['wins'] = {}
 					records[abs_id]['losses'] = {}
 					records[abs_id]['placings'] = {}
+					records[abs_id]['paths'] = {}
 
 				# store final placement by tourney id
 				records[abs_id]['placings'][t_id] = paths[e_id][0]
+				# store path through bracket by tourney id
+				records[abs_id]['paths'][t_id] = paths[e_id][1]
 
 				# store wins and losses
 				if e_id in wins:
@@ -229,7 +244,7 @@ def store_records(wins,losses,paths,t_info,dicts):
 	return True
 
 # stores tourney meta info and marks tournament as imported
-def store_tourney(slug,t_info,dicts):
+def store_tourney(slug,t_info,group_names,dicts):
 	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region = t_info
 	tourneys,ids,p_info,records = dicts
 	tourneys[t_id] = {}
@@ -244,6 +259,9 @@ def store_tourney(slug,t_info,dicts):
 	tourneys['slugs'][t_slug] = t_id
 	tourneys['slugs'][t_ss] = t_id
 	tourneys['slugs'][slug] = t_id
+	if 'groups' not in tourneys[t_id]:
+		tourneys[t_id]['groups'] = {}
+	tourneys[t_id]['groups'] = group_names
 		
 	return True
 
@@ -268,6 +286,8 @@ def load_db(ver):
 
 # saves a single dict
 def save_dict(data,name,ver,loc='db'):
+	if only_arcadians:
+		ver = str(ver)+" (ARC)"
 	if not os.path.isdir('%s'%loc):
 		os.mkdir(str('%s'%loc))
 	if not os.path.isdir('%s/%s'%(loc,ver)):
@@ -286,6 +306,7 @@ def load_dict(name,ver,loc='db'):
 		if name == 'tourneys':
 			t = {}
 			t['slugs'] = {}
+			#t['groups'] = {}
 			save_dict(t,name,ver,loc)
 			return t
 		else:

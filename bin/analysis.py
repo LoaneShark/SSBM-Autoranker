@@ -9,18 +9,23 @@ import argparse
 from timeit import default_timer as timer
 ## UTIL IMPORTS
 from db_utils import read_majors,set_db_args,save_db,load_db
+from analysis_utils import *
 
 ## TODO: 
 ##	Shortterm
 ## 		 - Figure out what to do with the data // what data do we want
 ## 		 - ignore irrelevant/side/casual/exhibition brackets (like at summit, e.g.)
 ## 		 - ensure scraper is JUST SINGLES unless otherwise specified
+## 		 - support for ladders (DPOTG redemption ladder?)
+## 		 - groupTypeId and state should be used? -- account for really weird bracket structure? (DPOTG18)
+## 		 - allow analysis_utils to write to file (csv?)
 ##
 ##	Longterm
 ## 		 - Challonge support (player matching by tag maybe needed -- no player ids provided!)
 ## 		 - pre-smash.gg era support (see: challonge support)
 ## 				- wtf do i do about evo's bitch-ass paper brackets
 ## 		 - General doubles / crews support (see: scraper support/filtering out by event type)
+## 		 - Multi-year support
 ##
 
 ## ARGUMENT PARSING
@@ -40,14 +45,19 @@ parser.add_argument('-c','--collect_garbage',help='delete phase data after tourn
 parser.add_argument('-ar','--use_arcadians',help='count arcadian events',default=False)
 args = parser.parse_args()
 
-game_idx = args.game
+game_idx = int(args.game)
+year = int(args.year)
 to_load_db = args.load
 if args.load == "False":
 	to_load_db = False
+maxpl = int(args.displaysize)
 
 def main():
 	set_db_args(args)
-	tourneys,ids,p_info,records = read_majors(args.game,args.year)
+	tourneys,ids,p_info,records = read_majors(game_idx,year)
+	#tourneys,ids,p_info,records = load_db(game_idx)
+	print_id = tourneys['slugs'][args.slug]
+	print_result((tourneys,ids,p_info,records),print_id,res_filt={'maxplace':64,'place':5})
 	return True
 
 if __name__ == "__main__":

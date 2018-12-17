@@ -26,12 +26,12 @@ parser.add_argument('-sl','--slug',help='tournament URL slug',default=None)
 parser.add_argument('-ss','--short_slug',help='shorthand tournament URL slug',default=None)
 parser.add_argument('-p','--print',help='print tournament final results to console as they are read in',default=False)
 parser.add_argument('-c','--collect_garbage',help='delete phase data after tournament is done being read in',default=True)
-parser.add_argument('-ar','--use_arcadians',help='count arcadian events',default=False)
+parser.add_argument('-ar','--use_arcadians',help='count arcadian events (default off, -1 for arcadians only)',default=False)
 args = parser.parse_args()
 
 v = int(args.verbosity)
 # verbosity threshold for save/load statements
-lv = 6
+lv = 8
 save_res = args.save
 load_res = args.load
 if args.save == "False":
@@ -53,6 +53,10 @@ else:
 	t_slug_a = get_slug(t_ss_a)
 print_res = args.print
 count_arcadians = args.use_arcadians
+if count_arcadians == -1:
+	only_arcadians = True
+else:
+	only_arcadians = False
 
 ## MAIN FUNCTIONS
 def readin(tourney,t_type="slug"):
@@ -131,13 +135,32 @@ def read_groups(t_id,groups,phase_data):
 
 			data = json.loads(pull_phase(group))
 
-			read_entrants(data,phase_data,entrants,names,paths)
-			read_sets(data,phase_data,wins,losses,paths)
+			# catch still-in-progress or not-yet updated brackets
+			groupstate = int(data['entities']['groups']['state'])
+			if groupstate < 3:
+				if v >=3 :
+					if groupstate == 2:
+						errstr = "it is still in progress!"
+					elif groupstate == 1:
+						errstr = "it hasn't started yet!"
+					else:
+						errstr = "it doesn't exist yet!"
 
-			if save_res:
-				if v >= lv:
-					print("Saving %d..."%group)
-				save_all(t_id,group,[entrants,wins,losses,paths,names])
+					wave_id = data['entities']['groups']['phaseId']
+					if phase_data[wave_id][1] == 1:
+						groupname = phase_data[wave_id][0]
+					else:
+						groupname = data['entities']['groups']['displayIdentifier']
+
+					print("ERROR: Could not read in group %s | %d because %s"%(groupname,group,errstr))
+			else:	
+				read_entrants(data,phase_data,entrants,names,paths)
+				read_sets(data,phase_data,wins,losses,paths)
+
+				if save_res:
+					if v >= lv:
+						print("Saving %d..."%group)
+					save_all(t_id,group,[entrants,wins,losses,paths,names])
 
 			if v >= 4:
 				print("{:.0f}".format(1000*(timer()-pstart)) + " ms")
@@ -152,7 +175,9 @@ def read_entrants(data,phase_data,entrants,names,xpath):
 		groupname = phase_data[wave_id][0]
 	else:
 		groupname = data['entities']['groups']['displayIdentifier']
-	names['g_%d'%group] = groupname
+	if 'groups' not in names:
+		names['groups'] = {}
+	names['groups'][group] = groupname
 	if v >= 4:
 		print("Reading group: %s | %d"%(groupname,group)) 
 	seedata = data['entities']['seeds']
@@ -223,7 +248,7 @@ def read_sets(data,phase_data,wins,losses,xpath):
 			is_bye = True
 
 		if not is_bye:
-			if v >= 6:
+			if v >= 7:
 				print(set_id,match['phaseGroupId'],match['identifier'],[w_id,l_id],[e1,e2])
 			if w_id not in wins:
 				wins[w_id] = [(l_id,[set_id,group])]
@@ -240,13 +265,15 @@ def read_sets(data,phase_data,wins,losses,xpath):
 			if not match['lOverallPlacement'] == None:
 				xpath[l_id][0] = match['lOverallPlacement']
 		else:
-			if v >= 6:
+			if v >= 7:
 				print(set_id,match['phaseGroupId'],match['identifier'],["bye","bye"],[e1,e2])
 
 	return wins,losses
 
 # reads the phase data for a given tournament
 def read_phases(tourney):
+	gamemap = {1: ['melee','ssbm','ssbmelee'], 2: ['P:M','project: m','project melee','project m'], 3: ['ssb4','smash 4','ssb wii u','smash wii u','for wii u'], \
+				4: ['smash 64','ssb64'], 5: ['brawl','ssbb'], 1386: ['ssbu','ultimate',]}
 	if v >= 2 and v < 4:
 		start = timer()
 	waves = {}
@@ -280,28 +307,45 @@ def read_phases(tourney):
 				print("Cannot read %s: Tournament hasn't happened yet!"%t_name)
 			return False
 
-		# get all event_id's for events that are gametype=1 (melee) and entrantcount=1 (singles) (or whatever criteria specified)
+		# get all event_id's for events that are specified gametype (default=1 [melee]) and entrantcount (default=1 [singles]) 
 		event_ids = [[event['id'],(event['name'],event['description'])] for event in tdata['entities']['event'] if event['videogameId'] == game and event['entrantSizeMin'] == teamsize]
 		#event_ids = [event['id'] for event in tdata['entities']['event'] if event['videogameId'] == game and event['entrantSizeMin'] == teamsize]
 		
-		if v >= 7:
-			print("only looking for brackets of game type: " + str(game))
-			print("event_ids pre filtering: " + str(len(event_ids)))
+		if v >= 6:
+			if teamsize == 1:
+				team_string = "singles"
+			elif teamsize == 2:
+				team_string = "doubles"
+			elif teamsize > 2:
+				team_string = "crews"
+			else:
+				team_string = "[V O I D]"
+			if not count_arcadians:
+				pro_string = "PRO"
+			else:
+				pro_string = "ALL"
+			print("only looking for brackets of game type: %s %s [%s]"%(gamemap[game][0], team_string, pro_string))
+			print("event_ids pre filtering: " + str([(event_id[0],event_id[1][0]) for event_id in event_ids]))
 		# filters out events that don't list melee in description, to filter out stuff like low tiers/ironmans/crews etc (only melee so far)
-		ssbm_events = [event_id[0] for event_id in event_ids if has_melee(event_id[1][0]) or has_melee(event_id[1][1])]
+		game_events = [event_id[0] for event_id in event_ids if has_game(event_id[1][0],game) or has_game(event_id[1][1],game)]
+		#team_events = [event_id[0] for event_id in event_ids if is_teams(event_id[1][0],teamsize) or is_teams(event_id[1][1],teamsize)]
 		amateur_events = [event_id[0] for event_id in event_ids if is_amateur(event_id[1][0]) or is_amateur(event_id[1][1])]
-		if not count_arcadians:
+		ladder_events = [event_id[0] for event_id in event_ids if is_ladder(event_id[1][0]) or is_ladder(event_id[1][1])]
+		if only_arcadians or not count_arcadians:
 			arcadian_events = [event_id[0] for event_id in event_ids if is_arcadian(event_id[1][0]) or is_arcadian(event_id[1][1])]
-		if len(ssbm_events) >= 1 and game == 1:
-			event_ids = ssbm_events
+		if len(game_events) >= 1 and game == 1:
+			event_ids = game_events
 		else:
 			event_ids = [event_id[0] for event_id in event_ids]
-		# filters out events that have 'amateur' or 'arcadian' in the description
+		# filters out events that have 'amateur', 'ladder' or 'arcadian' in the description
 		event_ids = [event_id for event_id in event_ids if not event_id in amateur_events]
+		event_ids = [event_id for event_id in event_ids if not event_id in ladder_events]
 		if not count_arcadians:
 			event_ids = [event_id for event_id in event_ids if not event_id in arcadian_events]
+		elif only_arcadians:
+			event_ids = arcadian_events
 
-		if v >= 7:
+		if v >= 6:
 			print("event_ids post filtering: " + str(len(event_ids)))
 		if force_first_event:
 			event_ids = event_ids[:1]

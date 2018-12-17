@@ -419,8 +419,8 @@
 							"placement":3,
 							"percent":12},
 						{"id":3,
-							"placement":4,"
-							percent":8},
+							"placement":4,
+							"percent":8},
 						{"id":4,
 							"placement":5,
 							"percent":5},
