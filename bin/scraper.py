@@ -10,6 +10,9 @@ v = 0
 # scrapes the ssbwiki url links for each major tournament, and returns their smash.gg slug
 # requires a game and year
 def scrape(game,year,verb=0):
+	if game not in [1,2,3,4,5,1386]:
+		print("Error: Cannot scrape majors/slugs for this game ID (%d)"%game)
+		return False
 	v = verb
 	url = 'https://www.ssbwiki.com/List_of_national_tournaments'
 

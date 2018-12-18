@@ -1,10 +1,10 @@
 ## DEPENDENCY IMPORTS
 import matplotlib.pyplot as plt 
-#import numpy as np 
-#import scipy as sp 
 import os,sys,pickle,time
 import re
 from timeit import default_timer as timer
+from copy import deepcopy as dcopy
+import country_converter as coco
 ## UTIL IMPORTS
 from readin_utils import print_results
 
@@ -27,12 +27,14 @@ def get_result(dicts,t_id,res_filt=None):
 		for l_id in records[p_id]['losses']:
 			for i in range(records[p_id]['losses'][l_id].count(t_id)):
 				temp_l.extend([l_id])
+		temp_l.reverse()
 		player_losses.extend([temp_l])
 	for p_id in player_ids:
 		temp_w = []
 		for w_id in records[p_id]['wins']:
 			for i in range(records[p_id]['wins'][w_id].count(t_id)):
 				temp_w.extend([w_id])
+		temp_w.reverse()
 		player_wins.extend([temp_w])
 	players = [player_ids,player_teams,player_tags,player_paths,player_places,player_losses,player_wins]
 	#print(players)
@@ -86,6 +88,49 @@ def get_result(dicts,t_id,res_filt=None):
 					continue
 	return players
 
+# returns a copy of the database containing the dicts of info relating to a given player
+# (filtered by event(s) if provided)
+def get_player(dicts,p_id,tag=None,t_ids=None,slugs=None):
+	tourneys,ids,p_info,records = dicts
+	if not tag == None:
+		p_id = get_abs_id_from_tag(dicts,tag)
+	if not slugs == None:
+		t_ids = [tourneys['slugs'][slug] for slug in slugs]
+
+	if not t_ids == None:
+		if type(t_ids) == int:
+			t_ids = [t_ids]
+		if type(t_ids) == list and not t_ids == []:
+			reccopy = dcopy(records[p_id])
+			for l_id in records[p_id]['losses']:
+				temp_l = [t for t in reccopy['losses'][l_id] if t in t_ids]
+				if temp_l == []:
+					del reccopy['losses'][l_id]
+				else:
+					reccopy['losses'][l_id] = temp_l
+			for w_id in records[p_id]['wins']:
+				temp_w = [t for t in reccopy['wins'][w_id] if t in t_ids]
+				if temp_w == []:
+					del reccopy['wins'][w_id]
+				else:
+					reccopy['wins'][w_id] = temp_w
+			for t_id in records[p_id]['placings']:
+				if t_id not in t_ids:
+					del reccopy['placings'][t_id]
+			for t_id in records[p_id]['paths']:
+				if t_id not in t_ids:
+					del reccopy['paths'][t_id]
+			idcopy = dcopy(ids[p_id])
+			for t_id in ids[p_id]:
+				if t_id not in t_ids:
+					del idcopy[t_id]
+			return p_id,p_info[p_id],reccopy,idcopy
+		else:
+			print("Error: Invalid form for t_ids in call to get_player(): %s"%type(t_ids))
+			return False
+	else:
+		return p_id,p_info[p_id],records[p_id],ids[p_id]
+
 # return (filtered) results for a series of tourneys
 def get_results(dicts,t_ids,res_filt=None):
 	if type(t_ids) is str:
@@ -98,6 +143,105 @@ def get_results(dicts,t_ids,res_filt=None):
 	else:
 		return get_result(dicts,t_ids,res_filt)
 
+def get_abs_id_from_tag(dicts,tag):
+	tourneys,ids,p_info,records = dicts
+	p_id = [abs_id for abs_id in p_info if tag in p_info[abs_id]['aliases']][0]
+	#print(p_info[1000]['aliases'])
+	return p_id
+
+# returns the region given a location and granularity
+# granularity: 1 = country/continent, 2 = region/country, 3 = state
+## What to do for small countries in smallest granularity? (e.g. European countries)
+## What to do for Japan? (big enough to be level 1 but not divisible going down)
+def calc_region(country,state=None,granularity=2):
+	cc = coco.CountryConverter()
+	if granularity == 1:
+		if country in ["United States","Canada","Japan"]:
+			return country
+		else:
+			#country_alpha2 = pycountry.countries.get(name=country).alpha_2
+			continent = cc.convert(names=[country],to='continent')
+			if continent == 'E':
+				return 'Europe'
+			if continent == 'NA':
+				return 'Central America'
+			if continent == 'SA':
+				return 'South America'
+			if continent == 'A':
+				return 'Asia'
+			return continent
+	if granularity == 2:
+		#if state == None:
+		#	return "N/A"
+		if country == "Japan":
+			return country
+		elif country in ["United States","Canada"]:
+			if state in ['ME','VT','NH','MA','RI','CT']:
+				return 'New England'
+			elif state in ['NY','PA','NJ']:
+				return 'Tristate'
+			elif state in ['MD','VA','WV','DE','DC','District of Columbia']:
+				return 'MD/VA'
+			elif state in ['NC','SC','GA']:
+				return 'South Atlantic'
+			elif state in ['FL','PR','VI']:
+				return 'Florida/PR'
+			elif state in ['OH','KY','TN','AL','MS','IN','IL','MI','WI']:
+				return 'Mideast'
+			elif state in ['ND','SD','MN','IA','MO','AR','LA','NE','KS','OK']:
+				return 'Midwest'
+			elif state in ['WY','CO','UT','NV','MT']:
+				return 'Rockies'
+			elif state in ['CA']:
+				return 'California'
+			elif state in ['WA','OR','BC','AB','ID']:
+				return 'Pacific Northwest'
+			elif state in ['AZ','NM','TX']:
+				return 'Southwest'
+			elif state in ['AK','YT','NT','NU']:
+				return 'Arctic Circle'
+			elif state in ['HI','GU','MP']:
+				return 'U.S. Pacific Islands'
+			elif state in ['SK','MB','ON']:
+				return 'Central Canada'
+			elif state in ['QC','NB','NS','PE','NL']:
+				return 'Atlantic Canada'
+			else:
+				return 'N/A'
+		else:
+			return country
+	if granularity == 3:
+		if state == None:
+			return "N/A"
+		elif country in ["United States","Canada","Japan"]:
+			return state
+		else:
+			return state
+
+# returns the regional grouping given either a player id or tag or location
+def get_region(dicts,p_id,tag=None,country=None,state=None,granularity=2):
+	tourneys,ids,p_info,records = dicts
+	if not tag == None:
+		p_id = get_abs_id_from_tag(dicts,tag)
+	if not country == None:
+		return calc_region(country,state,granularity)
+	return calc_region(p_info[p_id]['country'],p_info[p_id]['state'],granularity)
+
+# returns a list of player ids (and their json data if requested) given a regional name
+def get_players_by_region(dicts,region,granularity=2,get_data=False):
+	tourneys,ids,p_info,records = dicts
+	if get_data:
+		return [(abs_id,get_player(dicts,abs_id)) for abs_id in p_info if get_region(dicts,abs_id,granularity=granularity) == region]
+	else:
+		return [abs_id for abs_id in p_info if get_region(dicts,abs_id,granularity=granularity) == region]
+
+def list_tourneys(dicts,year=None):
+	tourneys,ids,p_info,records = dicts
+	if year == None:
+		return [tourneys[t_id]['name'] for t_id in tourneys if t_id != 'slugs']
+	else:
+		return [tourneys[t_id]['name'] for t_id in tourneys if t_id != 'slugs' for t_date in tourney[t_id]['date'] if t_date[2] == year]
+
 # print (filtered) results for a given tourney
 def print_result(dicts,t_id,res_filt=None,max_place=64):
 	tourneys,ids,p_info,records = dicts
@@ -109,7 +253,7 @@ def print_result(dicts,t_id,res_filt=None,max_place=64):
 	players = sorted(res,key=lambda l: (len(l[3]),0-l[4]), reverse=True)
 	num_rounds = len(players[0][3])
 	roundnames = [t_labels[group] for group in players[0][3]]
-	roundslen = sum([len(str(name)) for name in roundnames]) + 4*num_rounds
+	roundslen = sum([len(str(name)) for name in roundnames]) + 2*num_rounds
 
 	print("%s Results | ID: %d"%(tourneys[t_id]['name'],t_id))
 	print("\n{:>13.13}".format("Sponsor |"),"{:<24.24}".format("Tag"),"ID #\t","Place\t",("{:<%d.%d}"%(roundslen+5,roundslen+5)).format("Bracket"),"Losses\n")
@@ -124,18 +268,19 @@ def print_result(dicts,t_id,res_filt=None,max_place=64):
 			if len(sp) > 12:
 					sp = sp[:8] + "... |"
 			else:
-				sp = sp + " |"
+				if sp[-2:] != " |":
+					sp = sp + " |"
 		# format player tag
 		if len(tag) > 24:
 			tag = tag[:21]+"..."
 		# format losses
 		if losses == None or losses == []:
-			losses = None
+			loss_string = None
 		else:
-			losses = [p_info[loss_id]['tag'] for loss_id in losses]
+			loss_string = "["+", ".join(str(l) for l in [p_info[loss_id]['tag'] for loss_id in losses])+"]"
 
 		print("{:>13.13}".format(sp),"{:<24.24}".format(tag),"{:>7.7}".format(str(p_id)), \
-			"  {:<5.5}".format(str(placement)),"\t",("{:<%d.%d}"%(roundslen+5,roundslen+5)).format(str([t_labels[group] for group in path])),losses)
+			"  {:<5.5}".format(str(placement)),"\t",("{:<%d.%d}"%(roundslen+5,roundslen+5)).format("["+", ".join(str(label) for label in [t_labels[group] for group in path])+"]"),loss_string)
 
 # print (filtered) results for multiple tourneys
 def print_results(dicts,t_ids,res_filt=None,max_place=64):
@@ -208,7 +353,8 @@ def old_print_event(dicts,t_id,max_place=64):
 				if len(sp) > 12:
 						sp = sp[:8] + "... |"
 				else:
-					sp = sp + " |"
+					if sp[-2:] != " |":
+						sp = sp + " |"
 			# format player tag
 			if len(tag) > 24:
 				tag = tag[:21]+"..."

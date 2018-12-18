@@ -15,10 +15,12 @@ from readin_utils import *
 ## ARGUMENT PARSING
 parser = argparse.ArgumentParser()
 parser.add_argument('-v','--verbosity',help='verbosity',default=0)
-parser.add_argument('-s','--save',help='save results toggle (default True)',default=True)
-parser.add_argument('-l','--load',help='load results toggle (default True)',default=True)
-parser.add_argument('-f','--force_first',help='force the first criteria-matching event to be the only event',default=True)
+parser.add_argument('-s','--save',help='save db/cache toggle (default True)',default=True)
+parser.add_argument('-l','--load',help='load db/cache toggle (default True)',default=True)
+parser.add_argument('-ls','--load_slugs',help='load slugs toggle (default True)',default=True)
+parser.add_argument('-ff','--force_first',help='force the first criteria-matching event to be the only event',default=True)
 parser.add_argument('-g','--game',help='Melee=1, P:M=2, Wii U=3, 64=4, Ultimate=1386',default=1)
+parser.add_argument('-fg','--force_game',help='force the game id to be used, even if not a smash event (cannot scrape)',default=False)
 parser.add_argument('-y','--year',help='The year you want to analyze (for ssbwiki List of majors scraper)',default=2018)
 parser.add_argument('-t','--teamsize',help='1 for singles bracket, 2 for doubles',default=1)
 parser.add_argument('-d','--displaysize',help='lowest placing shown on pretty printer output (or -1 for all entrants)',default=64)
@@ -39,9 +41,11 @@ if args.save == "False":
 if args.load == "False":
 	load_res = False
 force_first_event = args.force_first
+if args.force_first == "False":
+	force_first_event = True
 teamsize = int(args.teamsize)
 game = int(args.game)
-if game not in [1,2,3,4,5,1386]:		#SSB = 4 	SSBM = 1	SSBB = 5 	P:M = 2		SSB4 = 3 	SSBU = 1386
+if game not in [1,2,3,4,5,1386] and not force_game:		#SSB = 4 	SSBM = 1	SSBB = 5 	P:M = 2		SSB4 = 3 	SSBU = 1386
 	print("Invalid game number provided. Forcing melee (id=1) instead.")
 	game = 1
 disp_num = int(args.displaysize)
@@ -135,35 +139,45 @@ def read_groups(t_id,groups,phase_data):
 
 			data = json.loads(pull_phase(group))
 
-			# catch still-in-progress or not-yet updated brackets
+			wave_id = data['entities']['groups']['phaseId']
+			if phase_data[wave_id][1] == 1:
+				groupname = phase_data[wave_id][0]
+			else:
+				groupname = data['entities']['groups']['displayIdentifier']
 			groupstate = int(data['entities']['groups']['state'])
-			if groupstate < 3:
-				if v >=3 :
-					if groupstate == 2:
-						errstr = "it is still in progress!"
-					elif groupstate == 1:
-						errstr = "it hasn't started yet!"
+			grouptype = int(data['entities']['groups']['groupTypeId'])
+
+			# round 2 of filtering out amateur brackets
+			if not(is_amateur(groupname) or (is_arcadian(groupname) and not count_arcadians)):
+				# catch still-in-progress or not-yet updated brackets
+				if groupstate < 3:
+					if v >=3 :
+						if groupstate == 2:
+							errstr = "it is still in progress!"
+						elif groupstate == 1:
+							errstr = "it hasn't started yet!"
+						else:
+							errstr = "it doesn't exist yet!"
+
+						print("ERROR: Could not read in group %s | %d because %s"%(groupname,group,errstr))
+				# use groupTypeId to check for bracket structure 
+				# (1: single elim, 2: double elim, 3: round-robin, 4: swiss, 5: exhibition, 6: custom schedule, 7: ladder/matchmaking, 8: elimination rounds, 9: race)
+				else:	
+					if grouptype not in [1,2,3,4]:
+						if v >= 4:
+							errstr = "%d is an unsupported group format"%grouptype
+							print("ERROR: Could not read in group %s | %d because %s"%(groupname,group,errstr))
 					else:
-						errstr = "it doesn't exist yet!"
+						read_entrants(data,phase_data,entrants,names,paths)
+						read_sets(data,phase_data,wins,losses,paths)
 
-					wave_id = data['entities']['groups']['phaseId']
-					if phase_data[wave_id][1] == 1:
-						groupname = phase_data[wave_id][0]
-					else:
-						groupname = data['entities']['groups']['displayIdentifier']
+					if save_res:
+						if v >= lv:
+							print("Saving %d..."%group)
+						save_all(t_id,group,[entrants,wins,losses,paths,names])
 
-					print("ERROR: Could not read in group %s | %d because %s"%(groupname,group,errstr))
-			else:	
-				read_entrants(data,phase_data,entrants,names,paths)
-				read_sets(data,phase_data,wins,losses,paths)
-
-				if save_res:
-					if v >= lv:
-						print("Saving %d..."%group)
-					save_all(t_id,group,[entrants,wins,losses,paths,names])
-
-			if v >= 4:
-				print("{:.0f}".format(1000*(timer()-pstart)) + " ms")
+				if v >= 4:
+					print("{:.0f}".format(1000*(timer()-pstart)) + " ms")
 	return entrants,wins,losses,paths,names
 
 # reads in and returns data for all entrants in a given phase group
@@ -186,7 +200,7 @@ def read_entrants(data,phase_data,entrants,names,xpath):
 		e_id,abs_id,tag,prefix,metainfo = read_names(x)
 		names[e_id] = (prefix,tag)
 
-		res = 9000
+		res = 9999
 		if v >= 8:
 			print(e_id,tag)
 		if v >= 9 and e_id in xpath:
@@ -244,7 +258,7 @@ def read_sets(data,phase_data,wins,losses,xpath):
 		set_id = match['id']
 		is_bye = False
 
-		if w_id == None or l_id == None:
+		if w_id == None or l_id == None or w_id == l_id:
 			is_bye = True
 
 		if not is_bye:
@@ -259,11 +273,25 @@ def read_sets(data,phase_data,wins,losses,xpath):
 			else:
 				losses[l_id].extend([(w_id,[set_id,group])])
 
-			# always update final placement (assume they progressed -- people can't backtrack in bracket)
+			# update final placement if it is further than their current one (people can't regress in bracket except for in GF)
 			if not match['wOverallPlacement'] == None:
-				xpath[w_id][0] = match['wOverallPlacement']
+				if match['wOverallPlacement'] < xpath[w_id][0] or match['isGF']:
+					xpath[w_id][0] = match['wOverallPlacement']
+			elif not match['wPlacement'] == None:
+				if match['wPlacement'] < xpath[w_id][0] or match['isGF']:
+					xpath[w_id][0] = match['wPlacement']
+			else:
+				if v >= 7:
+					print("Error: Could not update winner placement (%d)"%w_id)
 			if not match['lOverallPlacement'] == None:
-				xpath[l_id][0] = match['lOverallPlacement']
+				if match['lOverallPlacement'] < xpath[l_id][0] or match['isGF']:
+					xpath[l_id][0] = match['lOverallPlacement']
+			elif not match['lPlacement'] == None:
+				if match['lPlacement'] < xpath[l_id][0] or match['isGF']:
+					xpath[l_id][0] = match['lPlacement']
+			else:
+				if v >= 7:
+					print("Error: Could not update loser placement (%d)"%l_id)
 		else:
 			if v >= 7:
 				print(set_id,match['phaseGroupId'],match['identifier'],["bye","bye"],[e1,e2])
@@ -382,4 +410,4 @@ if __name__ == "__main__":
 
 	#clean_data("hbox tbh raw.txt","hbox tbh.txt")
 	#clean_data("hbox s7 raw.txt","hbox s7.txt")
-	#clean_data("dpotg2018.txt","g5top8.txt")
+	#clean_data("valhallasetsraw.txt","valhallasetsclean.txt")

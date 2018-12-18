@@ -35,8 +35,8 @@ def is_amateur(descr):
 	if descr == None:
 		return False
 	else:
-		return re.search('amateur',descr,re.IGNORECASE) or re.search('redemption',descr,re.IGNORECASE) or re.search('novice',descr,re.IGNORECASE) \
-		or re.search('beginner',descr,re.IGNORECASE) #or re.search('0-2',descr,re.IGNORECASE)
+		return re.search('amateur',descr,re.IGNORECASE) or re.search('novice',descr,re.IGNORECASE) or re.search('newbie',descr,re.IGNORECASE)\
+		or re.search('beginner',descr,re.IGNORECASE) or re.search('newcomer',descr,re.IGNORECASE)#or re.search('redemption',descr,re.IGNORECASE)
 
 # returns true if the description contains explicit mention of being an arcadian
 def is_arcadian(descr):
@@ -108,7 +108,7 @@ def print_results(res,names,entrants,losses,max_place=64):
 	num_rounds = len(res_s[0][1][1])
 	#lsbuff = "\t"*(num_rounds-len(res_s[-1][1][1])+1)
 	roundnames = [names['groups'][group] for group in res_s[0][1][1]]
-	roundslen = sum([len(str(name)) for name in roundnames]) + 4*num_rounds
+	roundslen = sum([len(str(name)) for name in roundnames]) + 2*num_rounds
 	print("\n{:>13.13}".format("Sponsor |"),"{:<24.24}".format("Tag"),"ID #\t","Place\t",("{:<%d.%d}"%(roundslen+5,roundslen+5)).format("Bracket"),"Losses\n")
 	for player in res_s:
 		if player[1][0] > max_place and max_place > 0:
@@ -121,14 +121,15 @@ def print_results(res,names,entrants,losses,max_place=64):
 				if len(sp) > 12:
 					sp = sp[:8] + "... |"
 				else:
-					sp = names[player[0]][0] + " |"
+					if sp[-2:] != " |":
+						sp = names[player[0]][0] + " |"
 			tag = names[player[0]][1]
 			if len(tag) > 24:
 				tag = tag[:21]+"..."
 
 			if player[0] in losses:
 				#print(losses)
-				ls = [names[loss[0]][1] for loss in losses[player[0]]]
+				ls = "["+", ".join(str(l) for l in [names[loss[0]][1] for loss in losses[player[0]]])+"]"
 			else:
 				ls = None
 
@@ -139,5 +140,6 @@ def print_results(res,names,entrants,losses,max_place=64):
 			#	lsbuff = "\t"
 			#else:
 			#	lsbuff = "\t\t\t"
-			print("{:>13.13}".format(sp),"{:<24.24}".format(names[player[0]][1]),"{:>7.7}".format(str(entrants[player[0]][1])),"  {:<5.5}".format(str(player[1][0])),"\t",("{:<%d.%d}"%(roundslen+5,roundslen+5)).format(str([names['groups'][group] for group in player[1][1]])),ls)
+			print("{:>13.13}".format(sp),"{:<24.24}".format(names[player[0]][1]),"{:>7.7}".format(str(entrants[player[0]][1])),"  {:<5.5}".format(str(player[1][0])),"\t", \
+				("{:<%d.%d}"%(roundslen+5,roundslen+5)).format("["+", ".join(str(i) for i in [names['groups'][group] for group in player[1][1]])+"]"),ls)
 	return(res_s)
