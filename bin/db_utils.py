@@ -8,27 +8,27 @@ from timeit import default_timer as timer
 from copy import deepcopy as dcopy
 ## UTIL IMPORTS
 from readin import readin,set_readin_args
-from readin_utils import get_slug
+from readin_utils import get_slug, is_emoji
 from analysis_utils import get_player, get_region
 import scraper
 
 ## ARGUMENT PARSING
 parser = argparse.ArgumentParser()
-parser.add_argument('-v','--verbosity',help='verbosity',default=0)
+parser.add_argument('-v','--verbosity',help='verbosity [0-9]',default=0)
 parser.add_argument('-s','--save',help='save db/cache toggle (default True)',default=True)
 parser.add_argument('-l','--load',help='load db/cache toggle (default True)',default=True)
 parser.add_argument('-ls','--load_slugs',help='load slugs toggle (default True)',default=True)
-parser.add_argument('-ff','--force_first',help='force the first criteria-matching event to be the only event',default=True)
-parser.add_argument('-g','--game',help='Melee=1, P:M=2, Wii U=3, 64=4, Ultimate=1386',default=1)
-parser.add_argument('-fg','--force_game',help='force the game id to be used, even if not a smash event (cannot scrape)',default=False)
-parser.add_argument('-y','--year',help='The year you want to analyze (for ssbwiki List of majors scraper)',default=2018)
-parser.add_argument('-t','--teamsize',help='1 for singles bracket, 2 for doubles',default=1)
-parser.add_argument('-d','--displaysize',help='lowest placing shown on pretty printer output (or -1 for all entrants)',default=64)
+parser.add_argument('-ff','--force_first',help='force the first criteria-matching event to be the only event (default True)',default=True)
+parser.add_argument('-g','--game',help='game id to be used: Melee=1, P:M=2, Wii U=3, 64=4, Ultimate=1386 (default melee)',default=1)
+parser.add_argument('-fg','--force_game',help='game id to be used, force use (cannot scrape non-smash slugs)',default=False)
+parser.add_argument('-y','--year',help='The year you want to analyze (for ssbwiki List of Majors scraper)(default 2018)',default=2018)
+parser.add_argument('-t','--teamsize',help='1 for singles bracket, 2 for doubles (default 1)',default=1)
+parser.add_argument('-d','--displaysize',help='lowest placing shown on pretty printer output, or -1 to show all entrants (default 64)',default=64)
 parser.add_argument('-sl','--slug',help='tournament URL slug',default=None)
 parser.add_argument('-ss','--short_slug',help='shorthand tournament URL slug',default=None)
-parser.add_argument('-p','--print',help='print tournament final results to console as they are read in',default=False)
-parser.add_argument('-c','--collect_garbage',help='delete phase data after tournament is done being read in',default=True)
-parser.add_argument('-ar','--use_arcadians',help='count arcadian events',default=False)
+parser.add_argument('-p','--print',help='print tournament final results to console as they are read in (default False)',default=False)
+parser.add_argument('-c','--collect_garbage',help='delete phase data after tournament is done being read in (default True)',default=True)
+parser.add_argument('-ar','--use_arcadians',help='count arcadian events (default False)',default=False)
 args = parser.parse_args()
 
 collect = args.collect_garbage
@@ -47,8 +47,10 @@ to_load_slugs = args.load_slugs
 if args.load_slugs == "False":
 	to_load_slugs = False
 db_slug = args.slug
-db_game = args.game
-db_year = args.year
+db_game = int(args.game)
+if args.force_game:
+	db_game = int(args.force_game)
+db_year = int(args.year)
 count_arcadians = args.use_arcadians
 if count_arcadians == -1:
 	only_arcadians = True
@@ -68,11 +70,11 @@ def read_majors(game_id=int(db_game),year=int(db_year)):
 		if to_load_slugs:
 			scrape_load = True
 			if v >= 3:
-				"Loading saved slugs..."
-			slugs = load_slugs(int(db_game),int(db_year))
+				print("Loading saved slugs...")
+			slugs = load_slugs(game_id,year)
 			if slugs == False or slugs == []:
 				if v >= 3:
-					"Saved slugs not found."
+					print("Saved slugs not found.")
 				slugs = scraper.scrape(game_id,year,v)
 				scrape_load = False
 		else:
@@ -93,8 +95,8 @@ def read_majors(game_id=int(db_game),year=int(db_year)):
 		print("The following majors could not be read (no smash.gg bracket found)")
 		print(fails)
 	if to_save_db and not scrape_load and not slug_given:
-		save_slugs(slugs,int(db_game),int(db_year))
-	return(read_tourneys(slugs,ver=db_game))
+		save_slugs(slugs,game_id,year)
+	return(read_tourneys(slugs,ver=game_id,year=year))
 
 def set_db_args(args):
 	collect = args.collect_garbage
@@ -115,8 +117,12 @@ def set_db_args(args):
 
 ## AUXILIARY FUNCTIONS
 # loads database and stores any tournament data not already present given the url slug
-def read_tourneys(slugs,ver='default'):
-	[tourneys,ids,p_info,records] = load_db(ver)
+def read_tourneys(slugs,ver='default',year=None):
+	if year != None:
+		verstr = '%s/%d'%(ver,year)
+	else:
+		verstr = ver
+	[tourneys,ids,p_info,records] = load_db(verstr)
 	if v >= 4 and len(tourneys.keys())>1:
 		print("Loaded Tourneys: " + str([tourneys[t_id]['name'] for t_id in tourneys if not t_id == 'slugs']))
 	#print(tourneys)
@@ -127,9 +133,11 @@ def read_tourneys(slugs,ver='default'):
 		if slug not in tourneys['slugs']:
 			readins = readin(slug)
 			if readins:
+				if v >= 4:
+					print("Importing to DB...")
 				if store_data(readins,(tourneys,ids,p_info,records),slug):
 					if to_save_db:
-						save_db((tourneys,ids,p_info,records),ver)
+						save_db((tourneys,ids,p_info,records),verstr)
 					t_id = tourneys['slugs'][readins[0][2]]
 					if collect:
 						delete_tourney_cache(t_id)
@@ -148,7 +156,7 @@ def store_data(readins,dicts,slug):
 
 # stores data through absolute player IDs (converting from entrant IDs)
 def store_players(entrants,names,t_info,dicts):
-	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region = t_info
+	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size = t_info
 	tourneys,ids,p_info,records = dicts
 
 	if t_id not in tourneys:
@@ -180,7 +188,7 @@ def store_players(entrants,names,t_info,dicts):
 			if names[e_id][1] not in p_info[abs_id]['aliases']:
 				p_info[abs_id]['aliases'].extend([names[e_id][1]])
 			p_info[abs_id]['tag'] = names[e_id][1]
-			for key,info in zip(['firstname','lastname','state','country'],entrants[e_id][3]):
+			for key,info in zip(['firstname','lastname','state','country','city'],entrants[e_id][3]):
 				if key in p_info[abs_id]:
 					if not (info == 'N/A' or info == '' or info == "" or info == None):
 						p_info[abs_id][key] = info
@@ -201,7 +209,7 @@ def store_players(entrants,names,t_info,dicts):
 
 # stores win/loss records
 def store_records(wins,losses,paths,t_info,dicts):
-	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region = t_info
+	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size = t_info
 	tourneys,ids,p_info,records = dicts
 	#print(t_id)
 	for abs_id in ids:
@@ -242,7 +250,7 @@ def store_records(wins,losses,paths,t_info,dicts):
 
 # stores tourney meta info and marks tournament as imported
 def store_tourney(slug,t_info,group_names,dicts):
-	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region = t_info
+	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size = t_info
 	tourneys,ids,p_info,records = dicts
 	tourneys[t_id] = {}
 	tourneys[t_id]['name'] = t_name
@@ -251,6 +259,7 @@ def store_tourney(slug,t_info,group_names,dicts):
 	tourneys[t_id]['type'] = t_type
 	tourneys[t_id]['date'] = t_date
 	tourneys[t_id]['region'] = t_region
+	tourneys[t_id]['numEntrants'] = t_size
 	if 'slugs' not in tourneys:
 		tourneys['slugs'] = {}
 	tourneys['slugs'][t_slug] = t_id
@@ -334,11 +343,11 @@ def save_db(dicts,ver,loc='db'):
 		return False
 
 # used to load datasets/hashtables
-def load_db(ver,force_blank=False):
+def load_db(ver,loc='db',force_blank=False):
 	if to_load_db and not force_blank:
 		if v >= 3:
 			print("Loading DB...")
-		return [load_dict(name,ver) for name in ['tourneys','ids','p_info','records']]
+		return [load_dict(name,ver,loc) for name in ['tourneys','ids','p_info','records']]
 	else:
 		return [load_dict(name,'blank',loc='db') for name in ['tourneys','ids','p_info','records']]
 

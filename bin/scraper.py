@@ -50,7 +50,8 @@ def scrape(game,year,verb=0):
 		print(res)
 
 	links = ["https://www.ssbwiki.com%s"%event[0] for event in res]
-	return(scrape_slugs(links))
+	entrant_counts = [event[3] for event in res]
+	return scrape_slugs(links)
 
 # given a set of tourney wiki page urls, returns all of their smash.gg slugs
 def scrape_slugs(urls):
@@ -85,9 +86,7 @@ def table_index(doc,game,year):
 	#print(name)
 
 	tables = doc.find_all('table')
-	#tables = tables[1:] 				# ignore main table all other tables are in, and the table of contents
 	headers = doc.find_all('h3')
-	#headers = headers[1:]
 	#print(tables)
 	c_game = 0
 	old_c_year = 99999

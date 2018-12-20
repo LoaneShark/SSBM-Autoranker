@@ -6,7 +6,7 @@ from timeit import default_timer as timer
 from copy import deepcopy as dcopy
 import country_converter as coco
 ## UTIL IMPORTS
-from readin_utils import print_results
+from readin_utils import print_results, is_emoji
 
 # return the (filtered) result(s) for a tourney
 def get_result(dicts,t_id,res_filt=None):
@@ -153,7 +153,7 @@ def get_abs_id_from_tag(dicts,tag):
 # granularity: 1 = country/continent, 2 = region/country, 3 = state
 ## What to do for small countries in smallest granularity? (e.g. European countries)
 ## What to do for Japan? (big enough to be level 1 but not divisible going down)
-def calc_region(country,state=None,granularity=2):
+def calc_region(country,state=None,city=None,granularity=2):
 	cc = coco.CountryConverter()
 	if granularity == 1:
 		if country in ["United States","Canada","Japan"]:
@@ -192,8 +192,6 @@ def calc_region(country,state=None,granularity=2):
 				return 'Midwest'
 			elif state in ['WY','CO','UT','NV','MT']:
 				return 'Rockies'
-			elif state in ['CA']:
-				return 'California'
 			elif state in ['WA','OR','BC','AB','ID']:
 				return 'Pacific Northwest'
 			elif state in ['AZ','NM','TX']:
@@ -206,26 +204,68 @@ def calc_region(country,state=None,granularity=2):
 				return 'Central Canada'
 			elif state in ['QC','NB','NS','PE','NL']:
 				return 'Atlantic Canada'
+			elif state in ['CA']:
+				if city == None:
+					return "Misc. California"
+				city = city.lower()
+				for qual in ["north ","south ","east ","west ","central ","outer ","new ","old "]:
+					city = city.replace(qual," ")
+				city = city.strip()
+				if any([city in c for c in [s.lower() for s in ['Los Angeles','LA','San Diego','SD','Long Beach','Bakersfield','Anaheim','Santa Ana',\
+				'Riverside','Chula Vista','Irvine','San Bernardino','Oxnard','Fontana','Moreno','Moreno Valley','SoCal','San Dimas',\
+				'Huntington','Huntington Beach','Glendale','Santa Clarita','Garden Grove','Oceanside','Rancho Cucamonga','Claremont',\
+				'Cucamonga','Ontario','Corona','Lancaster','Palmdale','Pomona','Escondido','Torrance','Pasadena','Glendora'\
+				'Orange','Fullerton','Thousand Oaks','Simi','Simi Valley','Victorville','El Monte','Downey','Costa Mesa',\
+				'Carlsbad','Inglewood','Ventura','Temecula','West Covina','Murrieta','Norwalk','Burbank','Santa Maria',\
+				'Beverly Hills','Beverly','Hollywood','West Hollywood','Sunset Strip','Los Feliz','Westwood','Culver City',\
+				'El Cajon','Rialto','Jurupa','Jurupa Valley','Compton','Vista','Mission Viejo','South Gate','Carson',\
+				'Santa Monica','San Marcos','Hesperia','Westminster','Santa Barbara','Hawthorne','Whittier','Newport Beach',\
+				'Indio','Alhambra','Menifee','Chino','Buena Park','Chino Hills','Upland','Perris','Lynwood','Apple Valley',\
+				'Redlands','Redondo Beach','Yorba Linda','Camarillo','Laguna Niguel','Orange','San Clemente','Pico Rivera',\
+				'Montebello','Encinitas','La Habra','Monterey Park','Gardena','National City','Lake Elsinore','Huntington Park',\
+				'La Mesa','Arcadia','Santee','Eastvale','Fountain Valley','Diamond Bar','Fountain','Paramount','Rosemead','Highland'\
+				'Midway City','Garden Grove','Tustin','Newport','Seal Beach','Manhattan Beach','Hawthorne','Lawndale','Gardena',\
+				'Inglewood','Lynwood','Bel Air','Reseda','Van Nuys','Woodland Hills']]]):
+					return 'SoCal'
+				elif any([city in c for c in [s.lower() for s in ['San Jose','San Francisco','SFO','SF','SJ','San Fran','SanFran','Sanfran','Fresno',\
+				'Sacramento','Oakland','Stockton','Fremont','Modesto','Santa Rosa','Elk Grove','Salinas','Hayward','NorCal',\
+				'Silicon Valley','Sunnyvale','Visalia','Concord','Roseville','Santa Clara','Vallejo','Berkeley','Newark',\
+				'Fairfield','Richmond','Antioch','Daly City','San Mateo','Clovis','Vacaville','Redding','Chico','El Dorado Hills',\
+				'San Leandro','Citrus Heights','Tracy','Livermore','Merced','Napa','Napa Valley','Redwood City','Foster',\
+				'Redwood','Sequoia','Mountain View','Alameda','Folsom','San Ramon','Pleasanton','Union City','Foster City',\
+				'Turlock','Manteca','Milpitas','Davis','Yuba City','Yuba','Union','Daly','Rancho Cordova','Palo Alto',\
+				'Walnut Creek','South San Francisco','Pittsburg','Lodi','Madera','Santa Cruz','Tulare','Cupertino',\
+				'Petaluma','San Rafael','Rocklin','Woodland','Porterville','Hanford','Novato','Brentwood','Watsonville',\
+				'Pacifica','San Bruno','Montara','Brisbane','']]]):
+					return 'NorCal'
+				else:
+					return 'California'
 			else:
 				return 'N/A'
 		else:
 			return country
 	if granularity == 3:
 		if state == None:
-			return "N/A"
+			if city == None:
+				return "N/A"
+			else:
+				return city
 		elif country in ["United States","Canada","Japan"]:
+			if state == 'CA':
+				if city is not None:
+					return city
 			return state
 		else:
 			return state
 
 # returns the regional grouping given either a player id or tag or location
-def get_region(dicts,p_id,tag=None,country=None,state=None,granularity=2):
+def get_region(dicts,p_id,tag=None,country=None,state=None,city=None,granularity=2):
 	tourneys,ids,p_info,records = dicts
 	if not tag == None:
 		p_id = get_abs_id_from_tag(dicts,tag)
 	if not country == None:
-		return calc_region(country,state,granularity)
-	return calc_region(p_info[p_id]['country'],p_info[p_id]['state'],granularity)
+		return calc_region(country,state,city,granularity)
+	return calc_region(p_info[p_id]['country'],p_info[p_id]['state'],p_info[p_id]['city'],granularity)
 
 # returns a list of player ids (and their json data if requested) given a regional name
 def get_players_by_region(dicts,region,granularity=2,get_data=False):
@@ -328,7 +368,7 @@ def old_print_event(dicts,t_id,max_place=64):
 
 	entrants = (player_ids,player_teams,player_tags,player_paths,player_places,player_losses)
 	entrants = [[col[i] for col in entrants] for i in range(len(entrants[0]))]
-	players = sorted(entrants,key=lambda l: (len(l[3]),0-l[4]), reverse=True)
+	players = sorted(entrants,key=lambda l: (0-l[4],len(l[3])), reverse=True)
 
 	num_rounds = len(players[0][3])
 
@@ -355,9 +395,17 @@ def old_print_event(dicts,t_id,max_place=64):
 				else:
 					if sp[-2:] != " |":
 						sp = sp + " |"
+			sp_len = 13
+			for ch in sp:
+				if is_emoji(sp):
+					sp_len -= 1
 			# format player tag
-			if len(tag) > 24:
-				tag = tag[:21]+"..."
+			tag_len = 24
+			if len(tag) > tag_len:
+				tag = tag[:tag_len-3]+"..."
+			for ch in tag:
+				if is_emoji(ch):
+					tag_len -= 1
 			# format losses
 			if losses == None or losses == []:
 				losses = None
@@ -367,5 +415,5 @@ def old_print_event(dicts,t_id,max_place=64):
 			#if len(path) > maxlen:
 			#	maxlen = len(path)
 			#lsbuff = "\t"*(maxlen-len(path)+1)
-			print("{:>13.13}".format(sp),"{:<24.24}".format(tag),"{:>7.7}".format(str(p_id)), \
+			print(("{:>%d.%d}"%(sp_len,sp_len)).format(sp),("{:<%d.%d}"%(tag_len,tag_len)).format(tag),"{:>7.7}".format(str(p_id)), \
 				"  {:<5.5}".format(str(placement)),"\t",("{:<%d.%d}"%(roundslen+5,roundslen+5)).format(str([t_labels[group] for group in path])),losses)

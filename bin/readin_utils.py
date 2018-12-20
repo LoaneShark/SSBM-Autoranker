@@ -3,6 +3,8 @@
 from six.moves.urllib.request import urlopen
 import requests
 import re,os,pickle,time,json
+from emoji import UNICODE_EMOJI
+import regex
 
 ## AUXILIARY FUNCTIONS
 # returns the full slug (needed to pull tourney data) given the short slug
@@ -98,12 +100,43 @@ def unshorten_url(url):
 	resp = session.head(url, allow_redirects=True)
 	return resp.url
 
+# returns True if a given string is only ascii characters
+def is_ascii(s):
+	if has_emojis(s):
+		return False
+	else:
+		return len(s) == len(s.encode())
+
+# returns True if a given string contains emoji characters
+# NOTE: currently ONLY works for FLAG EMOJIS (\U0001F1E6-\U0001F1FF)
+def is_emoji(s,print_e=False):
+	#s = s.encode('utf8').decode('utf8')
+	data = regex.findall(r'\X', s)
+	flags = regex.findall(u'[\U0001F1E6-\U0001F1FF]', s)
+	if print_e:
+		print("data: ",data)
+		print("flags: ",flags)
+		print(s)
+	for word in data:
+		if any(char[0] in UNICODE_EMOJI for char in data):
+			if print_e:
+				print("data loop ",char)
+			return True
+	for word in flags:
+		if any(char in UNICODE_EMOJI for char in word):
+			if print_e:
+				print("flag loop ",char)
+			return True
+	if len(flags) > 0:
+		return True
+	return False
+
 # prints tournament results by player's final placing
 def print_results(res,names,entrants,losses,max_place=64):
 	maxlen = 0
 
 	res_l = [item for item in res.items()]
-	res_s = sorted(res_l, key=lambda l: (len(l[1][1]),0-l[1][0]), reverse=True)
+	res_s = sorted(res_l, key=lambda l: (0-l[1][0],len(l[1][1])), reverse=True)
 
 	num_rounds = len(res_s[0][1][1])
 	#lsbuff = "\t"*(num_rounds-len(res_s[-1][1][1])+1)
@@ -123,10 +156,17 @@ def print_results(res,names,entrants,losses,max_place=64):
 				else:
 					if sp[-2:] != " |":
 						sp = names[player[0]][0] + " |"
+			sp_slot = 13
+			for ch in sp:
+				if is_emoji(ch):
+					sp_slot -= 1
 			tag = names[player[0]][1]
-			if len(tag) > 24:
+			tag_slot = 24
+			if len(tag) > tag_slot:
 				tag = tag[:21]+"..."
-
+			for ch in tag:
+				if is_emoji(ch):
+					tag_slot -= 1
 			if player[0] in losses:
 				#print(losses)
 				ls = "["+", ".join(str(l) for l in [names[loss[0]][1] for loss in losses[player[0]]])+"]"
@@ -140,6 +180,6 @@ def print_results(res,names,entrants,losses,max_place=64):
 			#	lsbuff = "\t"
 			#else:
 			#	lsbuff = "\t\t\t"
-			print("{:>13.13}".format(sp),"{:<24.24}".format(names[player[0]][1]),"{:>7.7}".format(str(entrants[player[0]][1])),"  {:<5.5}".format(str(player[1][0])),"\t", \
-				("{:<%d.%d}"%(roundslen+5,roundslen+5)).format("["+", ".join(str(i) for i in [names['groups'][group] for group in player[1][1]])+"]"),ls)
+			print(("{:>%d.%d}"%(sp_slot,sp_slot)).format(sp),("{:<%d.%d}"%(tag_slot,tag_slot)).format(names[player[0]][1]),"{:>7.7}".format(str(entrants[player[0]][1])), \
+				"  {:<5.5}".format(str(player[1][0])),"\t",("{:<%d.%d}"%(roundslen+5,roundslen+5)).format("["+", ".join(str(i) for i in [names['groups'][group] for group in player[1][1]])+"]"),ls)
 	return(res_s)
