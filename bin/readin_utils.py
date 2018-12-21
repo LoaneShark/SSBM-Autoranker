@@ -131,6 +131,62 @@ def is_emoji(s,print_e=False):
 		return True
 	return False
 
+# saves a single dict
+def save_dict(data,name,ver,loc='db'):
+	if not os.path.isdir('%s'%loc):
+		os.mkdir(str('%s'%loc))
+	if not os.path.isdir('%s/%s'%(loc,ver)):
+		os.mkdir(str('%s/%s'%(loc,ver)))
+	#if not os.path.isdir('%s/%s/%s'%(loc,ver,name)):
+	#	os.mkdir(str('%s/%s/%s'%(loc,ver,name)))
+	with open(str(loc)+'/'+str(ver)+'/'+name +'.pkl','wb') as f:
+		pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+
+# loads a single dict
+def load_dict(name,ver,loc='db'):
+	try:
+		with open(str(loc)+'/'+str(ver)+'/'+name+'.pkl','rb') as f:
+			return pickle.load(f) 
+	except FileNotFoundError:
+		if name == 'tourneys':
+			t = {}
+			t['slugs'] = {}
+			#t['groups'] = {}
+			save_dict(t,name,ver,loc)
+			return t
+		else:
+			save_dict({},name,ver,loc)
+			return {}
+
+# saves the slugs pulled by scraper to avoid having to rescrape every time
+def save_slugs(slugs,game,year,loc='db'):
+	if to_save_db:
+		if v >= 4:
+			print("Saving scraped slugs...")
+		if not os.path.isdir('%s/%s'%(loc,game)):
+			os.mkdir(str('%s/%s'%(loc,game)))
+		if not os.path.isdir('%s/%s/slugs'%(loc,game)):
+			os.mkdir(str('%s/%s/slugs'%(loc,game)))
+		with open(str(loc)+'/'+str(game)+'/slugs/'+str(year) +'.pkl','wb') as f:
+			pickle.dump(slugs, f, pickle.HIGHEST_PROTOCOL)
+		return True
+	else:
+		return False
+
+# loads the slugs pulled by scraper to avoid having to rescrape every time
+def load_slugs(game,year,loc='db'):
+	try:
+		with open(str(loc)+'/'+str(game)+'/slugs/'+str(year)+'.pkl','rb') as f:
+			return pickle.load(f) 
+	except FileNotFoundError:
+		return False
+
+# deletes the json pulls and phase data stored by readin
+# (for use once a tourney has been imported fully, to remove garbage files from accumulating)
+def delete_tourney_cache(t_id):
+	if os.path.isdir('obj/%d'%t_id):
+		shutil.rmtree('obj/%d'%t_id)
+
 # prints tournament results by player's final placing
 def print_results(res,names,entrants,losses,max_place=64):
 	maxlen = 0

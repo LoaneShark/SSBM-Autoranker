@@ -1,5 +1,7 @@
 ## DEPENDENCY IMPORTS
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
+from statistics import mean 
+from math import *
 #import numpy as np 
 #import scipy as sp 
 import os,sys,pickle,time
@@ -26,6 +28,7 @@ from analysis_utils import *
 ## 		 - General doubles / crews support (see: scraper support/filtering out by event type)
 ## 		 - allow analysis_utils to write to file for some queries, etc. (csv?)
 ## 		 - GUI/standalone executable tool/webapp
+## 		 - Intelligent clustering of players by region
 ##
 
 # Tourney shitlist:
@@ -66,6 +69,7 @@ maxpl = int(args.displaysize)
 def main():
 	set_db_args(args)
 	tourneys,ids,p_info,records = load_db(str(game_idx)+"/"+str(year))
+	disp_scores((tourneys,ids,p_info,records))
 	#tourneys,ids,p_info,records = read_majors(game_idx,year)
 	#print(list_tourneys((tourneys,ids,p_info,records)))
 	#tourneys,ids,p_info,records = delete_tourney((tourneys,ids,p_info,records),None,slug='don-t-park-on-the-grass-2018-1')
@@ -76,9 +80,14 @@ def main():
 
 	#dicts = delete_tourney((tourneys,ids,p_info,records),None,'valhalla')
 	#res = get_player((tourneys,ids,p_info,records),None,tag='Free Palestine')
-	out = get_players_by_region((tourneys,ids,p_info,records),'California',get_data = True)
-	for res in out:
-		print(res[1][1]['tag'],"|",res[1][1]['city'],"|",calc_region(res[1][1]['country'],res[1][1]['state'],res[1][1]['city']))
+	#out = get_players_by_region((tourneys,ids,p_info,records),'California',get_data=True)
+	#for res in out:
+	#	print(res[1][1]['tag'],"|",res[1][1]['city'],"|",res[1][1]['region']," (old) |",calc_region(res[1][1]['country'],res[1][1]['state'],res[1][1]['city']))
+	#for seg in [out[(i-1)*10:i*10] for i in range(int(len(out)/10))]:
+	#p_ids = [res[0] for res in out]
+	#update_regions((tourneys,ids,p_info,records),p_ids)
+	#print("Saving Updated DB...")
+	#save_db((tourneys,ids,p_info,records),str(game_idx)+"/"+str(year))
 	#print([res[1]['team'][0],res[1]['team'][0].encode()])
 	#print([len(res[1]['team'][0]),len(res[1]['team'][0].encode())])
 	#print(["hello","hello".encode()])
@@ -88,12 +97,37 @@ def main():
 
 	return True
 
-def score(dicts,dispnum=20):
+def disp_scores(dicts,dispnum=20):
 	tourneys,ids,p_info,records = dicts
 	scores = {}
 	for p_id in p_info:
+		scores[p_id] = mean([score(dicts,records[p_id]['placings'][t_id],t_id) for t_id in tourneys if type(t_id) is int if t_id in records[p_id]['placings']])
 
-		scores[p_id] 
+	players = sorted([[p_info[p_id]['tag'],scores[p_id]] for p_id in p_info],key=lambda x: x[1],reverse=True)
+	players = players[:dispnum]
+	for player in players:
+		print(player)
+
+def score(dicts,placing,t_id):
+	tourneys,ids,p_info,records = dicts
+
+	num_entrants = tourneys[t_id]['numEntrants']
+	percent = (log(num_entrants,2)-log(placing,2)+1)/log(num_entrants,2)
+	return percent
+
+def h2h(dicts,p1_id,p2_id):
+	tourneys,ids,p_info,records = dicts
+
+	w,l = 0,0
+
+	if p2_id in records[p1_id]["wins"]:
+		w = len(records[p1_id]["wins"][p2_id])
+	if p2_id in records[p1_id]["losses"]:
+		l = len(records[p1_id]["losses"][p2_id])
+
+	return (w,l) 
+
+
 
 if __name__ == "__main__":
 	main()
