@@ -28,6 +28,7 @@ parser.add_argument('-ff','--force_first',help='force the first criteria-matchin
 parser.add_argument('-g','--game',help='game id to be used: Melee=1, P:M=2, Wii U=3, 64=4, Ultimate=1386 (default melee)',default=1)
 parser.add_argument('-fg','--force_game',help='game id to be used, force use (cannot scrape non-smash slugs)',default=False)
 parser.add_argument('-y','--year',help='The year you want to analyze (for ssbwiki List of Majors scraper)(default 2018)',default=2018)
+parser.add_argument('-yc','--year_count',help='How many years to analyze from starting year',default=0)
 parser.add_argument('-t','--teamsize',help='1 for singles bracket, 2 for doubles (default 1)',default=1)
 parser.add_argument('-d','--displaysize',help='lowest placing shown on pretty printer output, or -1 to show all entrants (default 64)',default=64)
 parser.add_argument('-sl','--slug',help='tournament URL slug',default=None)
@@ -328,6 +329,7 @@ def read_sets(data,phase_data,wins,losses,xpath):
 		else:
 			if v >= 7:
 				print(set_id,match['phaseGroupId'],match['identifier'],["bye","bye"],[e1,e2])
+
 	# populate overall final bracket placements if not already provided
 	for x_id in sorted([x['entrantId'] for x in data['entities']['seeds'] if type(xpath[x['entrantId']][0]) is list],key=lambda p_id: xpath[p_id][0][0]):
 		if type(xpath[x_id][0]) is list:

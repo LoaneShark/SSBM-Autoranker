@@ -20,6 +20,7 @@ from analysis_utils import *
 ## 		 - use 'state' to check for status of bracket (1: unscheduled, 4: called, 2: in progress, 3: completed)
 ## 		 - Multi-year support
 ## 		 - error logs
+## 		 - SKILL TIERSSSSS
 ##
 ##	Longterm
 ## 		 - Challonge support (player matching by tag maybe needed -- no player ids provided!)
@@ -30,6 +31,16 @@ from analysis_utils import *
 ## 		 - GUI/standalone executable tool/webapp
 ## 		 - Intelligent clustering of players by region
 ##
+
+## ELO BALANCING:
+##	- debug?
+## 		- do invitationals/summit/alternate brackets mess with this?
+## 		- what K values to use? 
+## 		- how do we instantiate elo scores?
+## 	- aggregate/normalized?
+## 	- add Glicko
+## 	- add Iagorank
+##  - min activity requirements
 
 # Tourney shitlist:
 # 	- DPOTG (redemption ladder)
@@ -45,6 +56,7 @@ parser.add_argument('-ff','--force_first',help='force the first criteria-matchin
 parser.add_argument('-g','--game',help='game id to be used: Melee=1, P:M=2, Wii U=3, 64=4, Ultimate=1386 (default melee)',default=1)
 parser.add_argument('-fg','--force_game',help='game id to be used, force use (cannot scrape non-smash slugs)',default=False)
 parser.add_argument('-y','--year',help='The year you want to analyze (for ssbwiki List of Majors scraper)(default 2018)',default=2018)
+parser.add_argument('-yc','--year_count',help='How many years to analyze from starting year',default=0)
 parser.add_argument('-t','--teamsize',help='1 for singles bracket, 2 for doubles (default 1)',default=1)
 parser.add_argument('-d','--displaysize',help='lowest placing shown on pretty printer output, or -1 to show all entrants (default 64)',default=64)
 parser.add_argument('-sl','--slug',help='tournament URL slug',default=None)
@@ -58,6 +70,7 @@ game_idx = int(args.game)
 if args.force_game:
 	game_idx = int(args.force_game)
 year = int(args.year)
+year_count = int(args.year_count)
 to_load_db = args.load
 if args.load == "False":
 	to_load_db = False
@@ -68,12 +81,21 @@ maxpl = int(args.displaysize)
 
 def main():
 	set_db_args(args)
-	tourneys,ids,p_info,records = load_db(str(game_idx)+"/"+str(year))
-	disp_scores((tourneys,ids,p_info,records))
-	#tourneys,ids,p_info,records = read_majors(game_idx,year)
+	if year_count == 0:
+		yearstr = str(year)
+	else:
+		yearstr = str(year)+"-"+str(year+year_count)
+	#tourneys,ids,p_info,records = load_db(str(game_idx)+"/"+yearstr)
+	tourneys,ids,p_info,records = read_majors(game_idx,year)
+	#for i in range(year_count):
+	#	tourneys,ids,p_info,records = read_majors(game_idx,year+i,base=(tourneys,ids,p_info,records))
+
+	#tourneys,ids,p_info,records = delete_tourney((tourneys,ids,p_info,records),None,slug='smash-summit-6')
+	#tourneys,ids,p_info,records = delete_tourney((tourneys,ids,p_info,records),None,slug='smash-summit-7')
+	disp_all((tourneys,ids,p_info,records),key='elo')
+	#disp_elos((tourneys,ids,p_info,records))
 	#print(list_tourneys((tourneys,ids,p_info,records)))
 	#tourneys,ids,p_info,records = delete_tourney((tourneys,ids,p_info,records),None,slug='don-t-park-on-the-grass-2018-1')
-	#tourneys,ids,p_info,records = delete_tourney((tourneys,ids,p_info,records),None,slug='valhalla')
 	#tourneys,ids,p_info,records = delete_tourney((tourneys,ids,p_info,records),None,slug='heir-5')
 	#tourneys,ids,p_info,records = delete_tourney((tourneys,ids,p_info,records),None,slug='full-bloom-4')
 	#print(list_tourneys((tourneys,ids,p_info,records)))
@@ -97,16 +119,81 @@ def main():
 
 	return True
 
-def disp_scores(dicts,dispnum=20):
+def get_scores(dicts,acc=3):
 	tourneys,ids,p_info,records = dicts
 	scores = {}
 	for p_id in p_info:
-		scores[p_id] = mean([score(dicts,records[p_id]['placings'][t_id],t_id) for t_id in tourneys if type(t_id) is int if t_id in records[p_id]['placings']])
+		scores[p_id] = round(mean([score(dicts,records[p_id]['placings'][t_id],t_id) for t_id in tourneys if type(t_id) is int if t_id in records[p_id]['placings']]),acc)
+	return scores
+
+def disp_scores(dicts,dispnum=20):
+	tourneys,ids,p_info,records = dicts
+	scores = get_scores(dicts)
 
 	players = sorted([[p_info[p_id]['tag'],scores[p_id]] for p_id in p_info],key=lambda x: x[1],reverse=True)
 	players = players[:dispnum]
 	for player in players:
 		print(player)
+
+def get_elos(dicts,acc=3):
+	tourneys,ids,p_info,records = dicts
+	elos = {}
+	for p_id in p_info:
+		#elos[p_id] = mean([score(dicts,records[p_id]['placings'][t_id],t_id) for t_id in tourneys if type(t_id) is int if t_id in records[p_id]['placings']])
+		elos[p_id] = round(p_info[p_id]['elo'],acc)
+	return elos
+
+def disp_elos(dicts,dispnum=20):
+	tourneys,ids,p_info,records = dicts
+	elos = get_elos(dicts)
+
+	players = sorted([[p_info[p_id]['tag'],elos[p_id]] for p_id in p_info],key=lambda x: x[1],reverse=True)
+	players = players[:dispnum]
+	for player in players:
+		print(player)
+
+def get_iagorank(dicts):
+	tourneys,ids,p_info,records = dicts
+	return True
+
+def get_performances(dicts,acc=3):
+	tourneys,ids,p_info,records = dicts
+	avg_perfs = {}
+
+	for p_id in p_info:
+		#print(records[p_info])
+		perfs = []
+		for t_id in records[p_id]['performances']:
+			#print(records[p_id]['performances'])
+			perfs.extend([records[p_id]['performances'][t_id]])
+
+		avg_perfs[p_id] = round(mean(perfs),acc)
+	return avg_perfs
+
+
+def disp_all(dicts,dispnum=20,key='elo'):
+	tourneys,ids,p_info,records = dicts
+	key_idx = 1
+	elos = get_elos(dicts)
+	scores = get_scores(dicts)
+	perfs = get_performances(dicts)
+
+	if key == 'bracket':
+		key_idx = 2
+	if key == 'elo':
+		key_idx = 1
+	if key == 'performance':
+		key_idx = 3
+	if key == 'simbrac':
+		key_idx = 4
+	if key == 'glicko':
+		key_idx = 5
+	players = sorted([[p_info[p_id]['tag'],elos[p_id],scores[p_id],perfs[p_id]] for p_id in p_info],key=lambda x: x[key_idx],reverse=True)
+	players = players[:dispnum]
+
+	print("\n{:<20.20}".format("Player"),"{:<9.9}".format("Elo"),"{:<9.9}".format("Mean %"),"{:<9.9}".format("Mean Perf"),"\n")
+	for player in players:
+		print("{:<20.20}".format(player[0]),"{:<9.9}".format(player[1]),"{:<9.9}".format(player[2]),"{:<9.9}".format(player[3]))
 
 def score(dicts,placing,t_id):
 	tourneys,ids,p_info,records = dicts

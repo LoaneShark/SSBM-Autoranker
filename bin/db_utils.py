@@ -22,6 +22,7 @@ parser.add_argument('-ff','--force_first',help='force the first criteria-matchin
 parser.add_argument('-g','--game',help='game id to be used: Melee=1, P:M=2, Wii U=3, 64=4, Ultimate=1386 (default melee)',default=1)
 parser.add_argument('-fg','--force_game',help='game id to be used, force use (cannot scrape non-smash slugs)',default=False)
 parser.add_argument('-y','--year',help='The year you want to analyze (for ssbwiki List of Majors scraper)(default 2018)',default=2018)
+parser.add_argument('-yc','--year_count',help='How many years to analyze from starting year',default=0)
 parser.add_argument('-t','--teamsize',help='1 for singles bracket, 2 for doubles (default 1)',default=1)
 parser.add_argument('-d','--displaysize',help='lowest placing shown on pretty printer output, or -1 to show all entrants (default 64)',default=64)
 parser.add_argument('-sl','--slug',help='tournament URL slug',default=None)
@@ -51,6 +52,11 @@ db_game = int(args.game)
 if args.force_game:
 	db_game = int(args.force_game)
 db_year = int(args.year)
+db_year_count = int(args.year_count)
+if db_year_count == 0:
+	db_yearstr = str(db_year)
+else:
+	db_yearstr = str(db_year)+"-"+str(db_year+db_year_count)
 count_arcadians = args.use_arcadians
 if count_arcadians == -1:
 	only_arcadians = True
@@ -60,7 +66,7 @@ else:
 # main loop. calls scraper to get slugs for every major that happened
 # in the specified year for the specified game (per smash.gg numeric id value)
 # returns in the form of 4 dicts: tourneys,ids,p_info,records
-def read_majors(game_id=int(db_game),year=int(db_year)):
+def read_majors(game_id=int(db_game),year=int(db_year),base=None):
 	set_readin_args(args)
 	#slugs = ["genesis-5","summit6","shine2018","tbh8","summit7"]
 	fails = []
@@ -95,8 +101,8 @@ def read_majors(game_id=int(db_game),year=int(db_year)):
 		print("The following majors could not be read (no smash.gg bracket found)")
 		print(fails)
 	if to_save_db and not scrape_load and not slug_given:
-		save_slugs(slugs,game_id,year)
-	return(read_tourneys(slugs,ver=game_id,year=year))
+		save_slugs(slugs,game_id,year,to_save_db=to_save_db)
+	return(read_tourneys(slugs,ver=game_id,year=year,base=base))
 
 def set_db_args(args):
 	collect = args.collect_garbage
@@ -117,12 +123,17 @@ def set_db_args(args):
 
 ## AUXILIARY FUNCTIONS
 # loads database and stores any tournament data not already present given the url slug
-def read_tourneys(slugs,ver='default',year=None):
+def read_tourneys(slugs,ver='default',year=None,base=None):
 	if year != None:
-		verstr = '%s/%d'%(ver,year)
+		verstr = '%s/%s'%(ver,db_yearstr)
 	else:
 		verstr = ver
-	[tourneys,ids,p_info,records] = load_db(verstr)
+
+	if base == None:
+		[tourneys,ids,p_info,records] = load_db(verstr)
+	else:
+		tourneys,ids,p_info,records = base
+
 	if v >= 4 and len(tourneys.keys())>1:
 		print("Loaded Tourneys: " + str([tourneys[t_id]['name'] for t_id in tourneys if not t_id == 'slugs']))
 	#print(tourneys)
@@ -199,6 +210,10 @@ def store_players(entrants,names,t_info,dicts):
 			else:
 				if p_info[abs_id]['region'] == 'N/A' or p_info[abs_id]['region'] == None:
 					p_info[abs_id]['region'] = get_region(dicts,abs_id,granularity=2)
+			if 'elo' not in p_info[abs_id]:
+				p_info[abs_id]['elo'] = 1500.
+			if 'sets_played' not in p_info[abs_id]:
+				p_info[abs_id]['sets_played'] = 0
 
 			#print(ids[abs_id])
 	#else:
@@ -222,12 +237,16 @@ def store_records(wins,losses,paths,t_info,dicts):
 					records[abs_id]['wins'] = {}
 					records[abs_id]['losses'] = {}
 					records[abs_id]['placings'] = {}
+					records[abs_id]['performances'] = {}
 					records[abs_id]['paths'] = {}
 
 				# store final placement by tourney id
 				records[abs_id]['placings'][t_id] = paths[e_id][0]
 				# store path through bracket by tourney id
 				records[abs_id]['paths'][t_id] = paths[e_id][1]
+
+				expected_score = 0.
+				actual_score = 0.
 
 				# store wins and losses
 				if e_id in wins:
@@ -238,6 +257,10 @@ def store_records(wins,losses,paths,t_info,dicts):
 							records[abs_id]['wins'][l_id] = [t_id]
 						else:
 							records[abs_id]['wins'][l_id].extend([t_id])
+
+						p_info[abs_id]['sets_played'] += 1
+						actual_score += 1.
+						expected_score += exp_score(p_info[abs_id]['elo'],p_info[l_id]['elo'])
 				if e_id in losses:
 					for loss in losses[e_id]:
 						w_id = ids[t_id][loss[0]]
@@ -246,6 +269,17 @@ def store_records(wins,losses,paths,t_info,dicts):
 							records[abs_id]['losses'][w_id] = [t_id]
 						else:
 							records[abs_id]['losses'][w_id].extend([t_id])
+
+						p_info[abs_id]['sets_played'] += 1
+						actual_score += 0.
+						expected_score += exp_score(p_info[abs_id]['elo'],p_info[w_id]['elo'])
+
+				# update elo ratings after event
+				p_info[abs_id]['elo'] = update_elo(p_info[abs_id]['elo'],expected_score,actual_score,p_info[abs_id]['sets_played'])
+
+				# store event performance by tourney id
+				records[abs_id]['performances'][t_id] = calc_performance(records,p_info,abs_id,t_id)
+				#records[abs_id]['performances'][t_id] = calc_performance(ids,records,wins,losses,e_id,t_id)
 	return True
 
 # stores tourney meta info and marks tournament as imported
@@ -371,6 +405,64 @@ def easy_load_db(ver,loc='db',force_blank=False):
 		return [load_dict(name,ver,loc) for name in ['tourneys','ids','p_info','records']]
 	else:
 		return [load_dict(name,'blank',loc='db') for name in ['tourneys','ids','p_info','records']]
+
+# Calculates the event performance rating for a single event
+# using the FIDE "rule of 400" PR estimator
+def calc_performance(records,p_info,abs_id,t_id):
+	w_count,l_count = 0.,0.
+	skills = 0.
+
+	wins = records[abs_id]['wins']
+	losses = records[abs_id]['losses']
+
+	for l_id in wins:
+		#l_abs_id = ids[t_id][wins[e_id][0]]
+
+		skills += p_info[l_id]['elo']
+		w_count += wins[l_id].count(t_id)
+	for w_id in losses:
+		#w_abs_id = ids[t_id][losses[e_id][0]]
+
+		skills += p_info[w_id]['elo']
+		l_count += losses[w_id].count(t_id)
+
+	return (skills + 400.*(w_count-l_count))/(w_count+l_count)
+
+# returns the player's K-factor
+# (used in Elo calculations)
+def calc_k_factor(elo,n_played):
+
+	# FIDE K-factor method of calculation
+	if n_played < 30:
+		if elo < 2400:
+			return 40
+		else:
+			return 20
+	else:
+		if elo < 2400:
+			return 20
+		else:
+			return 10
+
+	# not used (old)
+	if elo >= 2400:
+		return 16.
+	elif elo >= 2100:
+		return 24.
+	else:
+		return 32.
+
+# returns the player's expected score for a match
+# (used in Elo calculations)
+def exp_score(elo_a,elo_b):
+	return 1.0/(1. + 10.**((float(elo_a)-float(elo_b))/400.))
+
+# updates the player's elo score given their expected and actual results of the event
+def update_elo(elo,expected,actual,N):
+	K = calc_k_factor(elo,N)
+
+	return elo + K*(actual-expected)
+
 
 if __name__ == "__main__":
 	read_majors()

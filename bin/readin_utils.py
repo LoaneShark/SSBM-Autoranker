@@ -5,6 +5,7 @@ import requests
 import re,os,pickle,time,json
 from emoji import UNICODE_EMOJI
 import regex
+import shutil
 
 ## AUXILIARY FUNCTIONS
 # returns the full slug (needed to pull tourney data) given the short slug
@@ -159,10 +160,10 @@ def load_dict(name,ver,loc='db'):
 			return {}
 
 # saves the slugs pulled by scraper to avoid having to rescrape every time
-def save_slugs(slugs,game,year,loc='db'):
+def save_slugs(slugs,game,year,loc='db',to_save_db=True):
 	if to_save_db:
-		if v >= 4:
-			print("Saving scraped slugs...")
+		#if v >= 4:
+		#	print("Saving scraped slugs...")
 		if not os.path.isdir('%s/%s'%(loc,game)):
 			os.mkdir(str('%s/%s'%(loc,game)))
 		if not os.path.isdir('%s/%s/slugs'%(loc,game)):

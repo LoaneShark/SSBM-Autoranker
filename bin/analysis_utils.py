@@ -274,7 +274,7 @@ def get_region(dicts,p_id,tag=None,country=None,state=None,city=None,granularity
 		return calc_region(country,state,city,granularity)
 	if not tag == None:
 		p_id = get_abs_id_from_tag(dicts,tag)
-	if to_calc:
+	if to_calc or not 'region' in p_info[p_id]:
 		return calc_region(p_info[p_id]['country'],p_info[p_id]['state'],p_info[p_id]['city'],granularity)
 	else:
 		return p_info[p_id]['region']
