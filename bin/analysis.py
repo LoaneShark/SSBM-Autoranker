@@ -15,12 +15,14 @@ from analysis_utils import *
 
 ## TODO: 
 ##	Shortterm
-## 		 - Figure out what to do with the data // what data do we want
 ## 		 - ensure scraper is JUST SINGLES unless otherwise specified
+## 			- Filter out "Teams" and "Doubles" events even if # of entrants is listed as 1
+## 		 - doubles support
 ## 		 - use 'state' to check for status of bracket (1: unscheduled, 4: called, 2: in progress, 3: completed)
-## 		 - Multi-year support
 ## 		 - error logs
 ## 		 - SKILL TIERSSSSS
+## 		 - Error 502 bad gateway handling (retry after waiting)
+## 		 - Find out why some players don't have results // win-loss records
 ##
 ##	Longterm
 ## 		 - Challonge support (player matching by tag maybe needed -- no player ids provided!)
@@ -37,6 +39,7 @@ from analysis_utils import *
 ## 		- do invitationals/summit/alternate brackets mess with this?
 ## 		- what K values to use? 
 ## 		- how do we instantiate elo scores?
+## 			- SSBMRank scores from the previous year? Normal distribution using avg tourney placing?
 ## 	- aggregate/normalized?
 ## 	- add Glicko
 ## 	- add Iagorank
@@ -85,10 +88,11 @@ def main():
 		yearstr = str(year)
 	else:
 		yearstr = str(year)+"-"+str(year+year_count)
-	#tourneys,ids,p_info,records = load_db(str(game_idx)+"/"+yearstr)
-	tourneys,ids,p_info,records = read_majors(game_idx,year)
-	#for i in range(year_count):
-	#	tourneys,ids,p_info,records = read_majors(game_idx,year+i,base=(tourneys,ids,p_info,records))
+	tourneys,ids,p_info,records = load_db(str(game_idx)+"/"+yearstr)
+	#tourneys,ids,p_info,records = load_db(str(game_idx)+"/"+str(year))
+	#tourneys,ids,p_info,records = read_majors(game_idx,year,base=(tourneys,ids,p_info,records))
+	for i in range(1,year_count+1):
+		tourneys,ids,p_info,records = read_majors(game_idx,year+i,base=(tourneys,ids,p_info,records))
 
 	#tourneys,ids,p_info,records = delete_tourney((tourneys,ids,p_info,records),None,slug='smash-summit-6')
 	#tourneys,ids,p_info,records = delete_tourney((tourneys,ids,p_info,records),None,slug='smash-summit-7')
@@ -123,7 +127,8 @@ def get_scores(dicts,acc=3):
 	tourneys,ids,p_info,records = dicts
 	scores = {}
 	for p_id in p_info:
-		scores[p_id] = round(mean([score(dicts,records[p_id]['placings'][t_id],t_id) for t_id in tourneys if type(t_id) is int if t_id in records[p_id]['placings']]),acc)
+		if p_id in records:
+			scores[p_id] = round(mean([score(dicts,records[p_id]['placings'][t_id],t_id) for t_id in tourneys if type(t_id) is int if t_id in records[p_id]['placings']]),acc)
 	return scores
 
 def disp_scores(dicts,dispnum=20):
@@ -139,8 +144,9 @@ def get_elos(dicts,acc=3):
 	tourneys,ids,p_info,records = dicts
 	elos = {}
 	for p_id in p_info:
-		#elos[p_id] = mean([score(dicts,records[p_id]['placings'][t_id],t_id) for t_id in tourneys if type(t_id) is int if t_id in records[p_id]['placings']])
-		elos[p_id] = round(p_info[p_id]['elo'],acc)
+		if p_id in records:
+			#elos[p_id] = mean([score(dicts,records[p_id]['placings'][t_id],t_id) for t_id in tourneys if type(t_id) is int if t_id in records[p_id]['placings']])
+			elos[p_id] = round(p_info[p_id]['elo'],acc)
 	return elos
 
 def disp_elos(dicts,dispnum=20):
@@ -161,13 +167,14 @@ def get_performances(dicts,acc=3):
 	avg_perfs = {}
 
 	for p_id in p_info:
+		if p_id in records:
 		#print(records[p_info])
-		perfs = []
-		for t_id in records[p_id]['performances']:
-			#print(records[p_id]['performances'])
-			perfs.extend([records[p_id]['performances'][t_id]])
+			perfs = []
+			for t_id in records[p_id]['performances']:
+				#print(records[p_id]['performances'])
+				perfs.extend([records[p_id]['performances'][t_id]])
 
-		avg_perfs[p_id] = round(mean(perfs),acc)
+			avg_perfs[p_id] = round(mean(perfs),acc)
 	return avg_perfs
 
 
@@ -188,7 +195,7 @@ def disp_all(dicts,dispnum=20,key='elo'):
 		key_idx = 4
 	if key == 'glicko':
 		key_idx = 5
-	players = sorted([[p_info[p_id]['tag'],elos[p_id],scores[p_id],perfs[p_id]] for p_id in p_info],key=lambda x: x[key_idx],reverse=True)
+	players = sorted([[p_info[p_id]['tag'],elos[p_id],scores[p_id],perfs[p_id]] for p_id in p_info if p_id in elos if p_id in scores if p_id in perfs],key=lambda x: x[key_idx],reverse=True)
 	players = players[:dispnum]
 
 	print("\n{:<20.20}".format("Player"),"{:<9.9}".format("Elo"),"{:<9.9}".format("Mean %"),"{:<9.9}".format("Mean Perf"),"\n")

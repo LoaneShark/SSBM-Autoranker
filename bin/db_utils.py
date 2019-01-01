@@ -370,6 +370,8 @@ def clear_db(ver,loc='db'):
 def save_db(dicts,ver,loc='db'):
 	if args.teamsize == 2:
 		ver = str(ver) + " (DUBS)"
+	if args.teamsize >= 4:
+		ver = str(ver) + " (CREWS)"
 	if only_arcadians:
 		ver = str(ver)+" (ARC)"
 	if to_save_db:
@@ -397,6 +399,8 @@ def load_db(ver,loc='db',force_blank=False):
 def easy_load_db(ver,loc='db',force_blank=False):
 	if args.teamsize == 2:
 		ver = str(ver) + " (DUBS)"
+	if args.teamsize >= 4:
+		ver = str(ver) + " (CREWS)"
 	if only_arcadians:
 		ver = str(ver)+" (ARC)"
 	if to_load_db and not force_blank:
@@ -426,6 +430,8 @@ def calc_performance(records,p_info,abs_id,t_id):
 		skills += p_info[w_id]['elo']
 		l_count += losses[w_id].count(t_id)
 
+	if (w_count + l_count) == 0:
+		return 0
 	return (skills + 400.*(w_count-l_count))/(w_count+l_count)
 
 # returns the player's K-factor
