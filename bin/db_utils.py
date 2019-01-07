@@ -210,8 +210,15 @@ def store_players(entrants,names,t_info,dicts):
 			else:
 				if p_info[abs_id]['region'] == 'N/A' or p_info[abs_id]['region'] == None:
 					p_info[abs_id]['region'] = get_region(dicts,abs_id,granularity=2)
+					
+			# store ranking data, with initial values if needed
 			if 'elo' not in p_info[abs_id]:
 				p_info[abs_id]['elo'] = 1500.
+			# glicko stores a tuple with (rating,RD,volatility)
+			if 'glicko' not in p_info[abs_id]:
+				p_info[abs_id]['glicko'] = (1500.,350.,0.06)
+			if 'iagorank' not in p_info[abs_id]:
+				p_info[abs_id]['iagorank'] = -9999.
 			if 'sets_played' not in p_info[abs_id]:
 				p_info[abs_id]['sets_played'] = 0
 

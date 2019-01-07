@@ -10,7 +10,11 @@ from geopy.geocoders import Nominatim
 from readin_utils import *
 from db_utils import load_dict,save_dict
 
+flatten = lambda l: [item for sublist in l for item in sublist]
+
 # return the (filtered) result(s) for a tourney
+# format is a list of players sorted by final placement, with indexing:
+# (p_id,p_team,p_tag,p_path,p_place,p_losses,p_wins)
 def get_result(dicts,t_id,res_filt=None):
 	tourneys,ids,p_info,records = dicts
 	t = tourneys[t_id]
@@ -142,14 +146,59 @@ def get_results(dicts,t_ids,res_filt=None):
 			print("Error:: Invalid tournament id: %s"%t_ids)
 	if type(t_ids) is list:
 		return [[t_id,get_result(dicts,t_id,res_filt)] for t_id in t_ids]
+	elif t_ids == None:
+		return [[t_id,get_result(dicts,t_id,res_filt)] for t_id in tourneys if not t_id == 'slugs']
 	else:
 		return get_result(dicts,t_ids,res_filt)
 
+# returns a list (in printing format) containing a player's final placing, bracket path, wins/losses, and metainfo
+# for each tourney they attended (or only in those provided).
+# can pull the results for a whole team as well
+def get_resume(dicts,p_id,tag=None,t_ids=None,team=None,slugs=None):
+	tourneys,ids,p_info,records = dicts
+	# recursion filtering
+	if type(p_id) is list:
+		return flatten([get_resume(dicts,pid,tag=tag,t_ids=t_ids,team=team,slugs=slugs) for pid in p_id])
+	elif type(tag) is list:
+		return flatten([get_resume(dicts,p_id,tag=tg,t_ids=t_ids,team=team,slugs=slugs) for tg in tag])
+	elif type(team) is list:
+		return flatten([get_resume(dicts,p_id,tag=tag,t_ids=t_ids,team=tm,slugs=slugs) for tm in team])
+	if tag == None:
+		if type(p_id) is str:
+			p_id = get_abs_id_from_tag(dicts,p_id)
+		if not team == None:
+			team_ids = get_players_from_team(dicts,team)
+			return flatten([get_resume(dicts,team_id,tag=tag,t_ids=t_ids,slugs=slugs) for team_id in team_ids])
+	else:
+		p_id = get_abs_id_from_tag(dicts,tag)
+	#print(p_id)
+	# tourney id filtering
+	if t_ids == None:
+		t_ids = []
+	if type(slugs) is list:
+		t_ids.extend([tourneys['slugs'][slug] for slug in slugs])
+	#print(t_ids)
+	if len(t_ids) > 0:
+		res = [flatten([[t_id],get_result(dicts,t_id,res_filt={'player': p_id})]) for t_id in t_ids if not get_result(dicts,t_id,res_filt={'player': p_id}) == []]
+	else:
+		res = [flatten([[t_id],get_result(dicts,t_id,res_filt={'player': p_id})]) for t_id in ids[p_id] if not get_result(dicts,t_id,res_filt={'player': p_id}) == []]
+
+		#t_losses = [records[p_id]['losses'][l_id] for l_id in records[p_id]['losses'] if t_id ]
+		#t_res = (records[p_id]['placings'][t_id],records[p_id]['paths'][t_id])
+	return res
+
+# returns (first stored) player id given their tag in a string
 def get_abs_id_from_tag(dicts,tag):
 	tourneys,ids,p_info,records = dicts
 	p_id = [abs_id for abs_id in p_info if tag in p_info[abs_id]['aliases']][0]
 	#print(p_info[1000]['aliases'])
 	return p_id
+
+# returns a list of all player ids listed under this team
+def get_players_from_team(dicts,team):
+	tourneys,ids,p_info,records = dicts
+	roster = [abs_id for abs_id in p_info if p_info[abs_id]['team'] == team]
+	return roster
 
 # returns the region given a location and granularity
 # granularity: 1 = country/continent, 2 = region/country, 3 = state
@@ -364,6 +413,110 @@ def print_events(dicts,t_ids,max_place=64):
 	else:
 		print_result(dicts,t_id,res_filt={'maxplace':max_place})
 
+# prints the specified records, grouping by the g_key criteria
+def print_resume(dicts,res,g_key='player',disp_raw=False,disp_wins=True):
+	tourneys,ids,p_info,records = dicts
+	print('')
+	if g_key == 'player':
+		res = sorted(res,key=lambda r: (r[1][0],r[0]))
+		h_idx = 1
+		s_idx = 0
+		print("RESUME BY PLAYER:")
+	elif g_key == 'event':
+		res = sorted(res,key=lambda r: (r[0],r[1][4],r[1][0]))
+		h_idx = 0
+		s_idx = 5
+		print("RESUME BY EVENT:")
+	elif g_key == 'team':
+		res = sorted(res,key=lambda r: (r[1][1],r[0],r[1][4],r[1][0]))
+		h_idx = 2
+		s_idx = 0
+		print("RESUME BY TEAM:")
+	elif g_key == 'placing':
+		res = sorted(res,key=lambda r: (r[1][4],r[1][0],r[0]))
+		h_idx = 5
+		s_idx = 1
+		print("RESUME BY PLACING:")
+	# default to player ID grouping
+	else:
+		res = sorted(res,key=lambda r: (r[1][0],r[0]))
+		h_idx = 1
+		print("RESUME BY PLAYER:")
+	print('----------------')
+
+	# flatten and replace ids with plaintext
+	res = [flatten([[line[0]],line[1]]) for line in res]
+	if not disp_raw:
+		for line in res:
+			line[4] = [tourneys[line[0]]['groups'][grp_id] for grp_id in line[4]]
+			line[6] = [p_info[l_id]['tag'] for l_id in line[6]]
+			line[7] = [p_info[w_id]['tag'] for w_id in line[7]]
+			line[0] = tourneys[line[0]]['name']
+
+	# print first value/header
+	oldval = res[0][h_idx]
+	old_sval = res[0][s_idx]
+	if h_idx == 1:
+		tagstr = ""
+		if res[0][2] != None:
+			tagstr += "%s | "%res[0][2]
+		tagstr += res[0][3]
+		print("%s (id: %d)"%(tagstr,res[0][1]))
+	else:
+		print(str(oldval)+": ")
+	s_tagstr = ""
+	if s_idx == 1:
+		if h_idx != 2:
+			s_tagstr += str(res[0][2])+" | "
+		s_tagstr += res[0][3]
+		print("\t"+s_tagstr)
+	else:
+		print("\t"+str(res[0][s_idx]))
+	# iterate through list
+	for line in res:
+		# print header if on new section
+		if line[h_idx] != oldval:
+			if h_idx == 1:
+				tagstr = ""
+				if line[2] != None:
+					tagstr += "%s | "%line[2]
+				tagstr += line[3]
+				print("%s (id: %d)"%(tagstr,line[1]))
+			else:
+				print(str(line[h_idx])+": ")
+		# print secondary header if on new subsection
+		if line[s_idx] != old_sval or line[h_idx] != oldval:
+			#temp_sline = []
+			s_tagstr = ""
+			if s_idx == 1:
+				if h_idx != 2:
+					s_tagstr += str(line[2])+" | "
+				s_tagstr += line[3]
+				print("\t"+s_tagstr)
+			else:
+				print("\t"+str(line[s_idx]))
+				
+		old_sval = line[s_idx]
+		oldval = line[h_idx]
+		# print data line
+		print_resume_line(line,h_idx,s_idx,disp_wins)
+
+# helper for print_resume
+def print_resume_line(line,h_idx,s_idx,disp_wins=True):
+	temp_line = []
+	if h_idx == 1:
+		temp_line.extend([line[:h_idx]])
+		temp_line.extend([line[h_idx+3:]])
+	else:
+		temp_line.extend([line[:h_idx]])
+		temp_line.extend([line[h_idx+1:]])
+	temp_line = flatten(temp_line)
+	temp_line.remove(line[s_idx])
+	if not disp_wins:
+		temp_line = temp_line[:-1]
+	print("\t\t"+str(temp_line))
+
+# print's an event's results (deprecated)
 def old_print_event(dicts,t_id,max_place=64):
 	maxlen = 0
 	tourneys,ids,p_info,records = dicts

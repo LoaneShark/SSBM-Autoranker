@@ -23,6 +23,7 @@ from analysis_utils import *
 ## 		 - SKILL TIERSSSSS
 ## 		 - Error 502 bad gateway handling (retry after waiting)
 ## 		 - Find out why some players don't have results // win-loss records
+## 		 - use res_filt format more universally for queries and such // expand get_result
 ##
 ##	Longterm
 ## 		 - Challonge support (player matching by tag maybe needed -- no player ids provided!)
@@ -91,12 +92,26 @@ def main():
 	tourneys,ids,p_info,records = load_db(str(game_idx)+"/"+yearstr)
 	#tourneys,ids,p_info,records = load_db(str(game_idx)+"/"+str(year))
 	#tourneys,ids,p_info,records = read_majors(game_idx,year,base=(tourneys,ids,p_info,records))
-	for i in range(1,year_count+1):
-		tourneys,ids,p_info,records = read_majors(game_idx,year+i,base=(tourneys,ids,p_info,records))
+	#for i in range(1,year_count+1):
+	#	tourneys,ids,p_info,records = read_majors(game_idx,year+i,base=(tourneys,ids,p_info,records))
+
+
+	#print(get_result((tourneys,ids,p_info,records),36179,res_filt={'player':1000}))
+	resume = get_resume((tourneys,ids,p_info,records),None,team=['Liquid','TSM','Tempo'],slugs=['evo-2018','shine-2018','the-big-house-7'])
+	print_resume((tourneys,ids,p_info,records),resume,g_key='team')
 
 	#tourneys,ids,p_info,records = delete_tourney((tourneys,ids,p_info,records),None,slug='smash-summit-6')
 	#tourneys,ids,p_info,records = delete_tourney((tourneys,ids,p_info,records),None,slug='smash-summit-7')
-	disp_all((tourneys,ids,p_info,records),key='elo')
+
+	#disp_all((tourneys,ids,p_info,records),key='elo')
+	#xxx = 0
+	#for t_id in tourneys:
+	#	if 'name' in tourneys[t_id]:
+	#		if 'Shine' in tourneys[t_id]['name']:
+	#			xxx = t_id
+	#print_result((tourneys,ids,p_info,records),xxx,{'tag':'Iago'})
+	#print(p_info[65348]['elo'])
+
 	#disp_elos((tourneys,ids,p_info,records))
 	#print(list_tourneys((tourneys,ids,p_info,records)))
 	#tourneys,ids,p_info,records = delete_tourney((tourneys,ids,p_info,records),None,slug='don-t-park-on-the-grass-2018-1')
@@ -176,7 +191,6 @@ def get_performances(dicts,acc=3):
 
 			avg_perfs[p_id] = round(mean(perfs),acc)
 	return avg_perfs
-
 
 def disp_all(dicts,dispnum=20,key='elo'):
 	tourneys,ids,p_info,records = dicts
