@@ -27,11 +27,13 @@ def has_game(descr,game=1, gamemap={1: ['melee','ssbm','ssbmelee'], 2: ['P:M','p
 
 # returns true if the description contains explicit mention of being the right team size
 def is_teams(descr,teamsize):
-	teammap = {1: ['singles','solo','1v1','1 v 1','1 vs 1','1vs1'],2:['doubles','teams','2v2','2 v 2','2 vs 2','pairs','duos'],3:['3v3','3 v 3','3 vs 3','triples']}
+	ts = min(teamsize,4)
+	teammap = {1: ['singles','solo','1v1','1 v 1','1 vs 1','1vs1','ones'],2:['doubles','dubs','teams','2v2','2 v 2','2vs2','2 vs 2','pairs','duos','twos'],3:['3v3','3 v 3','3vs3','3 vs 3','triples'], \
+				4: ['4v4','4 v 4','4vs4','4 vs 4','4 on 4','quads','crews','squads','fours','quartets']}
 	if descr == None:
 		return False
 	else:
-		return re.search('arcadian',descr,re.IGNORECASE) or re.search('unranked',descr,re.IGNORECASE)
+		return any([re.search(keyword,descr,re.IGNORECASE) for keyword in teammap[ts]])
 
 # returns true if the description contains explicit mention of being an amateur/side bracket
 def is_amateur(descr):

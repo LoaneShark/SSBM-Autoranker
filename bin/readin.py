@@ -29,7 +29,7 @@ parser.add_argument('-g','--game',help='game id to be used: Melee=1, P:M=2, Wii 
 parser.add_argument('-fg','--force_game',help='game id to be used, force use (cannot scrape non-smash slugs)',default=False)
 parser.add_argument('-y','--year',help='The year you want to analyze (for ssbwiki List of Majors scraper)(default 2018)',default=2018)
 parser.add_argument('-yc','--year_count',help='How many years to analyze from starting year',default=0)
-parser.add_argument('-t','--teamsize',help='1 for singles bracket, 2 for doubles (default 1)',default=1)
+parser.add_argument('-t','--teamsize',help='1 for singles bracket, 2 for doubles, 4+ for crews (default 1)',default=1)
 parser.add_argument('-d','--displaysize',help='lowest placing shown on pretty printer output, or -1 to show all entrants (default 64)',default=64)
 parser.add_argument('-sl','--slug',help='tournament URL slug',default=None)
 parser.add_argument('-ss','--short_slug',help='shorthand tournament URL slug',default=None)
@@ -203,6 +203,8 @@ def read_entrants(data,phase_data,entrants,names,xpath):
 		if 'groups' not in names:
 			names['groups'] = {}
 		if str(groupname) == "1" and num_groups <= 1:
+			names['groups'][group] = phasename
+		elif num_groups == 1:
 			names['groups'][group] = phasename
 		else:
 			names['groups'][group] = groupname
@@ -399,20 +401,24 @@ def read_phases(tourney):
 				pro_string = "ALL"
 			print("only looking for brackets of game type: %s %s [%s]"%(gamemap[game][0], team_string, pro_string))
 			print("event_ids pre filtering: " + str([(event_id[0],event_id[1][0]) for event_id in event_ids]))
-		# filters out events that don't list melee in description, to filter out stuff like low tiers/ironmans/crews etc (only melee so far)
+		# filters out events that don't list melee in description, to filter out stuff like low tiers/ironmans/crews etc
 		game_events = [event_id[0] for event_id in event_ids if has_game(event_id[1][0],game) or has_game(event_id[1][1],game)]
-		#team_events = [event_id[0] for event_id in event_ids if is_teams(event_id[1][0],teamsize) or is_teams(event_id[1][1],teamsize)]
+		if teamsize > 1:
+			team_events = [event_id[0] for event_id in event_ids if is_teams(event_id[1][0],teamsize) or is_teams(event_id[1][1],teamsize)]
 		amateur_events = [event_id[0] for event_id in event_ids if is_amateur(event_id[1][0]) or is_amateur(event_id[1][1])]
 		ladder_events = [event_id[0] for event_id in event_ids if is_ladder(event_id[1][0]) or is_ladder(event_id[1][1])]
 		if only_arcadians or not count_arcadians:
 			arcadian_events = [event_id[0] for event_id in event_ids if is_arcadian(event_id[1][0]) or is_arcadian(event_id[1][1])]
-		if len(game_events) >= 1 and game == 1:
-			event_ids = game_events
-		else:
-			event_ids = [event_id[0] for event_id in event_ids]
+		#if len(game_events) >= 1:
+		#	event_ids = game_events
+		#else:
+		#	event_ids = [event_id[0] for event_id in event_ids]
 		# filters out events that have 'amateur', 'ladder' or 'arcadian' in the description
+		event_ids = game_events
 		event_ids = [event_id for event_id in event_ids if not event_id in amateur_events]
 		event_ids = [event_id for event_id in event_ids if not event_id in ladder_events]
+		if teamsize > 1:
+			event_ids = [event_id for event_id in event_ids if event_id in team_events]
 		if not count_arcadians:
 			event_ids = [event_id for event_id in event_ids if not event_id in arcadian_events]
 		elif only_arcadians:

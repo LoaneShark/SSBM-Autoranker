@@ -10,7 +10,7 @@ import argparse
 #import shutil
 from timeit import default_timer as timer
 ## UTIL IMPORTS
-from db_utils import read_majors,set_db_args,save_db,load_db,delete_tourney
+from db_utils import read_majors,set_db_args,save_db,load_db,delete_tourney,easy_load_db
 from analysis_utils import *
 
 ## TODO: 
@@ -42,7 +42,7 @@ from analysis_utils import *
 ## 		- how do we instantiate elo scores?
 ## 			- SSBMRank scores from the previous year? Normal distribution using avg tourney placing?
 ## 	- aggregate/normalized?
-## 	- add Glicko
+## 	- add Glicko-2
 ## 	- add Iagorank
 ##  - min activity requirements
 
@@ -61,7 +61,7 @@ parser.add_argument('-g','--game',help='game id to be used: Melee=1, P:M=2, Wii 
 parser.add_argument('-fg','--force_game',help='game id to be used, force use (cannot scrape non-smash slugs)',default=False)
 parser.add_argument('-y','--year',help='The year you want to analyze (for ssbwiki List of Majors scraper)(default 2018)',default=2018)
 parser.add_argument('-yc','--year_count',help='How many years to analyze from starting year',default=0)
-parser.add_argument('-t','--teamsize',help='1 for singles bracket, 2 for doubles (default 1)',default=1)
+parser.add_argument('-t','--teamsize',help='1 for singles bracket, 2 for doubles, 4+ for crews (default 1)',default=1)
 parser.add_argument('-d','--displaysize',help='lowest placing shown on pretty printer output, or -1 to show all entrants (default 64)',default=64)
 parser.add_argument('-sl','--slug',help='tournament URL slug',default=None)
 parser.add_argument('-ss','--short_slug',help='shorthand tournament URL slug',default=None)
@@ -89,21 +89,22 @@ def main():
 		yearstr = str(year)
 	else:
 		yearstr = str(year)+"-"+str(year+year_count)
-	tourneys,ids,p_info,records = load_db(str(game_idx)+"/"+yearstr)
+	#tourneys,ids,p_info,records = load_db(str(game_idx)+"/"+yearstr)
+	tourneys,ids,p_info,records = easy_load_db(str(game_idx)+"/"+yearstr)
 	#tourneys,ids,p_info,records = load_db(str(game_idx)+"/"+str(year))
-	#tourneys,ids,p_info,records = read_majors(game_idx,year,base=(tourneys,ids,p_info,records))
+	tourneys,ids,p_info,records = read_majors(game_idx,year,base=(tourneys,ids,p_info,records))
 	#for i in range(1,year_count+1):
 	#	tourneys,ids,p_info,records = read_majors(game_idx,year+i,base=(tourneys,ids,p_info,records))
 
 
 	#print(get_result((tourneys,ids,p_info,records),36179,res_filt={'player':1000}))
-	resume = get_resume((tourneys,ids,p_info,records),None,team=['Liquid','TSM','Tempo'],slugs=['evo-2018','shine-2018','the-big-house-7'])
-	print_resume((tourneys,ids,p_info,records),resume,g_key='team')
+	#resume = get_resume((tourneys,ids,p_info,records),None,team=['Liquid','TSM','Tempo'],slugs=['evo-2018','shine-2018','the-big-house-7'])
+	#print_resume((tourneys,ids,p_info,records),resume,g_key='event',s_key='team')
 
 	#tourneys,ids,p_info,records = delete_tourney((tourneys,ids,p_info,records),None,slug='smash-summit-6')
 	#tourneys,ids,p_info,records = delete_tourney((tourneys,ids,p_info,records),None,slug='smash-summit-7')
 
-	#disp_all((tourneys,ids,p_info,records),key='elo')
+	disp_all((tourneys,ids,p_info,records),key='elo')
 	#xxx = 0
 	#for t_id in tourneys:
 	#	if 'name' in tourneys[t_id]:

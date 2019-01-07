@@ -414,7 +414,7 @@ def print_events(dicts,t_ids,max_place=64):
 		print_result(dicts,t_id,res_filt={'maxplace':max_place})
 
 # prints the specified records, grouping by the g_key criteria
-def print_resume(dicts,res,g_key='player',disp_raw=False,disp_wins=True):
+def print_resume(dicts,res,g_key='player',s_key=None,disp_raw=False,disp_wins=True):
 	tourneys,ids,p_info,records = dicts
 	print('')
 	if g_key == 'player':
@@ -442,10 +442,21 @@ def print_resume(dicts,res,g_key='player',disp_raw=False,disp_wins=True):
 		res = sorted(res,key=lambda r: (r[1][0],r[0]))
 		h_idx = 1
 		print("RESUME BY PLAYER:")
+	if not (s_key == None or s_key == g_key):
+		if s_key == 'player':
+			s_idx = 1
+		if s_key == 'event':
+			s_idx = 0
+		if s_key == 'team':
+			s_idx = 2
+		if s_key == 'placing':
+			s_idx = 5
 	print('----------------')
 
 	# flatten and replace ids with plaintext
+	# also resort by provided secondary criteria (if any)
 	res = [flatten([[line[0]],line[1]]) for line in res]
+	res = sorted(res,key=lambda l: (l[h_idx],l[s_idx]))
 	if not disp_raw:
 		for line in res:
 			line[4] = [tourneys[line[0]]['groups'][grp_id] for grp_id in line[4]]
@@ -495,7 +506,7 @@ def print_resume(dicts,res,g_key='player',disp_raw=False,disp_wins=True):
 				print("\t"+s_tagstr)
 			else:
 				print("\t"+str(line[s_idx]))
-				
+
 		old_sval = line[s_idx]
 		oldval = line[h_idx]
 		# print data line

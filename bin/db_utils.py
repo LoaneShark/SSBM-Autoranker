@@ -23,7 +23,7 @@ parser.add_argument('-g','--game',help='game id to be used: Melee=1, P:M=2, Wii 
 parser.add_argument('-fg','--force_game',help='game id to be used, force use (cannot scrape non-smash slugs)',default=False)
 parser.add_argument('-y','--year',help='The year you want to analyze (for ssbwiki List of Majors scraper)(default 2018)',default=2018)
 parser.add_argument('-yc','--year_count',help='How many years to analyze from starting year',default=0)
-parser.add_argument('-t','--teamsize',help='1 for singles bracket, 2 for doubles (default 1)',default=1)
+parser.add_argument('-t','--teamsize',help='1 for singles bracket, 2 for doubles, 4+ for crews (default 1)',default=1)
 parser.add_argument('-d','--displaysize',help='lowest placing shown on pretty printer output, or -1 to show all entrants (default 64)',default=64)
 parser.add_argument('-sl','--slug',help='tournament URL slug',default=None)
 parser.add_argument('-ss','--short_slug',help='shorthand tournament URL slug',default=None)
@@ -130,7 +130,7 @@ def read_tourneys(slugs,ver='default',year=None,base=None):
 		verstr = ver
 
 	if base == None:
-		[tourneys,ids,p_info,records] = load_db(verstr)
+		[tourneys,ids,p_info,records] = easy_load_db(verstr)
 	else:
 		tourneys,ids,p_info,records = base
 
@@ -158,11 +158,11 @@ def read_tourneys(slugs,ver='default',year=None,base=None):
 def store_data(readins,dicts,slug):
 	t_info,entrants,names,paths,wins,losses = readins
 	tourneys,ids,p_info,records = dicts
-
-	if store_players(entrants,names,t_info,dicts):
-		if store_records(wins,losses,paths,t_info,dicts):
-			if store_tourney(slug,t_info,names['groups'],dicts):
-				return True
+	if len(entrants.keys()) > 1:
+		if store_players(entrants,names,t_info,dicts):
+			if store_records(wins,losses,paths,t_info,dicts):
+				if store_tourney(slug,t_info,names['groups'],dicts):
+					return True
 	return False
 
 # stores data through absolute player IDs (converting from entrant IDs)
@@ -210,7 +210,7 @@ def store_players(entrants,names,t_info,dicts):
 			else:
 				if p_info[abs_id]['region'] == 'N/A' or p_info[abs_id]['region'] == None:
 					p_info[abs_id]['region'] = get_region(dicts,abs_id,granularity=2)
-					
+
 			# store ranking data, with initial values if needed
 			if 'elo' not in p_info[abs_id]:
 				p_info[abs_id]['elo'] = 1500.
@@ -375,9 +375,9 @@ def clear_db(ver,loc='db'):
 
 # used to save datasets/hashtables
 def save_db(dicts,ver,loc='db'):
-	if args.teamsize == 2:
+	if int(args.teamsize) == 2:
 		ver = str(ver) + " (DUBS)"
-	if args.teamsize >= 4:
+	if int(args.teamsize) >= 4:
 		ver = str(ver) + " (CREWS)"
 	if only_arcadians:
 		ver = str(ver)+" (ARC)"
@@ -404,18 +404,13 @@ def load_db(ver,loc='db',force_blank=False):
 
 # used to load datasets/hashtables; auto-fills ver modifiers based on args
 def easy_load_db(ver,loc='db',force_blank=False):
-	if args.teamsize == 2:
+	if int(args.teamsize) == 2:
 		ver = str(ver) + " (DUBS)"
-	if args.teamsize >= 4:
+	if int(args.teamsize) >= 4:
 		ver = str(ver) + " (CREWS)"
-	if only_arcadians:
+	if int(only_arcadians):
 		ver = str(ver)+" (ARC)"
-	if to_load_db and not force_blank:
-		if v >= 3:
-			print("Loading DB...")
-		return [load_dict(name,ver,loc) for name in ['tourneys','ids','p_info','records']]
-	else:
-		return [load_dict(name,'blank',loc='db') for name in ['tourneys','ids','p_info','records']]
+	return load_db(ver,loc,force_blank)
 
 # Calculates the event performance rating for a single event
 # using the FIDE "rule of 400" PR estimator
