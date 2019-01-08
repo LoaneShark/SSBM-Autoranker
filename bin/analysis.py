@@ -2,7 +2,7 @@
 import matplotlib.pyplot as plt
 from statistics import mean 
 from math import *
-#import numpy as np 
+import numpy as np 
 #import scipy as sp 
 import os,sys,pickle,time
 #import json
@@ -10,18 +10,15 @@ import argparse
 #import shutil
 from timeit import default_timer as timer
 ## UTIL IMPORTS
-from db_utils import read_majors,set_db_args,save_db,load_db,delete_tourney,easy_load_db
+from db_utils import *
 from analysis_utils import *
 
 ## TODO: 
 ##	Shortterm
-## 		 - ensure scraper is JUST SINGLES unless otherwise specified
-## 			- Filter out "Teams" and "Doubles" events even if # of entrants is listed as 1
-## 		 - doubles support
+## 		 - General doubles / crews support (see: scraper support/filtering out by event type)
 ## 		 - use 'state' to check for status of bracket (1: unscheduled, 4: called, 2: in progress, 3: completed)
 ## 		 - error logs
 ## 		 - SKILL TIERSSSSS
-## 		 - Error 502 bad gateway handling (retry after waiting)
 ## 		 - Find out why some players don't have results // win-loss records
 ## 		 - use res_filt format more universally for queries and such // expand get_result
 ##
@@ -29,7 +26,6 @@ from analysis_utils import *
 ## 		 - Challonge support (player matching by tag maybe needed -- no player ids provided!)
 ## 		 - pre-smash.gg era support (see: challonge support)
 ## 				- wtf do i do about evo's bitch-ass paper brackets
-## 		 - General doubles / crews support (see: scraper support/filtering out by event type)
 ## 		 - allow analysis_utils to write to file for some queries, etc. (csv?)
 ## 		 - GUI/standalone executable tool/webapp
 ## 		 - Intelligent clustering of players by region
@@ -89,22 +85,26 @@ def main():
 		yearstr = str(year)
 	else:
 		yearstr = str(year)+"-"+str(year+year_count)
-	#tourneys,ids,p_info,records = load_db(str(game_idx)+"/"+yearstr)
 	tourneys,ids,p_info,records = easy_load_db(str(game_idx)+"/"+yearstr)
-	#tourneys,ids,p_info,records = load_db(str(game_idx)+"/"+str(year))
 	tourneys,ids,p_info,records = read_majors(game_idx,year,base=(tourneys,ids,p_info,records))
-	#for i in range(1,year_count+1):
-	#	tourneys,ids,p_info,records = read_majors(game_idx,year+i,base=(tourneys,ids,p_info,records))
+	for i in range(year_count):
+		tourneys,ids,p_info,records = read_majors(game_idx,year+i,base=(tourneys,ids,p_info,records))
+
+	# ==========================================================================================
+
+	#tourneys,ids,p_info,records = load_db(str(game_idx)+"/"+yearstr)
+	#tourneys,ids,p_info,records = load_db(str(game_idx)+"/"+str(year))
 
 
 	#print(get_result((tourneys,ids,p_info,records),36179,res_filt={'player':1000}))
-	#resume = get_resume((tourneys,ids,p_info,records),None,team=['Liquid','TSM','Tempo'],slugs=['evo-2018','shine-2018','the-big-house-7'])
-	#print_resume((tourneys,ids,p_info,records),resume,g_key='event',s_key='team')
+	resume = get_resume((tourneys,ids,p_info,records),None,team=['C9','CLG.'])
+	#update_regions((tourneys,ids,p_info,records),[1000])
+	#print_resume((tourneys,ids,p_info,records),resume,g_key='team',s_key='region')
 
 	#tourneys,ids,p_info,records = delete_tourney((tourneys,ids,p_info,records),None,slug='smash-summit-6')
 	#tourneys,ids,p_info,records = delete_tourney((tourneys,ids,p_info,records),None,slug='smash-summit-7')
 
-	disp_all((tourneys,ids,p_info,records),key='elo')
+	disp_all((tourneys,ids,p_info,records),key='glicko')
 	#xxx = 0
 	#for t_id in tourneys:
 	#	if 'name' in tourneys[t_id]:
@@ -139,6 +139,8 @@ def main():
 
 	return True
 
+# gets a the "score" for each player, calculated as the average percentage of bracket completed
+# (average number of rounds made through the bracket, normalized to [0,1])
 def get_scores(dicts,acc=3):
 	tourneys,ids,p_info,records = dicts
 	scores = {}
@@ -147,6 +149,7 @@ def get_scores(dicts,acc=3):
 			scores[p_id] = round(mean([score(dicts,records[p_id]['placings'][t_id],t_id) for t_id in tourneys if type(t_id) is int if t_id in records[p_id]['placings']]),acc)
 	return scores
 
+# displays the above scores for the given number of people
 def disp_scores(dicts,dispnum=20):
 	tourneys,ids,p_info,records = dicts
 	scores = get_scores(dicts)
@@ -174,11 +177,29 @@ def disp_elos(dicts,dispnum=20):
 	for player in players:
 		print(player)
 
+def get_glickos(dicts,acc=3):
+	tourneys,ids,p_info,records = dicts
+	glickos = {}
+	for p_id in p_info:
+		if p_id in records:
+			#elos[p_id] = mean([score(dicts,records[p_id]['placings'][t_id],t_id) for t_id in tourneys if type(t_id) is int if t_id in records[p_id]['placings']])
+			glickos[p_id] = round(p_info[p_id]['glicko'][0],acc)
+	return elos
+
+def disp_glickos(dicts,dispnum=20):
+	tourneys,ids,p_info,records = dicts
+	elos = get_glickos(dicts)
+
+	players = sorted([[p_info[p_id]['tag'],glickos[p_id]] for p_id in p_info],key=lambda x: x[1],reverse=True)
+	players = players[:dispnum]
+	for player in players:
+		print(player)
+
 def get_iagorank(dicts):
 	tourneys,ids,p_info,records = dicts
 	return True
 
-def get_performances(dicts,acc=3):
+def get_avg_performances(dicts,acc=3):
 	tourneys,ids,p_info,records = dicts
 	avg_perfs = {}
 
@@ -193,12 +214,37 @@ def get_performances(dicts,acc=3):
 			avg_perfs[p_id] = round(mean(perfs),acc)
 	return avg_perfs
 
-def disp_all(dicts,dispnum=20,key='elo'):
+def get_best_performances(dicts,use_names=False,acc=3):
+	tourneys,ids,p_info,records = dicts
+	best_perfs = {}
+
+	for p_id in p_info:
+		if p_id in records:
+		#print(records[p_info])
+			best = -9999.
+			maxperf = np.amax(np.array([[round(records[p_id]['performances'][t_id],acc),t_id,records[p_id]['placings'][t_id]] for t_id in records[p_id]['performances']],dtype='object'),0)
+			maxperf = list(maxperf)
+			if use_names:
+				maxperf[1] = tourneys[maxperf[1]]['name']
+				#perfs.extend([records[p_id]['performances'][t_id]])
+
+			best_perfs[p_id] = maxperf
+	return best_perfs
+
+def disp_all(dicts,dispnum=20,key='elo',avg_perf=False):
 	tourneys,ids,p_info,records = dicts
 	key_idx = 1
 	elos = get_elos(dicts)
 	scores = get_scores(dicts)
-	perfs = get_performances(dicts)
+	glickos = get_glickos(dicts)
+	if avg_perf:
+		perfs = get_avg_performances(dicts)
+		perfstr = "Mean Perf"
+		perfstr_len = 9
+	else:
+		perfs = get_best_performances(dicts,use_names=True)
+		perfstr = "Breakout Performance"
+		perfstr_len = 69
 
 	if key == 'bracket':
 		key_idx = 2
@@ -210,12 +256,13 @@ def disp_all(dicts,dispnum=20,key='elo'):
 		key_idx = 4
 	if key == 'glicko':
 		key_idx = 5
-	players = sorted([[p_info[p_id]['tag'],elos[p_id],scores[p_id],perfs[p_id]] for p_id in p_info if p_id in elos if p_id in scores if p_id in perfs],key=lambda x: x[key_idx],reverse=True)
+	players = sorted([[p_info[p_id]['tag'],elos[p_id],glickos[p_id],scores[p_id],perfs[p_id]] for p_id in p_info if p_id in elos if p_id in scores if p_id in perfs],key=lambda x: x[key_idx],reverse=True)
 	players = players[:dispnum]
+	#print(players)
 
-	print("\n{:<20.20}".format("Player"),"{:<9.9}".format("Elo"),"{:<9.9}".format("Mean %"),"{:<9.9}".format("Mean Perf"),"\n")
+	print("\n{:<20.20}".format("Player"),"{:<9.9}".format("Elo"),"{:<9.9}".format("Glicko-2"),"{:<9.9}".format("Mean %"),("{:<%d.%d}"%(perfstr_len,perfstr_len)).format(perfstr),"\n")
 	for player in players:
-		print("{:<20.20}".format(player[0]),"{:<9.9}".format(player[1]),"{:<9.9}".format(player[2]),"{:<9.9}".format(player[3]))
+		print("{:<20.20}".format(player[0]),"{:<9.9}".format(player[1]),"{:<9.9}".format(player[2]),"{:<9.9}".format(player[3]),("{:<%d.%d}"%(perfstr_len,perfstr_len)).format(str(player[4])))
 
 def score(dicts,placing,t_id):
 	tourneys,ids,p_info,records = dicts

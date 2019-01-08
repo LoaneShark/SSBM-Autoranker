@@ -26,7 +26,7 @@ def set_dicts(dicts):
 # perform the main calculations and data processing
 # (DEPRECATED)
 def old_main():
-	print "Reading data files"
+	print("Reading data files")
 	(wins, metadata, tourneys, placings) = dataread()
 	N = len(metadata) # number of players in dataset
 	T = len(tourneys) # number of tourneys in placings dataset
@@ -36,21 +36,21 @@ def old_main():
 	#print metadata
 
 	# calculate percentage of rounds won in bracket for each player
-	print "Guessing initial skill ranks"
+	print("Guessing initial skill ranks")
 	rounds = np.array(placings, copy=True, dtype='object')
 	for player in rounds:
 		for i in range(len(player)):
 			player[i] = prounds(player[i],tourneys[i,0])
 
 	# calculate the aggregate and average percentage of rounds won for each player
-	aggrnds = [[n for n in player if type(n) is type(1.0) or type(n) is type(0)] for player in rounds]
-	avgrnds = np.array([np.mean([n for n in player if type(n) is type(1.0) or type(n) is type(0)]) for player in rounds])
+	aggrnds = [[n for n in player if type(n) is float or type(n) is int] for player in rounds]
+	avgrnds = np.array([np.mean([n for n in player if type(n) is float or type(n) is int]) for player in rounds])
 	
 	# catcher to make sure no fraudulent placing data slips through
 	for i in range(len(rounds)):
 		#print rounds[i]
 		if -9999. in rounds[i]:
-			print metadata[i,0]
+			print(metadata[i,0])
 
 	# reorder the data by the new round win probability
 	tmprank = np.zeros(N, dtype=[('name', 'S20'), ('rank', int), ('percentage', float), ('PID', int)])
@@ -87,13 +87,13 @@ def old_main():
 
 
 	# clean data (remove players with insufficient match data)
-	print "Cleaning data..."
+	print("Cleaning data...")
 	data,winps,N = prunedata(data,winps)
 
 	# simulate the results of a bracket
-	print "Simulating Brackets..."
+	print("Simulating Brackets...")
 	skills,probs = simbracket(data,winps,100)
-	print skills
+	print(skills)
 	
 	score = np.inf
 	optparams = (3,[])
@@ -225,7 +225,7 @@ def prunedata(data, winps):
 			if ratio >= 0:
 				xs.append(float(i+1))
 		if len(xs) <= 6:
-			print "Pruning " + data[rank-1,2]
+			print("Pruning",data[rank-1,2])
 			tmpdata = np.zeros((len(data)-1,5), dtype='object')
 			tmpdata[:rank-1] = data[:rank-1]
 			tmpdata[rank-1:] = data[rank:]
@@ -312,7 +312,7 @@ def plotwinprobs(winps, rank, data):
 	y = np.array(ys)
 	# get plotting data for sigmoid
 	p = fitsig(winps,rank,data)
-	print p
+	print(p)
 	#x0,y0,c,k = p
 	x0,c,k = p
 	xp = np.linspace(0, 1, 1500)
@@ -403,3 +403,6 @@ def fitsig(winps, rank, data):
 	p, cov = results
 	#p,_,_,_,_ = results
 	return p
+
+if __name__ == "__main__":
+	old_main()

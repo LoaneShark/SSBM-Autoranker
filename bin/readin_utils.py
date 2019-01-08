@@ -196,49 +196,74 @@ def print_results(res,names,entrants,losses,max_place=64):
 
 	res_l = [item for item in res.items()]
 	res_s = sorted(res_l, key=lambda l: (0-l[1][0],len(l[1][1])), reverse=True)
+	#print(res_s)
+	team_mult = len(names[res_s[0][0]][1])
+	print(team_mult,names[res_s[0][0]])
 
 	num_rounds = len(res_s[0][1][1])
 	#lsbuff = "\t"*(num_rounds-len(res_s[-1][1][1])+1)
 	roundnames = [names['groups'][group] for group in res_s[0][1][1]]
 	roundslen = sum([len(str(name)) for name in roundnames]) + 2*num_rounds
-	print("\n{:>13.13}".format("Sponsor |"),"{:<24.24}".format("Tag"),"ID #\t","Place\t",("{:<%d.%d}"%(roundslen+5,roundslen+5)).format("Bracket"),"Losses\n")
+	sp_slot = 13*team_mult
+	tag_slot = 24*team_mult
+	id_slot = 9*team_mult
+	print(("\n{:>%d.%d}"%(sp_slot,sp_slot)).format("Sponsor |"),("{:<%d.%d}"%(tag_slot,tag_slot)).format("Tag"),("{:<%d.%d}"%(id_slot,id_slot)).format("ID #"), \
+		"Place\t",("{:<%d.%d}"%(roundslen+5,roundslen+5)).format("Bracket"),"Losses\n")
 	for player in res_s:
+		#if type(team_s[0]) is int:
+		#	team = [team_s]
+		#else:
+		#	team = team_s
+		#for player in team:
 		if player[1][0] > max_place and max_place > 0:
 			break
 		else:
-			if names[player[0]][0] == "" or names[player[0]][0] == None:
-				sp = "  "
-			else:
-				sp = names[player[0]][0]
-				if len(sp) > 12:
-					sp = sp[:8] + "... |"
+			playerstrings = []
+			for idx in range(team_mult):
+				if names[player[0]][0][idx] == "" or names[player[0]][0][idx] == None:
+					sp = "  "
 				else:
-					if sp[-2:] != " |":
-						sp = names[player[0]][0] + " |"
-			sp_slot = 13
-			for ch in sp:
-				if is_emoji(ch):
-					sp_slot -= 1
-			tag = names[player[0]][1]
-			tag_slot = 24
-			if len(tag) > tag_slot:
-				tag = tag[:21]+"..."
-			for ch in tag:
-				if is_emoji(ch):
-					tag_slot -= 1
+					sp = names[player[0]][0][idx]
+					if len(sp) > 12:
+						sp = sp[:8] + "... |"
+					else:
+						if sp[-2:] != " |":
+							#sp = "/".join(str(n) for n in names[player[0]][0]) + " |"
+							sp = names[player[0]][0][idx] + " |"
+				sp_slot = 13#*team_mult
+				for ch in sp:
+					if is_emoji(ch):
+						sp_slot -= 1
+				#tag = "/".join(str(n) for n in names[player[0]][1])
+				tag = names[player[0]][1][idx]
+				tag_slot = 24#*team_mult
+				if len(tag) > tag_slot:
+					tag = tag[:tag_slot-3]+"..."
+				for ch in tag:
+					if is_emoji(ch):
+						tag_slot -= 1
+
+				playerstrings.extend([(sp,tag)])
+
 			if player[0] in losses:
 				#print(losses)
-				ls = "["+", ".join(str(l) for l in [names[loss[0]][1] for loss in losses[player[0]]])+"]"
+				ls = "["+", ".join(" / ".join(str(j) for j in l) for l in [names[loss[0]][1] for loss in losses[player[0]]])+"]"
 			else:
 				ls = None
 
-			if len(player[1][1]) > maxlen:
-				maxlen = len(player[1][1])
-			lsbuff = "\t"*(maxlen-len(player[1][1])+1)
+			#if len(player[1][1]) > maxlen:
+			#	maxlen = len(player[1][1])
+			#lsbuff = "\t"*(maxlen-len(player[1][1])+1)
 			#if len(player[1][1]) > 2:
 			#	lsbuff = "\t"
 			#else:
 			#	lsbuff = "\t\t\t"
-			print(("{:>%d.%d}"%(sp_slot,sp_slot)).format(sp),("{:<%d.%d}"%(tag_slot,tag_slot)).format(names[player[0]][1]),"{:>7.7}".format(str(entrants[player[0]][1])), \
-				"  {:<5.5}".format(str(player[1][0])),"\t",("{:<%d.%d}"%(roundslen+5,roundslen+5)).format("["+", ".join(str(i) for i in [names['groups'][group] for group in player[1][1]])+"]"),ls)
+			if len(playerstrings) == 1:
+				print(("{:>%d.%d}"%(sp_slot,sp_slot)).format(sp),("{:<%d.%d}"%(tag_slot,tag_slot)).format(tag),("{:>%d.%d}"%(8*team_mult,8*team_mult)).format(" / ".join(str(n) for n in entrants[player[0]][1])), \
+				"  {:<5.5}".format(str(player[1][0])),("{:<%d.%d}"%(roundslen+5,roundslen+5)).format("["+", ".join(str(i) for i in [names['groups'][group] for group in player[1][1]])+"]"),ls)
+			else:
+				print(("{:<%d.%d}"%(team_mult*(sp_slot+tag_slot),team_mult*(sp_slot+tag_slot))).format(" & ".join(("{:<%d.%d}"%(sp_slot+tag_slot,sp_slot+tag_slot)).format(("{:>%d.%d}"%(sp_slot,sp_slot)).format(sp)+" "+("{:<%d.%d}"%(tag_slot,tag_slot)).format(tag)) for sp,tag in playerstrings)), \
+					("{:>%d.%d}"%(8*team_mult,8*team_mult)).format("/".join(str(n) for n in entrants[player[0]][1])), \
+				"  {:<5.5}".format(str(player[1][0])),("{:<%d.%d}"%(roundslen+5,roundslen+5)).format("["+", ".join(str(i) for i in [names['groups'][group] for group in player[1][1]])+"]"),ls)
+
 	return(res_s)

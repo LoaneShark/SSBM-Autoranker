@@ -4,11 +4,9 @@ import os,sys,pickle,time
 import re
 from timeit import default_timer as timer
 from copy import deepcopy as dcopy
-import country_converter as coco
-from geopy.geocoders import Nominatim
 ## UTIL IMPORTS
 from readin_utils import *
-from db_utils import load_dict,save_dict
+from db_utils import load_dict,save_dict,calc_region,get_region,get_players_by_region
 
 flatten = lambda l: [item for sublist in l for item in sublist]
 
@@ -154,23 +152,23 @@ def get_results(dicts,t_ids,res_filt=None):
 # returns a list (in printing format) containing a player's final placing, bracket path, wins/losses, and metainfo
 # for each tourney they attended (or only in those provided).
 # can pull the results for a whole team as well
-def get_resume(dicts,p_id,tag=None,t_ids=None,team=None,slugs=None):
+def get_resume(dicts,p_id,tags=None,t_ids=None,team=None,slugs=None):
 	tourneys,ids,p_info,records = dicts
 	# recursion filtering
 	if type(p_id) is list:
-		return flatten([get_resume(dicts,pid,tag=tag,t_ids=t_ids,team=team,slugs=slugs) for pid in p_id])
-	elif type(tag) is list:
-		return flatten([get_resume(dicts,p_id,tag=tg,t_ids=t_ids,team=team,slugs=slugs) for tg in tag])
+		return flatten([get_resume(dicts,pid,tags=tags,t_ids=t_ids,team=team,slugs=slugs) for pid in p_id])
+	elif type(tags) is list:
+		return flatten([get_resume(dicts,p_id,tags=tag,t_ids=t_ids,team=team,slugs=slugs) for tag in tags])
 	elif type(team) is list:
-		return flatten([get_resume(dicts,p_id,tag=tag,t_ids=t_ids,team=tm,slugs=slugs) for tm in team])
-	if tag == None:
+		return flatten([get_resume(dicts,p_id,tags=tags,t_ids=t_ids,team=tm,slugs=slugs) for tm in team])
+	if tags == None:
 		if type(p_id) is str:
 			p_id = get_abs_id_from_tag(dicts,p_id)
 		if not team == None:
 			team_ids = get_players_from_team(dicts,team)
-			return flatten([get_resume(dicts,team_id,tag=tag,t_ids=t_ids,slugs=slugs) for team_id in team_ids])
+			return flatten([get_resume(dicts,team_id,tags=tags,t_ids=t_ids,slugs=slugs) for team_id in team_ids])
 	else:
-		p_id = get_abs_id_from_tag(dicts,tag)
+		p_id = get_abs_id_from_tag(dicts,tags)
 	#print(p_id)
 	# tourney id filtering
 	if t_ids == None:
@@ -199,147 +197,6 @@ def get_players_from_team(dicts,team):
 	tourneys,ids,p_info,records = dicts
 	roster = [abs_id for abs_id in p_info if p_info[abs_id]['team'] == team]
 	return roster
-
-# returns the region given a location and granularity
-# granularity: 1 = country/continent, 2 = region/country, 3 = state
-## What to do for small countries in smallest granularity? (e.g. European countries)
-## What to do for Japan? (big enough to be level 1 but not divisible going down)
-def calc_region(country,state=None,city=None,granularity=2):
-	cc = coco.CountryConverter()
-
-	if granularity == 1:
-		if country in ["United States","Canada","Japan"]:
-			return country
-		else:
-			#country_alpha2 = pycountry.countries.get(name=country).alpha_2
-			continent = cc.convert(names=[country],to='continent')
-			if continent == 'E':
-				return 'Europe'
-			if continent == 'NA':
-				return 'Central America'
-			if continent == 'SA':
-				return 'South America'
-			if continent == 'A':
-				return 'Asia'
-			return continent
-	if granularity == 2:
-		#if state == None:
-		#	return "N/A"
-		if country == "Japan":
-			return country
-		elif country in ["United States","Canada"]:
-			if state in ['ME','VT','NH','MA','RI','CT']:
-				return 'New England'
-			elif state in ['NY','PA','NJ']:
-				return 'Tristate'
-			elif state in ['MD','VA','WV','DE','DC','District of Columbia']:
-				return 'MD/VA'
-			elif state in ['NC','SC','GA']:
-				return 'South Atlantic'
-			elif state in ['FL','PR','VI']:
-				return 'Florida/PR'
-			elif state in ['OH','KY','TN','AL','MS','IN','IL','MI','WI']:
-				return 'Mideast'
-			elif state in ['ND','SD','MN','IA','MO','AR','LA','NE','KS','OK']:
-				return 'Midwest'
-			elif state in ['WY','CO','UT','NV','MT']:
-				return 'Rockies'
-			elif state in ['WA','OR','BC','AB','ID']:
-				return 'Pacific Northwest'
-			elif state in ['AZ','NM','TX']:
-				return 'Southwest'
-			elif state in ['AK','YT','NT','NU']:
-				return 'Arctic Circle'
-			elif state in ['HI','GU','MP']:
-				return 'U.S. Pacific Islands'
-			elif state in ['SK','MB','ON']:
-				return 'Central Canada'
-			elif state in ['QC','NB','NS','PE','NL']:
-				return 'Atlantic Canada'
-			elif state in ['CA']:
-				if city == None:
-					return "Misc. Cali"
-				city_l = city.lower()
-				for qual in ["north ","south ","east ","west ","central ","outer ","new ","old ",", CA"]:
-					city_l = city_l.replace(qual," ")
-				city_l = city.strip()
-				calidict = load_cali_cities()
-				if city_l in calidict:
-					return calidict[city_l]
-				else:
-					#print("Calcuforniating... [%s]"%city)
-					geolocator = Nominatim(user_agent="SSBM_Autoranker")
-					city_loc = geolocator.geocode(city+", CA, USA")
-					city_low = geolocator.geocode(city_l+", CA, USA")
-					if city_loc == None:
-						calidict[city] = "Misc. Cali"
-						save_cali_cities(calidict,to_load=False)
-						return "Misc. Cali"
-					if is_socal(geolocator,city_loc) or is_socal(geolocator,city_low):
-						calidict[city] = "SoCal"
-						save_cali_cities(calidict,to_load=False)
-						return "SoCal"
-					else:
-						calidict[city] = "NorCal"
-						save_cali_cities(calidict,to_load=False)
-						return "NorCal"
-			else:
-				return 'N/A'
-		else:
-			return country
-	if granularity == 3:
-		if state == None:
-			if city == None:
-				return "N/A"
-			else:
-				return city
-		elif country in ["United States","Canada","Japan"]:
-			if state == 'CA':
-				if city is not None:
-					return city
-			return state
-		else:
-			return state
-
-# returns True if geopy location is below dividing line
-def is_socal(geoloc,location):
-	p1 = geoloc.geocode("Atascadero, CA")
-	x1,y1 = p1.longitude,p1.latitude
-	x_l,y_l = location.longitude,location.latitude
-	if x1 == x_l and y1 ==y_l:
-		return True
-	p2 = geoloc.geocode("Fresno, CA")
-	x2,y2 = p2.longitude,p2.latitude
-	if x2 == x_l and y2 == y_l:
-		return True
-	m = ((y2-y1)/(x2-x1))
-	b = y1-m*x1
-	return y_l < (m*x_l+b)
-
-# returns the regional grouping given either a player id or tag or location
-def get_region(dicts,p_id,tag=None,country=None,state=None,city=None,granularity=2,to_calc=False):
-	tourneys,ids,p_info,records = dicts
-	if not country == None:
-		return calc_region(country,state,city,granularity)
-	if not tag == None:
-		p_id = get_abs_id_from_tag(dicts,tag)
-	if to_calc or not 'region' in p_info[p_id]:
-		return calc_region(p_info[p_id]['country'],p_info[p_id]['state'],p_info[p_id]['city'],granularity)
-	else:
-		return p_info[p_id]['region']
-
-# returns a list of player ids (and their json data if requested) given a regional name
-def get_players_by_region(dicts,region,granularity=2,get_data=False):
-	tourneys,ids,p_info,records = dicts
-	if get_data:
-		return [(abs_id,get_player(dicts,abs_id)) for abs_id in p_info if get_region(dicts,abs_id,granularity=granularity) == region]
-	else:
-		return [abs_id for abs_id in p_info if get_region(dicts,abs_id,granularity=granularity) == region]
-
-def update_regions(dicts,players):
-	tourneys,ids,p_info,records = dicts
-	for p_id in players:
-		p_info[p_id]['region'] = get_region((tourneys,ids,p_info,records),p_id,to_calc=True)
 
 def list_tourneys(dicts,year=None):
 	tourneys,ids,p_info,records = dicts
@@ -437,6 +294,11 @@ def print_resume(dicts,res,g_key='player',s_key=None,disp_raw=False,disp_wins=Tr
 		h_idx = 5
 		s_idx = 1
 		print("RESUME BY PLACING:")
+	elif g_key == 'region':
+		res = sorted(res,key=lambda r: (r[1][1],r[1][0],r[0]))
+		h_idx = 4
+		s_idx = 1
+		print("RESUME BY REGION:")
 	# default to player ID grouping
 	else:
 		res = sorted(res,key=lambda r: (r[1][0],r[0]))
@@ -451,18 +313,26 @@ def print_resume(dicts,res,g_key='player',s_key=None,disp_raw=False,disp_wins=Tr
 			s_idx = 2
 		if s_key == 'placing':
 			s_idx = 5
+		if s_key == 'region':
+			s_idx = 4
 	print('----------------')
 
 	# flatten and replace ids with plaintext
 	# also resort by provided secondary criteria (if any)
 	res = [flatten([[line[0]],line[1]]) for line in res]
-	res = sorted(res,key=lambda l: (l[h_idx],l[s_idx]))
-	if not disp_raw:
-		for line in res:
+	for line in res:
+		if not disp_raw:
 			line[4] = [tourneys[line[0]]['groups'][grp_id] for grp_id in line[4]]
 			line[6] = [p_info[l_id]['tag'] for l_id in line[6]]
 			line[7] = [p_info[w_id]['tag'] for w_id in line[7]]
 			line[0] = tourneys[line[0]]['name']
+		tempval = line[4]
+		line[4] = line[5]
+		line[5] = tempval
+		line.insert(4,get_region(dicts,line[1]))
+	#print(res[:,h_idx])
+	#print(res[:,s_idx])
+	res = sorted(res,key=lambda l: (l[h_idx],l[s_idx]))
 
 	# print first value/header
 	oldval = res[0][h_idx]
@@ -472,7 +342,7 @@ def print_resume(dicts,res,g_key='player',s_key=None,disp_raw=False,disp_wins=Tr
 		if res[0][2] != None:
 			tagstr += "%s | "%res[0][2]
 		tagstr += res[0][3]
-		print("%s (id: %d)"%(tagstr,res[0][1]))
+		print("%s (id: %d) | %s"%(tagstr,res[0][1]),res[0][4])
 	else:
 		print(str(oldval)+": ")
 	s_tagstr = ""
@@ -480,6 +350,7 @@ def print_resume(dicts,res,g_key='player',s_key=None,disp_raw=False,disp_wins=Tr
 		if h_idx != 2:
 			s_tagstr += str(res[0][2])+" | "
 		s_tagstr += res[0][3]
+		s_tagstr += " ("+res[0][4]+")"
 		print("\t"+s_tagstr)
 	else:
 		print("\t"+str(res[0][s_idx]))
@@ -492,7 +363,7 @@ def print_resume(dicts,res,g_key='player',s_key=None,disp_raw=False,disp_wins=Tr
 				if line[2] != None:
 					tagstr += "%s | "%line[2]
 				tagstr += line[3]
-				print("%s (id: %d)"%(tagstr,line[1]))
+				print("%s (id: %d) | %s"%(tagstr,line[1],line[4]))
 			else:
 				print(str(line[h_idx])+": ")
 		# print secondary header if on new subsection
@@ -503,6 +374,7 @@ def print_resume(dicts,res,g_key='player',s_key=None,disp_raw=False,disp_wins=Tr
 				if h_idx != 2:
 					s_tagstr += str(line[2])+" | "
 				s_tagstr += line[3]
+				s_tagstr += " ("+line[4]+")"
 				print("\t"+s_tagstr)
 			else:
 				print("\t"+str(line[s_idx]))
@@ -517,15 +389,22 @@ def print_resume_line(line,h_idx,s_idx,disp_wins=True):
 	temp_line = []
 	if h_idx == 1:
 		temp_line.extend([line[:h_idx]])
-		temp_line.extend([line[h_idx+3:]])
+		temp_line.extend([line[h_idx+4:]])
 	else:
 		temp_line.extend([line[:h_idx]])
 		temp_line.extend([line[h_idx+1:]])
 	temp_line = flatten(temp_line)
+	if s_idx == 1:
+		if h_idx != 2:
+			temp_line.remove(line[2])
+		temp_line.remove(line[3])
+		temp_line.remove(line[4])
 	temp_line.remove(line[s_idx])
+	del_lines = 0
 	if not disp_wins:
 		temp_line = temp_line[:-1]
-	print("\t\t"+str(temp_line))
+		del_lines = 1
+	print("\t\t"+'['+', '.join(str(val) for val in temp_line[:(del_lines-3)])+', '+', '.join('['+', '.join(str(item) for item in val)+']' for val in temp_line[(del_lines-3):])+']')
 
 # print's an event's results (deprecated)
 def old_print_event(dicts,t_id,max_place=64):
@@ -598,55 +477,6 @@ def old_print_event(dicts,t_id,max_place=64):
 			#lsbuff = "\t"*(maxlen-len(path)+1)
 			print(("{:>%d.%d}"%(sp_len,sp_len)).format(sp),("{:<%d.%d}"%(tag_len,tag_len)).format(tag),"{:>7.7}".format(str(p_id)), \
 				"  {:<5.5}".format(str(placement)),"\t",("{:<%d.%d}"%(roundslen+5,roundslen+5)).format(str([t_labels[group] for group in path])),losses)
-
-# saves the given cities in additions, with the given classification (Socal, Norcal, or Misc)
-def save_cali_cities(cali={},to_load=True,hard_load=False):
-	if to_load:
-		cali_load = load_dict('cali','cities','obj')
-		for key in cali_load.keys():
-			if key not in cali:
-				cali[key] = cali_load[key]
-	if hard_load:
-		SC = ['Los Angeles','LA','San Diego','SD','Long Beach','Bakersfield','Anaheim','Santa Ana',\
-					'Riverside','Chula Vista','Irvine','San Bernardino','Oxnard','Fontana','Moreno','Moreno Valley','SoCal','San Dimas',\
-					'Huntington','Huntington Beach','Glendale','Santa Clarita','Garden Grove','Oceanside','Rancho Cucamonga','Claremont',\
-					'Cucamonga','Ontario','Corona','Lancaster','Palmdale','Pomona','Escondido','Torrance','Pasadena','Glendora'\
-					'Orange','Fullerton','Thousand Oaks','Simi','Simi Valley','Victorville','El Monte','Downey','Costa Mesa',\
-					'Carlsbad','Inglewood','Ventura','Temecula','West Covina','Murrieta','Norwalk','Burbank','Santa Maria',\
-					'Beverly Hills','Beverly','Hollywood','West Hollywood','Sunset Strip','Los Feliz','Westwood','Culver City',\
-					'El Cajon','Rialto','Jurupa','Jurupa Valley','Compton','Vista','Mission Viejo','South Gate','Carson',\
-					'Santa Monica','San Marcos','Hesperia','Westminster','Santa Barbara','Hawthorne','Whittier','Newport Beach',\
-					'Indio','Alhambra','Menifee','Chino','Buena Park','Chino Hills','Upland','Perris','Lynwood','Apple Valley',\
-					'Redlands','Redondo Beach','Yorba Linda','Camarillo','Laguna Niguel','Orange','San Clemente','Pico Rivera',\
-					'Montebello','Encinitas','La Habra','Monterey Park','Gardena','National City','Lake Elsinore','Huntington Park',\
-					'La Mesa','Arcadia','Santee','Eastvale','Fountain Valley','Diamond Bar','Fountain','Paramount','Rosemead','Highland'\
-					'Midway City','Garden Grove','Tustin','Newport','Seal Beach','Manhattan Beach','Hawthorne','Lawndale','Gardena',\
-					'Inglewood','Lynwood','Bel Air','Reseda','Van Nuys','Woodland Hills']
-		for c in SC:
-			if not c in cali:
-				cali[c] = 'SoCal'
-
-		NC = ['San Jose','San Francisco','SFO','SF','SJ','San Fran','SanFran','Sanfran','Fresno',\
-					'Sacramento','Oakland','Stockton','Fremont','Modesto','Santa Rosa','Elk Grove','Salinas','Hayward','NorCal',\
-					'Silicon Valley','Sunnyvale','Visalia','Concord','Roseville','Santa Clara','Vallejo','Berkeley','Newark',\
-					'Fairfield','Richmond','Antioch','Daly City','San Mateo','Clovis','Vacaville','Redding','Chico','El Dorado Hills',\
-					'San Leandro','Citrus Heights','Tracy','Livermore','Merced','Napa','Napa Valley','Redwood City','Foster',\
-					'Redwood','Sequoia','Mountain View','Alameda','Folsom','San Ramon','Pleasanton','Union City','Foster City',\
-					'Turlock','Manteca','Milpitas','Davis','Yuba City','Yuba','Union','Daly','Rancho Cordova','Palo Alto',\
-					'Walnut Creek','South San Francisco','Pittsburg','Lodi','Madera','Santa Cruz','Tulare','Cupertino',\
-					'Petaluma','San Rafael','Rocklin','Woodland','Porterville','Hanford','Novato','Brentwood','Watsonville',\
-					'Pacifica','San Bruno','Montara','Brisbane']
-		for c in NC:
-			if c not in cali:
-				cali[c] = 'NorCal'
-
-		for c in additions:
-			cali[c] = cali_class
-
-	return save_dict(cali,'cali','cities','obj')
-
-def load_cali_cities():
-	return load_dict('cali','cities','obj')
 
 if __name__ == "__main__":
 	save_cali_cities(hard_load=True)

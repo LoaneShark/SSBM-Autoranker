@@ -81,12 +81,19 @@ def readin(tourney,t_type="slug"):
 		print("Error: invalid tourney identifier type")
 		return None
 
+	if v >= 2 and v < 4:
+		start = timer()
+
 	out = read_phases(slug)
 
 	if out:
 		t,ps,pdata = out
 		t_id,t_name,t_slug,t_ss,t_type,t_date,t_region = t
 		es,ws,ls,rs,ns = read_groups(t_id,ps,pdata)
+
+		if v >= 2 and v < 4:
+			print("{:.3f}".format(timer()-start) + " s")
+
 		t = (t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,len(es.keys()))
 		if print_res:
 			print_results(rs,ns,es,ls,max_place=disp_num)
@@ -145,7 +152,11 @@ def read_groups(t_id,groups,phase_data):
 
 		if not load_succ:
 
-			data = json.loads(pull_phase(group))
+			try:
+				data = json.loads(pull_phase(group))
+			except HTTPError:
+				time.sleep(3)
+				data = json.loads(pull_phase(group))
 
 			wave_id = data['entities']['groups']['phaseId']
 			is_exhibition = phase_data[wave_id][5]
@@ -214,7 +225,10 @@ def read_entrants(data,phase_data,entrants,names,xpath):
 
 		for x in seedata:
 			e_id,abs_id,tag,prefix,metainfo = read_names(x)
-			names[e_id] = (prefix,tag)
+			#if type(abs_id) is list:
+			names[e_id] = (prefix,tag,x['mutations']['entrants'][str(e_id)]['name'])
+			#else:
+			#	names[e_id] = [(pr,tg) for pr,tg in zip(prefix,tag)]
 
 			res = [x['placement']]
 			if v >= 8:
@@ -240,35 +254,40 @@ def read_entrants(data,phase_data,entrants,names,xpath):
 # returns sponsor, gamertag, and player meta info for a given entrant	
 def read_names(x):
 	e_id = x['entrantId']
-	part_id = x['mutations']['entrants'][str(e_id)]['participantIds'][0]
-	abs_id = x['mutations']['entrants'][str(e_id)]['playerIds'][str(part_id)]
-	tag = x['mutations']['participants'][str(part_id)]['gamerTag']
-	prefix = x['mutations']['participants'][str(part_id)]['prefix']
+	part_ids = x['mutations']['entrants'][str(e_id)]['participantIds']
+	abs_ids = [x['mutations']['entrants'][str(e_id)]['playerIds'][str(part_id)] for part_id in part_ids]
+	tags = [x['mutations']['participants'][str(part_id)]['gamerTag'] for part_id in part_ids]
+	prefixes = [x['mutations']['participants'][str(part_id)]['prefix'] for part_id in part_ids]
 
-	continfo = x['mutations']['participants'][str(part_id)]['contactInfo']
-	if 'nameFirst' in continfo:
-		f_name = continfo['nameFirst']
-	else:
-		f_name = "N/A"
-	if 'nameLast' in continfo:
-		l_name = continfo['nameLast']
-	else:
-		l_name = "N/A"
-	if 'state' in continfo:
-		state = continfo['state']
-	else:
-		state = "N/A"
-	if 'country' in continfo:
-		country = continfo['country']
-	else:
-		country = 'N/A'
-	if 'city' in continfo:
-		city = continfo['city']
-	else:
-		city = 'N/A'
-	metainfo = (f_name,l_name,state,country,city)
+	continfos = [x['mutations']['participants'][str(part_id)]['contactInfo'] for part_id in part_ids]
+	metainfo = [[0,0,0,0,0]]
+	for continfo in continfos:
+		if 'nameFirst' in continfo:
+			f_name = continfo['nameFirst']
+		else:
+			f_name = "N/A"
+		if 'nameLast' in continfo:
+			l_name = continfo['nameLast']
+		else:
+			l_name = "N/A"
+		if 'state' in continfo:
+			state = continfo['state']
+		else:
+			state = "N/A"
+		if 'country' in continfo:
+			country = continfo['country']
+		else:
+			country = 'N/A'
+		if 'city' in continfo:
+			city = continfo['city']
+		else:
+			city = 'N/A'
+		metainfo.extend([[f_name,l_name,state,country,city]])
+	metainfo = metainfo[1:]
 
-	return e_id,abs_id,tag,prefix,metainfo
+	#if len(part_ids) == 1:
+	#	return e_id,abs_ids[0],tags[0],prefixes[0],metainfo[0]
+	return e_id,abs_ids,tags,prefixes,metainfo
 
 # reads the sets for a given phase group and returns match results
 def read_sets(data,phase_data,wins,losses,xpath):
@@ -348,9 +367,7 @@ def read_sets(data,phase_data,wins,losses,xpath):
 # reads the phase data for a given tournament
 def read_phases(tourney):
 	gamemap = {1: ['melee','ssbm','ssbmelee'], 2: ['P:M','project: m','project melee','project m'], 3: ['ssb4','smash 4','ssb wii u','smash wii u','for wii u'], \
-				4: ['smash 64','ssb64'], 5: ['brawl','ssbb'], 1386: ['ssbu','ultimate']}
-	if v >= 2 and v < 4:
-		start = timer()
+				4: ['smash 64','ssb64','64'], 5: ['brawl','ssbb'], 1386: ['ssbu','ultimate','for switch','nintendo switch','switch']}
 	waves = {}
 	#with open(filepath) as f:
 	#	data = json.loads(f.read())
@@ -371,7 +388,7 @@ def read_phases(tourney):
 		t_info = (t_id,t_name,t_slug,t_ss,t_type,t_date,t_region)
 
 		if v >= 1:
-			print("Reading tournament: %s | %d"%(tdata['entities']['tournament']['name'],t_id))
+			print("Reading tournament: %s | %d"%(t_name,t_id))
 
 		# can't read a tourney's results if it hasn't happened yet!
 		day_after = datetime.datetime(t_date[0],t_date[1],t_date[2])
@@ -440,8 +457,6 @@ def read_phases(tourney):
 		#print(event_ids)
 		#print(phase_ids)
 		#print(group_ids)
-		if v >= 2 and v < 4:
-			print("{:.3f}".format(timer()-start) + " s")
 		
 		return (t_info,group_ids,waves)
 
@@ -460,6 +475,6 @@ if __name__ == "__main__":
 	#pull_phase(764818)
 
 	#clean_data("heirphasesraw.txt","heirphasesclean.txt")
-	#clean_data("group21raw.txt","group21clean.txt")
+	#clean_data("./old/crewsraw.txt","./old/crewsclean.txt")
 	#clean_data("cextop8raw.txt","cextop8clean.txt")
 	#clean_data("valhallasetsraw.txt","valhallasetsclean.txt")
