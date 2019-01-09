@@ -12,6 +12,7 @@ from timeit import default_timer as timer
 ## UTIL IMPORTS
 from db_utils import *
 from analysis_utils import *
+from calc_utils import *
 
 ## TODO: 
 ##	Shortterm
@@ -97,9 +98,9 @@ def main():
 
 
 	#print(get_result((tourneys,ids,p_info,records),36179,res_filt={'player':1000}))
-	resume = get_resume((tourneys,ids,p_info,records),None,team=['C9','CLG.'])
+	resume = get_resume((tourneys,ids,p_info,records),None,tags=['Puncayshun','tlo','goo','Jelly$potter'])
 	#update_regions((tourneys,ids,p_info,records),[1000])
-	#print_resume((tourneys,ids,p_info,records),resume,g_key='team',s_key='region')
+	print_resume((tourneys,ids,p_info,records),resume,g_key='event',s_key='player')
 
 	#tourneys,ids,p_info,records = delete_tourney((tourneys,ids,p_info,records),None,slug='smash-summit-6')
 	#tourneys,ids,p_info,records = delete_tourney((tourneys,ids,p_info,records),None,slug='smash-summit-7')
@@ -182,9 +183,8 @@ def get_glickos(dicts,acc=3):
 	glickos = {}
 	for p_id in p_info:
 		if p_id in records:
-			#elos[p_id] = mean([score(dicts,records[p_id]['placings'][t_id],t_id) for t_id in tourneys if type(t_id) is int if t_id in records[p_id]['placings']])
 			glickos[p_id] = round(p_info[p_id]['glicko'][0],acc)
-	return elos
+	return glickos
 
 def disp_glickos(dicts,dispnum=20):
 	tourneys,ids,p_info,records = dicts
@@ -247,15 +247,15 @@ def disp_all(dicts,dispnum=20,key='elo',avg_perf=False):
 		perfstr_len = 69
 
 	if key == 'bracket':
-		key_idx = 2
+		key_idx = 3
 	if key == 'elo':
 		key_idx = 1
 	if key == 'performance':
-		key_idx = 3
-	if key == 'simbrac':
 		key_idx = 4
+	if key == 'simbrac':
+		key_idx = None #5
 	if key == 'glicko':
-		key_idx = 5
+		key_idx = 2
 	players = sorted([[p_info[p_id]['tag'],elos[p_id],glickos[p_id],scores[p_id],perfs[p_id]] for p_id in p_info if p_id in elos if p_id in scores if p_id in perfs],key=lambda x: x[key_idx],reverse=True)
 	players = players[:dispnum]
 	#print(players)
