@@ -29,7 +29,7 @@ def has_game(descr,game=1, gamemap={1: ['melee','ssbm','ssbmelee'], 2: ['P:M','p
 def is_teams(descr,teamsize):
 	ts = min(teamsize,4)
 	teammap = {1: ['singles','solo','1v1','1 v 1','1 vs 1','1vs1','ones'],2:['doubles','dubs','teams','2v2','2 v 2','2vs2','2 vs 2','pairs','duos','twos'],3:['3v3','3 v 3','3vs3','3 vs 3','triples'], \
-				4: ['4v4','4 v 4','4vs4','4 vs 4','4 on 4','quads','crews','squads','fours','quartets']}
+				4: ['4v4','4 v 4','4vs4','4 vs 4','4 on 4','quads','crews','squads','fours','quartets','groups','crew']}
 	if descr == None:
 		return False
 	else:
@@ -196,9 +196,14 @@ def print_results(res,names,entrants,losses,max_place=64):
 
 	res_l = [item for item in res.items()]
 	res_s = sorted(res_l, key=lambda l: (0-l[1][0],len(l[1][1])), reverse=True)
-	#print(res_s)
-	team_mult = len(names[res_s[0][0]][1])
-	print(team_mult,names[res_s[0][0]])
+
+	# Error catching
+	if res == [] or len(res) <= 0:
+		print("Error: no bracket found")
+		return False
+
+	team_mult = max([len(names[plyr[0]][1]) for plyr in res_s])
+	#print(team_mult,names[res_s[0][0]])
 
 	num_rounds = len(res_s[0][1][1])
 	#lsbuff = "\t"*(num_rounds-len(res_s[-1][1][1])+1)
@@ -206,8 +211,14 @@ def print_results(res,names,entrants,losses,max_place=64):
 	roundslen = sum([len(str(name)) for name in roundnames]) + 2*num_rounds
 	sp_slot = 13*team_mult
 	tag_slot = 24*team_mult
-	id_slot = 9*team_mult
-	print(("\n{:>%d.%d}"%(sp_slot,sp_slot)).format("Sponsor |"),("{:<%d.%d}"%(tag_slot,tag_slot)).format("Tag"),("{:<%d.%d}"%(id_slot,id_slot)).format("ID #"), \
+	tag_title = "Tag"
+	if team_mult >= 4:
+		sp_slot = 0
+		tag_slot = 24
+		tag_title = "Crew"
+	id_slot = 8*team_mult
+	print(team_mult)
+	print(("\n{:>%d.%d}"%(sp_slot,sp_slot)).format("Sponsor |"),("{:<%d.%d}"%(tag_slot,tag_slot)).format(tag_title),("{:<%d.%d}"%(id_slot,id_slot)).format("ID #"), \
 		"Place\t",("{:<%d.%d}"%(roundslen+5,roundslen+5)).format("Bracket"),"Losses\n")
 	for player in res_s:
 		#if type(team_s[0]) is int:
@@ -219,7 +230,8 @@ def print_results(res,names,entrants,losses,max_place=64):
 			break
 		else:
 			playerstrings = []
-			for idx in range(team_mult):
+			entr_mult = len(names[player[0]][1])
+			for idx in range(entr_mult):
 				if names[player[0]][0][idx] == "" or names[player[0]][0][idx] == None:
 					sp = "  "
 				else:
@@ -247,7 +259,10 @@ def print_results(res,names,entrants,losses,max_place=64):
 
 			if player[0] in losses:
 				#print(losses)
-				ls = "["+", ".join(" / ".join(str(j) for j in l) for l in [names[loss[0]][1] for loss in losses[player[0]]])+"]"
+				if len(playerstrings) >= 4:
+					ls = "["+", ".join(entrants[loss[0]][0][2] for loss in losses[player[0]])+"]"
+				else:
+					ls = "["+", ".join(" / ".join(str(j) for j in l) for l in [names[loss[0]][1] for loss in losses[player[0]]])+"]"
 			else:
 				ls = None
 
@@ -258,8 +273,12 @@ def print_results(res,names,entrants,losses,max_place=64):
 			#	lsbuff = "\t"
 			#else:
 			#	lsbuff = "\t\t\t"
-			if len(playerstrings) == 1:
+			if len(playerstrings) == 1: #or len(playerstrings) >= 4:
 				print(("{:>%d.%d}"%(sp_slot,sp_slot)).format(sp),("{:<%d.%d}"%(tag_slot,tag_slot)).format(tag),("{:>%d.%d}"%(8*team_mult,8*team_mult)).format(" / ".join(str(n) for n in entrants[player[0]][1])), \
+				"  {:<5.5}".format(str(player[1][0])),("{:<%d.%d}"%(roundslen+5,roundslen+5)).format("["+", ".join(str(i) for i in [names['groups'][group] for group in player[1][1]])+"]"),ls)
+			elif len(playerstrings) >= 4: #or len(playerstrings) >= 4:
+				team_name = entrants[player[0]][0][2]
+				print(("{:<%d.%d}"%(tag_slot,tag_slot)).format(team_name),("{:>%d.%d}"%(8*team_mult,8*team_mult)).format(" / ".join(str(n) for n in entrants[player[0]][1])), \
 				"  {:<5.5}".format(str(player[1][0])),("{:<%d.%d}"%(roundslen+5,roundslen+5)).format("["+", ".join(str(i) for i in [names['groups'][group] for group in player[1][1]])+"]"),ls)
 			else:
 				print(("{:<%d.%d}"%(team_mult*(sp_slot+tag_slot),team_mult*(sp_slot+tag_slot))).format(" & ".join(("{:<%d.%d}"%(sp_slot+tag_slot,sp_slot+tag_slot)).format(("{:>%d.%d}"%(sp_slot,sp_slot)).format(sp)+" "+("{:<%d.%d}"%(tag_slot,tag_slot)).format(tag)) for sp,tag in playerstrings)), \

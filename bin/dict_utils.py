@@ -285,6 +285,7 @@ def print_events(dicts,t_ids,max_place=64):
 # prints the specified records, grouping by the g_key criteria
 def print_resume(dicts,res,g_key='player',s_key=None,disp_raw=False,disp_wins=True):
 	tourneys,ids,p_info,records = dicts
+	#print(res)
 	if not res or len(res) == 0 or res == []:
 		print("Resume was not provided or could not be found")
 		return False
@@ -334,7 +335,7 @@ def print_resume(dicts,res,g_key='player',s_key=None,disp_raw=False,disp_wins=Tr
 
 	# flatten and replace ids with plaintext
 	# also resort by provided secondary criteria (if any)
-	res = [flatten([[line[0]],line[1]]) for line in res]
+	res = [flatten([[line[0]],line[1]]) for line in res] 
 	for line in res:
 		if not disp_raw:
 			line[4] = [tourneys[line[0]]['groups'][grp_id] for grp_id in line[4]]
@@ -348,6 +349,7 @@ def print_resume(dicts,res,g_key='player',s_key=None,disp_raw=False,disp_wins=Tr
 	#print(res[:,h_idx])
 	#print(res[:,s_idx])
 	res = sorted(res,key=lambda l: (l[h_idx],l[s_idx]))
+	#print(res)
 
 	# print first value/header
 	oldval = res[0][h_idx]
@@ -357,7 +359,7 @@ def print_resume(dicts,res,g_key='player',s_key=None,disp_raw=False,disp_wins=Tr
 		if res[0][2] != None:
 			tagstr += "%s | "%res[0][2]
 		tagstr += res[0][3]
-		print("%s (id: %d) | %s"%(tagstr,res[0][1]),res[0][4])
+		print("%s (id: %d) | %s"%(tagstr,res[0][1],res[0][4]))
 	else:
 		print(str(oldval)+": ")
 	s_tagstr = ""

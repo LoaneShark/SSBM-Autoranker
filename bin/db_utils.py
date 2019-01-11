@@ -26,12 +26,14 @@ parser.add_argument('-fg','--force_game',help='game id to be used, force use (ca
 parser.add_argument('-y','--year',help='The year you want to analyze (for ssbwiki List of Majors scraper)(default 2018)',default=2018)
 parser.add_argument('-yc','--year_count',help='How many years to analyze from starting year',default=0)
 parser.add_argument('-t','--teamsize',help='1 for singles bracket, 2 for doubles, 4+ for crews (default 1)',default=1)
+parser.add_argument('-st','--static_teams',help='store teams as static units, rather than strack skill of its members individually [WIP]',default=False)
 parser.add_argument('-d','--displaysize',help='lowest placing shown on pretty printer output, or -1 to show all entrants (default 64)',default=64)
 parser.add_argument('-sl','--slug',help='tournament URL slug',default=None)
 parser.add_argument('-ss','--short_slug',help='shorthand tournament URL slug',default=None)
 parser.add_argument('-p','--print',help='print tournament final results to console as they are read in (default False)',default=False)
 parser.add_argument('-c','--collect_garbage',help='delete phase data after tournament is done being read in (default True)',default=True)
 parser.add_argument('-ar','--use_arcadians',help='count arcadian events (default False)',default=False)
+parser.add_argument('-gt','--glicko_tau',help='tau value to be used by Glicko-2 algorithm (default 0.5)',default=0.5)
 args = parser.parse_args()
 
 collect = args.collect_garbage
@@ -65,6 +67,7 @@ if count_arcadians == -1:
 else:
 	only_arcadians = False
 teamsize = int(args.teamsize)
+glicko_tau = float(args.glicko_tau)
 
 # main loop. calls scraper to get slugs for every major that happened
 # in the specified year for the specified game (per smash.gg numeric id value)
@@ -169,6 +172,9 @@ def store_data(readins,dicts,slug):
 	return False
 
 # stores data through absolute player IDs (converting from entrant IDs)
+# entrants = ([name],[abs_id],e_id,[metainfo]) where name, abs_id, metainfo are a list for each member of the team
+# and name = (sponsor, tag, teamname (or None))
+# and metainfo = [firstname, lastname, state, country, city]
 def store_players(entrants,names,t_info,dicts):
 	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size = t_info
 	tourneys,ids,p_info,records = dicts
@@ -228,6 +234,10 @@ def store_players(entrants,names,t_info,dicts):
 					p_info[abs_id]['iagorank'] = -9999.
 				if 'sets_played' not in p_info[abs_id]:
 					p_info[abs_id]['sets_played'] = 0
+				if 'events_entered' not in p_info[abs_id]:
+					p_info[abs_id]['events_entered'] = 0
+				if 'last_event' not in p_info[abs_id]:
+					p_info[abs_id]['last_event'] = t_id
 
 			#print(ids[abs_id])
 	#else:
@@ -240,6 +250,7 @@ def store_players(entrants,names,t_info,dicts):
 def store_records(wins,losses,paths,t_info,dicts,update_ranks=True):
 	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size = t_info
 	tourneys,ids,p_info,records = dicts
+	old_p_info = dcopy(p_info)
 	glicko_matches = {}
 	#print(t_id)
 	for abs_id in ids:
@@ -278,7 +289,7 @@ def store_records(wins,losses,paths,t_info,dicts,update_ranks=True):
 
 						p_info[abs_id]['sets_played'] += 1
 						actual_score += 1.
-						expected_score += exp_score(p_info[abs_id]['elo'],p_info[l_id]['elo'])
+						expected_score += exp_score(old_p_info[abs_id]['elo'],old_p_info[l_id]['elo'])
 
 						glicko_scores.extend([(1.,l_id)])
 				if e_id in losses:
@@ -292,13 +303,13 @@ def store_records(wins,losses,paths,t_info,dicts,update_ranks=True):
 
 						p_info[abs_id]['sets_played'] += 1
 						actual_score += 0.
-						expected_score += exp_score(p_info[abs_id]['elo'],p_info[w_id]['elo'])
+						expected_score += exp_score(old_p_info[abs_id]['elo'],old_p_info[w_id]['elo'])
 
 						glicko_scores.extend([(0.,w_id)])
 
 				if update_ranks:
 					# update elo ratings after event
-					p_info[abs_id]['elo'] = update_elo(p_info[abs_id]['elo'],expected_score,actual_score,p_info[abs_id]['sets_played'])
+					p_info[abs_id]['elo'] = update_elo(old_p_info[abs_id]['elo'],expected_score,actual_score,old_p_info[abs_id]['sets_played'])
 					glicko_matches[abs_id] = glicko_scores
 					# store event performance by tourney id
 					records[abs_id]['performances'][t_id] = calc_performance(records,p_info,abs_id,t_id)
@@ -307,7 +318,7 @@ def store_records(wins,losses,paths,t_info,dicts,update_ranks=True):
 	if update_ranks:
 		if v >= 4:
 			print("Updating Glicko...")
-		update_glicko(p_info,ids,glicko_matches,t_id)
+		update_glicko(dicts,glicko_matches,t_info,tau=glicko_tau)
 
 	return True
 

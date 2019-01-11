@@ -31,11 +31,13 @@ parser.add_argument('-y','--year',help='The year you want to analyze (for ssbwik
 parser.add_argument('-yc','--year_count',help='How many years to analyze from starting year',default=0)
 parser.add_argument('-t','--teamsize',help='1 for singles bracket, 2 for doubles, 4+ for crews (default 1)',default=1)
 parser.add_argument('-d','--displaysize',help='lowest placing shown on pretty printer output, or -1 to show all entrants (default 64)',default=64)
+parser.add_argument('-st','--static_teams',help='store teams as static units, rather than strack skill of its members individually [WIP]',default=False)
 parser.add_argument('-sl','--slug',help='tournament URL slug',default=None)
 parser.add_argument('-ss','--short_slug',help='shorthand tournament URL slug',default=None)
 parser.add_argument('-p','--print',help='print tournament final results to console as they are read in (default False)',default=False)
 parser.add_argument('-c','--collect_garbage',help='delete phase data after tournament is done being read in (default True)',default=True)
 parser.add_argument('-ar','--use_arcadians',help='count arcadian events (default False)',default=False)
+parser.add_argument('-gt','--glicko_tau',help='tau value to be used by Glicko-2 algorithm (default 0.5)',default=0.5)
 args = parser.parse_args()
 
 v = int(args.verbosity)
@@ -198,6 +200,9 @@ def read_groups(t_id,groups,phase_data):
 
 					if v >= 4:
 						print("{:.0f}".format(1000*(timer()-pstart)) + " ms")
+		# sort paths according to proper bracket structure
+		#for e_id in paths:
+
 	return entrants,wins,losses,paths,names
 
 # reads in and returns data for all entrants in a given phase group
@@ -208,6 +213,7 @@ def read_entrants(data,phase_data,entrants,names,xpath):
 	phasename = phase_data[wave_id][0]
 	groupname = data['entities']['groups']['displayIdentifier']
 	num_groups = phase_data[wave_id][1]
+	phaseorder = phase_data[wave_id][2]
 
 	# if not an exhibition wave
 	if not phase_data[wave_id][5]:
@@ -224,9 +230,9 @@ def read_entrants(data,phase_data,entrants,names,xpath):
 		seedata = data['entities']['seeds']
 
 		for x in seedata:
-			e_id,abs_id,tag,prefix,metainfo = read_names(x)
+			e_id,abs_id,tag,prefix,metainfo,team_name = read_names(x)
 			#if type(abs_id) is list:
-			names[e_id] = (prefix,tag,x['mutations']['entrants'][str(e_id)]['name'])
+			names[e_id] = (prefix,tag,team_name)
 			#else:
 			#	names[e_id] = [(pr,tg) for pr,tg in zip(prefix,tag)]
 
@@ -258,6 +264,10 @@ def read_names(x):
 	abs_ids = [x['mutations']['entrants'][str(e_id)]['playerIds'][str(part_id)] for part_id in part_ids]
 	tags = [x['mutations']['participants'][str(part_id)]['gamerTag'] for part_id in part_ids]
 	prefixes = [x['mutations']['participants'][str(part_id)]['prefix'] for part_id in part_ids]
+	if len(part_ids) > 1:
+		team_name = x['mutations']['entrants'][str(e_id)]['name']
+	else:
+		team_name = None
 
 	continfos = [x['mutations']['participants'][str(part_id)]['contactInfo'] for part_id in part_ids]
 	metainfo = [[0,0,0,0,0]]
@@ -287,7 +297,9 @@ def read_names(x):
 
 	#if len(part_ids) == 1:
 	#	return e_id,abs_ids[0],tags[0],prefixes[0],metainfo[0]
-	return e_id,abs_ids,tags,prefixes,metainfo
+	if team_name != None:
+		return e_id,abs_ids,tags,prefixes,metainfo,team_name
+	return e_id,abs_ids,tags,prefixes,metainfo,None
 
 # reads the sets for a given phase group and returns match results
 def read_sets(data,phase_data,wins,losses,xpath):
@@ -400,7 +412,7 @@ def read_phases(tourney):
 			return False
 
 		# get all event_id's for events that are specified gametype (default=1 [melee]) and entrantcount (default=1 [singles]) 
-		event_ids = [[event['id'],(event['name'],event['description'])] for event in tdata['entities']['event'] if event['videogameId'] == game and event['entrantSizeMin'] == teamsize]
+		event_ids = [[event['id'],(event['name'],event['description'])] for event in tdata['entities']['event'] if event['videogameId'] == game] #and min(event['entrantSizeMin'],4) == min(teamsize,4)]
 		#event_ids = [event['id'] for event in tdata['entities']['event'] if event['videogameId'] == game and event['entrantSizeMin'] == teamsize]
 		
 		if v >= 6:
@@ -418,10 +430,12 @@ def read_phases(tourney):
 				pro_string = "ALL"
 			print("only looking for brackets of game type: %s %s [%s]"%(gamemap[game][0], team_string, pro_string))
 			print("event_ids pre filtering: " + str([(event_id[0],event_id[1][0]) for event_id in event_ids]))
-		# filters out events that don't list melee in description, to filter out stuff like low tiers/ironmans/crews etc
+		# filters out events that don't list the given game in description, to filter out stuff like low tiers/ironmans/crews etc
 		game_events = [event_id[0] for event_id in event_ids if has_game(event_id[1][0],game) or has_game(event_id[1][1],game)]
 		if teamsize > 1:
 			team_events = [event_id[0] for event_id in event_ids if is_teams(event_id[1][0],teamsize) or is_teams(event_id[1][1],teamsize)]
+		if teamsize <= 1:
+			team_events = [event_id[0] for event_id in event_ids if is_teams(event_id[1][0],2) or is_teams(event_id[1][1],2)]
 		amateur_events = [event_id[0] for event_id in event_ids if is_amateur(event_id[1][0]) or is_amateur(event_id[1][1])]
 		ladder_events = [event_id[0] for event_id in event_ids if is_ladder(event_id[1][0]) or is_ladder(event_id[1][1])]
 		if only_arcadians or not count_arcadians:
@@ -436,6 +450,8 @@ def read_phases(tourney):
 		event_ids = [event_id for event_id in event_ids if not event_id in ladder_events]
 		if teamsize > 1:
 			event_ids = [event_id for event_id in event_ids if event_id in team_events]
+		else:
+			event_ids = [event_id for event_id in event_ids if not event_id in team_events]
 		if not count_arcadians:
 			event_ids = [event_id for event_id in event_ids if not event_id in arcadian_events]
 		elif only_arcadians:
@@ -448,11 +464,14 @@ def read_phases(tourney):
 		# get all phases (waves) for each event (ideally filtered down to 1 by now)
 		phase_ids = [phase['id'] for phase in tdata['entities']['phase'] if phase['eventId'] in event_ids]
 		# get all groups (pools) for each phase
-		group_ids = [group['id'] for group in tdata['entities']['groups'] if group['phaseId'] in phase_ids]
+		group_ids = [(group['id'],group['phaseId']) for group in tdata['entities']['groups'] if group['phaseId'] in phase_ids]
 
 		for w in tdata['entities']['phase']:
 			if w['id'] not in waves:
 				waves[w['id']] = [w['name'],w['groupCount'],w['phaseOrder'],w['eventId'],w['typeId'],w['isExhibition']]
+		# sort groups to be read in proper bracket structure order		
+		group_ids = sorted(group_ids,key=lambda l: waves[l[1]][2])
+		group_ids = [group_id[0] for group_id in group_ids]
 		#print(t_id)
 		#print(event_ids)
 		#print(phase_ids)
@@ -474,7 +493,8 @@ if __name__ == "__main__":
 	#read_sets("sets.txt")
 	#pull_phase(764818)
 
-	#clean_data("heirphasesraw.txt","heirphasesclean.txt")
+	#clean_data("./old/summit5setsraw1.txt","./old/summit5setsclean1.txt")
+	#clean_data("./old/summit5setsraw2.txt","./old/summit5setsclean2.txt")
 	#clean_data("./old/crewsraw.txt","./old/crewsclean.txt")
 	#clean_data("cextop8raw.txt","cextop8clean.txt")
 	#clean_data("valhallasetsraw.txt","valhallasetsclean.txt")

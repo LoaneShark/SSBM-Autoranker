@@ -1,6 +1,7 @@
 ## DEPENDENCY IMPORTS
 import matplotlib.pyplot as plt 
 import os,sys,pickle,time
+from datetime import date, timedelta
 #import json
 #import argparse
 #import shutil
@@ -12,17 +13,19 @@ from math import *
 ## UTIL IMPORTS
 from dict_utils import get_abs_id_from_tag
 
+activity_min = 3
 
 # returns true if given player meets specified minimum activity requirements (default 3)
-def is_active(dicts,p_id,tag=None,min_req=3):
+def is_active(dicts,p_id,tag=None,min_req=activity_min):
 	tourneys,ids,p_info,records = dicts
 	if tag != None:
 		p_id = get_abs_id_from_tag(dicts,tag)
-	attendance = [t_id for t_id in records[p_id]['placings'] if type(records[p_id]['placings']) is int]
+	attendance = [t_id for t_id in records[p_id]['placings'] if type(records[p_id]['placings'][t_id]) is int]
+	#print(len(attendance))
 	return (len(attendance) >= min_req)
 
 # returns a list of booleans for each given player, if they meet activity requirements
-def are_active(dicts,p_ids,tags=[],min_req=3):
+def are_active(dicts,p_ids,tags=[],min_req=activity_min):
 	tourneys,ids,p_info,records = dicts
 	if type(tags) is list and len(tags) > 0:
 		p_ids = [get_abs_id_from_tag(dicts,tag) for tag in tags]
@@ -41,16 +44,16 @@ def calc_performance(records,p_info,abs_id,t_id):
 	for l_id in wins:
 		#l_abs_id = ids[t_id][wins[e_id][0]]
 
-		skills += p_info[l_id]['elo']
 		w_count += wins[l_id].count(t_id)
+		skills += p_info[l_id]['elo']*w_count
 	for w_id in losses:
 		#w_abs_id = ids[t_id][losses[e_id][0]]
 
-		skills += p_info[w_id]['elo']
 		l_count += losses[w_id].count(t_id)
+		skills += p_info[w_id]['elo']*l_count
 
-	if (w_count + l_count) == 0:
-		return 0
+	if (w_count + l_count) == 0.:
+		return 0.
 	return (skills + 400.*(w_count-l_count))/(w_count+l_count)
 
 # returns the player's K-factor
@@ -80,18 +83,20 @@ def calc_k_factor(elo,n_played):
 # returns the player's expected score for a match
 # (used in Elo calculations)
 def exp_score(elo_a,elo_b):
-	return 1.0/(1. + 10.**((float(elo_a)-float(elo_b))/400.))
+	return 1.0/(1. + 10.**((float(elo_b)-float(elo_a))/400.))
 
 # updates the player's elo score given their expected and actual results of the event
 def update_elo(elo,expected,actual,N):
 	K = calc_k_factor(elo,N)
 
+	# days of wonder K-scaling (not used because of FIDE system)
+	#if N < 20:
+	#	K *= (float(N)/20.)
+
 	return elo + K*(actual-expected)
 
 ## GLICKO CALCULATION UTILS
 # (from glicko.net's algorithm)
-glicko_tau = 0.5
-#glicko_tau = 1.
 # returns mu,phi given r,RD (and vice versa)
 def glicko_scale(rating,RD):
 	return (rating-1500.)/173.7178,RD/173.7178
@@ -125,13 +130,13 @@ def glicko_E(mu,mu_j,phi_j):
 # mu = glicko-2 rating
 # phi = glicko-2 rating deviation
 # sigma = glicko-2 rating volatility
-def glicko_update_vol(mu,phi,sigma,p_matches,delta,v_g):
+def glicko_update_vol(mu,phi,sigma,p_matches,delta,v_g,tau):
 	mus = [match[1] for match in p_matches]
 	phis = [match[2] for match in p_matches]
 	# step 1 (definitions)
 	a = log(sigma**2.)
 	tol = 0.000001
-	tau = glicko_tau
+	#tau = glicko_tau
 	f = lambda x: ((exp(x)*((delta**2.)-(phi**2.)-v_g-exp(x)))/(2.*(((phi**2.)+v_g+exp(x))**2.)))-((x-a)/(tau**2.))
 
 	# step 2 (initial values)
@@ -172,23 +177,27 @@ def glicko_update_vol(mu,phi,sigma,p_matches,delta,v_g):
 
 # updates the glicko ratings for all players that entered,
 # after a given tournament
-def update_glicko(p_info,ids,matches,t_id):
+old_glicko_tau = 0.5
+def update_glicko(dicts,matches,t_info,tau=0.5):
+	tourneys,ids,p_info,records = dicts
+	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size = t_info
 	# converts match information to (s_j,mu_j,phi_j) format
-	#p_info_old = dcopy(p_info)
+	p_info_old = dcopy(p_info)
 
 	for abs_id in p_info:
 		# step 1 (instantiate starting values)
 		# glicko stores a tuple with (rating,RD,volatility)
 		if 'glicko' not in p_info[abs_id]:
 			p_info[abs_id]['glicko'] = (1500.,350.,0.06)
+			p_info_old[abs_id]['glicko'] = (1500.,350.,0.06)
 
 		# step 2 (scale values)
 		r,RD,sigma = p_info[abs_id]['glicko']
 		mu,phi = glicko_scale(r,RD)
 		
 		#if abs_id in matches
-		if t_id in ids[abs_id]:
-			p_matches = [(match[0],p_info[match[1]]['glicko']) for match in matches[abs_id]]
+		if t_id in ids[abs_id] and abs_id in matches and len(matches[abs_id]) > 0:
+			p_matches = [(match[0],p_info_old[match[1]]['glicko']) for match in matches[abs_id]]
 			p_matches = [(match[0],glicko_scale(match[1][0],match[1][1])) for match in p_matches]
 			p_matches = [(match[0],match[1][0],match[1][1]) for match in p_matches]
 
@@ -198,7 +207,7 @@ def update_glicko(p_info,ids,matches,t_id):
 			delta = glicko_delta(mu,p_matches)
 
 			# step 5 (compute sigma')
-			sigma_prime = glicko_update_vol(mu,phi,sigma,p_matches,delta,v_g)
+			sigma_prime = glicko_update_vol(mu,phi,sigma,p_matches,delta,v_g,tau)
 
 			# step 6 (update phi to new pre-rating value)
 			phi_star = sqrt(phi**2. + sigma_prime**2.)
@@ -208,7 +217,15 @@ def update_glicko(p_info,ids,matches,t_id):
 			mu_prime = mu + (phi_prime**2)*sum([glicko_g(phi_j)*(s_j - glicko_E(mu,mu_j,phi_j)) for s_j,mu_j,phi_j in p_matches])
 
 		else:
-			phi_prime = sqrt(phi**2 + sigma**2)
+			#print(t_date)
+			if t_id == p_info[abs_id]['last_event']:
+				last_date = t_date
+			else:
+				last_date = tourneys[p_info[abs_id]['last_event']]['date']
+			if date(last_date[0],last_date[1],last_date[2]) < (date(t_date[0],t_date[1],t_date[2])-timedelta(days=30)):
+				phi_prime = phi
+			else:
+				phi_prime = sqrt(phi**2 + sigma**2)
 			mu_prime = mu
 			sigma_prime = sigma
 
