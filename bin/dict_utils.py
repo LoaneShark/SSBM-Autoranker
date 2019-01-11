@@ -6,9 +6,10 @@ from timeit import default_timer as timer
 from copy import deepcopy as dcopy
 ## UTIL IMPORTS
 from readin_utils import *
-from db_utils import load_dict,save_dict,calc_region,get_region,get_players_by_region
+from region_utils import *
+from readin_utils import load_dict,save_dict
 
-flatten = lambda l: [item for sublist in l for item in sublist]
+flatten = lambda l: [item for sublist in l for item in sublist] if type(l) is list else []
 
 # return the (filtered) result(s) for a tourney
 # format is a list of players sorted by final placement, with indexing:
@@ -169,6 +170,11 @@ def get_resume(dicts,p_id,tags=None,t_ids=None,team=None,slugs=None):
 			return flatten([get_resume(dicts,team_id,tags=tags,t_ids=t_ids,slugs=slugs) for team_id in team_ids])
 	else:
 		p_id = get_abs_id_from_tag(dicts,tags)
+
+	# break if player is not in database
+	if p_id == None:
+		return []
+
 	#print(p_id)
 	# tourney id filtering
 	if t_ids == None:
@@ -186,11 +192,17 @@ def get_resume(dicts,p_id,tags=None,t_ids=None,team=None,slugs=None):
 	return res
 
 # returns (first stored) player id given their tag in a string
-def get_abs_id_from_tag(dicts,tag):
+def get_abs_id_from_tag(dicts,tag,first_only=True):
 	tourneys,ids,p_info,records = dicts
-	p_id = [abs_id for abs_id in p_info if tag in p_info[abs_id]['aliases']][0]
+	p_id = [abs_id for abs_id in p_info if tag in p_info[abs_id]['aliases']]
+	if len(p_id) > 0:
+		if first_only:
+			return p_id[0]
+		else:
+			return p_id
+	else:
+		return None
 	#print(p_info[1000]['aliases'])
-	return p_id
 
 # returns a list of all player ids listed under this team
 def get_players_from_team(dicts,team):
@@ -273,6 +285,9 @@ def print_events(dicts,t_ids,max_place=64):
 # prints the specified records, grouping by the g_key criteria
 def print_resume(dicts,res,g_key='player',s_key=None,disp_raw=False,disp_wins=True):
 	tourneys,ids,p_info,records = dicts
+	if not res or len(res) == 0 or res == []:
+		print("Resume was not provided or could not be found")
+		return False
 	print('')
 	if g_key == 'player':
 		res = sorted(res,key=lambda r: (r[1][0],r[0]))
@@ -350,7 +365,7 @@ def print_resume(dicts,res,g_key='player',s_key=None,disp_raw=False,disp_wins=Tr
 		if h_idx != 2:
 			s_tagstr += str(res[0][2])+" | "
 		s_tagstr += res[0][3]
-		s_tagstr += " ("+res[0][4]+")"
+		s_tagstr += " ("+str(res[0][4])+")"
 		print("\t"+s_tagstr)
 	else:
 		print("\t"+str(res[0][s_idx]))
@@ -374,7 +389,7 @@ def print_resume(dicts,res,g_key='player',s_key=None,disp_raw=False,disp_wins=Tr
 				if h_idx != 2:
 					s_tagstr += str(line[2])+" | "
 				s_tagstr += line[3]
-				s_tagstr += " ("+line[4]+")"
+				s_tagstr += " ("+str(line[4])+")"
 				print("\t"+s_tagstr)
 			else:
 				print("\t"+str(line[s_idx]))
@@ -477,6 +492,3 @@ def old_print_event(dicts,t_id,max_place=64):
 			#lsbuff = "\t"*(maxlen-len(path)+1)
 			print(("{:>%d.%d}"%(sp_len,sp_len)).format(sp),("{:<%d.%d}"%(tag_len,tag_len)).format(tag),"{:>7.7}".format(str(p_id)), \
 				"  {:<5.5}".format(str(placement)),"\t",("{:<%d.%d}"%(roundslen+5,roundslen+5)).format(str([t_labels[group] for group in path])),losses)
-
-if __name__ == "__main__":
-	save_cali_cities(hard_load=True)

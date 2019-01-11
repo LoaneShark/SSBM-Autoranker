@@ -11,7 +11,7 @@ import argparse
 from timeit import default_timer as timer
 ## UTIL IMPORTS
 from db_utils import *
-from analysis_utils import *
+from dict_utils import *
 from calc_utils import *
 
 ## TODO: 
@@ -98,7 +98,7 @@ def main():
 
 
 	#print(get_result((tourneys,ids,p_info,records),36179,res_filt={'player':1000}))
-	resume = get_resume((tourneys,ids,p_info,records),None,tags=['Puncayshun','tlo','goo','Jelly$potter'])
+	resume = get_resume((tourneys,ids,p_info,records),None,tags=['Hungrybox','Plup','Leffen','Mew2King'])
 	#update_regions((tourneys,ids,p_info,records),[1000])
 	print_resume((tourneys,ids,p_info,records),resume,g_key='event',s_key='player')
 
@@ -146,7 +146,7 @@ def get_scores(dicts,acc=3):
 	tourneys,ids,p_info,records = dicts
 	scores = {}
 	for p_id in p_info:
-		if p_id in records:
+		if p_id in records and is_active(dicts,p_id):
 			scores[p_id] = round(mean([score(dicts,records[p_id]['placings'][t_id],t_id) for t_id in tourneys if type(t_id) is int if t_id in records[p_id]['placings']]),acc)
 	return scores
 
@@ -155,7 +155,7 @@ def disp_scores(dicts,dispnum=20):
 	tourneys,ids,p_info,records = dicts
 	scores = get_scores(dicts)
 
-	players = sorted([[p_info[p_id]['tag'],scores[p_id]] for p_id in p_info],key=lambda x: x[1],reverse=True)
+	players = sorted([[p_info[p_id]['tag'],scores[p_id]] for p_id in scores],key=lambda x: x[1],reverse=True)
 	players = players[:dispnum]
 	for player in players:
 		print(player)
@@ -164,7 +164,7 @@ def get_elos(dicts,acc=3):
 	tourneys,ids,p_info,records = dicts
 	elos = {}
 	for p_id in p_info:
-		if p_id in records:
+		if p_id in records and is_active(dicts,p_id):
 			#elos[p_id] = mean([score(dicts,records[p_id]['placings'][t_id],t_id) for t_id in tourneys if type(t_id) is int if t_id in records[p_id]['placings']])
 			elos[p_id] = round(p_info[p_id]['elo'],acc)
 	return elos
@@ -173,7 +173,7 @@ def disp_elos(dicts,dispnum=20):
 	tourneys,ids,p_info,records = dicts
 	elos = get_elos(dicts)
 
-	players = sorted([[p_info[p_id]['tag'],elos[p_id]] for p_id in p_info],key=lambda x: x[1],reverse=True)
+	players = sorted([[p_info[p_id]['tag'],elos[p_id]] for p_id in elos],key=lambda x: x[1],reverse=True)
 	players = players[:dispnum]
 	for player in players:
 		print(player)
@@ -182,7 +182,7 @@ def get_glickos(dicts,acc=3):
 	tourneys,ids,p_info,records = dicts
 	glickos = {}
 	for p_id in p_info:
-		if p_id in records:
+		if p_id in records and is_active(dicts,p_id):
 			glickos[p_id] = round(p_info[p_id]['glicko'][0],acc)
 	return glickos
 
@@ -190,7 +190,7 @@ def disp_glickos(dicts,dispnum=20):
 	tourneys,ids,p_info,records = dicts
 	elos = get_glickos(dicts)
 
-	players = sorted([[p_info[p_id]['tag'],glickos[p_id]] for p_id in p_info],key=lambda x: x[1],reverse=True)
+	players = sorted([[p_info[p_id]['tag'],glickos[p_id]] for p_id in glickos],key=lambda x: x[1],reverse=True)
 	players = players[:dispnum]
 	for player in players:
 		print(player)

@@ -9,7 +9,24 @@ from copy import deepcopy as dcopy
 #import country_converter as coco
 #from geopy.geocoders import Nominatim
 from math import *
+## UTIL IMPORTS
+from dict_utils import get_abs_id_from_tag
 
+
+# returns true if given player meets specified minimum activity requirements (default 3)
+def is_active(dicts,p_id,tag=None,min_req=3):
+	tourneys,ids,p_info,records = dicts
+	if tag != None:
+		p_id = get_abs_id_from_tag(dicts,tag)
+	attendance = [t_id for t_id in records[p_id]['placings'] if type(records[p_id]['placings']) is int]
+	return (len(attendance) >= min_req)
+
+# returns a list of booleans for each given player, if they meet activity requirements
+def are_active(dicts,p_ids,tags=[],min_req=3):
+	tourneys,ids,p_info,records = dicts
+	if type(tags) is list and len(tags) > 0:
+		p_ids = [get_abs_id_from_tag(dicts,tag) for tag in tags]
+	return [is_active(dicts,p_id,min_req=min_req) for p_id in p_ids]
 
 ## ELO CALCULATION UTILS
 # Calculates the event performance rating for a single event
@@ -73,8 +90,8 @@ def update_elo(elo,expected,actual,N):
 
 ## GLICKO CALCULATION UTILS
 # (from glicko.net's algorithm)
-#glicko_tau = 0.5
-glicko_tau = 1.
+glicko_tau = 0.5
+#glicko_tau = 1.
 # returns mu,phi given r,RD (and vice versa)
 def glicko_scale(rating,RD):
 	return (rating-1500.)/173.7178,RD/173.7178
@@ -164,15 +181,17 @@ def update_glicko(p_info,ids,matches,t_id):
 		# glicko stores a tuple with (rating,RD,volatility)
 		if 'glicko' not in p_info[abs_id]:
 			p_info[abs_id]['glicko'] = (1500.,350.,0.06)
-		p_matches = [(match[0],p_info[match[1]]['glicko']) for match in matches[abs_id]]
-		p_matches = [(match[0],glicko_scale(match[1][0],match[1][1])) for match in p_matches]
-		p_matches = [(match[0],match[1][0],match[1][1]) for match in p_matches]
 
 		# step 2 (scale values)
 		r,RD,sigma = p_info[abs_id]['glicko']
 		mu,phi = glicko_scale(r,RD)
 		
+		#if abs_id in matches
 		if t_id in ids[abs_id]:
+			p_matches = [(match[0],p_info[match[1]]['glicko']) for match in matches[abs_id]]
+			p_matches = [(match[0],glicko_scale(match[1][0],match[1][1])) for match in p_matches]
+			p_matches = [(match[0],match[1][0],match[1][1]) for match in p_matches]
+
 			# step 3 (compute v)
 			v_g = glicko_variance(mu,p_matches)
 			# step 4 (compute delta)
