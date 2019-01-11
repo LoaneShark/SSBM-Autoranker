@@ -98,7 +98,7 @@ def main():
 
 
 	#print(get_result((tourneys,ids,p_info,records),36179,res_filt={'player':1000}))
-	resume = get_resume((tourneys,ids,p_info,records),None,tags=['Hungrybox','Plup','Leffen','Mew2King'])
+	resume = get_resume((tourneys,ids,p_info,records),None,tags=['Hungrybox','Plup','Leffen','Mew2King'],slugs=['the-big-house-8','summit-7','shine-2018'])
 	#update_regions((tourneys,ids,p_info,records),[1000])
 	print_resume((tourneys,ids,p_info,records),resume,g_key='event',s_key='player')
 

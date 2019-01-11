@@ -213,10 +213,10 @@ def store_players(entrants,names,t_info,dicts):
 					else:
 						p_info[abs_id][key] = info
 				if 'region' not in p_info[abs_id]:
-					p_info[abs_id]['region'] = get_region(dicts,abs_id,granularity=2,calc_region=True)
+					p_info[abs_id]['region'] = get_region(dicts,abs_id,granularity=2,to_calc=True)
 				else:
 					if p_info[abs_id]['region'] == 'N/A' or p_info[abs_id]['region'] == None:
-						p_info[abs_id]['region'] = get_region(dicts,abs_id,granularity=2,calc_region=True)
+						p_info[abs_id]['region'] = get_region(dicts,abs_id,granularity=2,to_calc=True)
 
 				# store ranking data, with initial values if needed
 				if 'elo' not in p_info[abs_id]:
