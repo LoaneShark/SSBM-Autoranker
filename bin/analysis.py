@@ -105,6 +105,7 @@ def main():
 	#disp_all(dicts,key='elo')
 	#disp_all(dicts,key='elo',dispnum=20,min_activity=2)
 	#disp_all(dicts,key='glicko',dispnum=20,min_activity=2)
+	print(tourneys[3511]['name'])
 	disp_all(dicts,key='norm_all',dispnum=20,min_activity=2,tier_tol=0.5)
 	#print_event(dicts,tourneys['slugs']['smash-summit-5'])
 

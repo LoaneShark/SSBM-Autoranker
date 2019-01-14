@@ -218,7 +218,7 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 					p_info[abs_id]['aliases'].extend([p_tag])
 					if p_tag != None and any([is_cjk(tag_c) for tag_c in p_tag]):
 						#trans_tag = '『'+translate(tag)+'』'
-						trans_tag = '<'+(translate(tag,to='ja')).pronunciation+'>'
+						trans_tag = '<'+(translate(p_tag,to='ja')).pronunciation+'>'
 						if trans_tag not in p_info[abs_id]['aliases']:
 							p_info[abs_id]['aliases'].extend([trans_tag])
 				if translate_cjk:

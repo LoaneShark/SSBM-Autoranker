@@ -5,8 +5,11 @@ from six.moves.urllib.parse import urlencode
 import requests
 import re,os,pickle,time,json
 from emoji import UNICODE_EMOJI
+from json.decoder import JSONDecodeError
 #from google.cloud import translate as g_translate
 from googletrans import Translator
+#from polyglot.transliteration import Transliterator
+from polyglot.text import Text
 import regex
 import shutil
 import subprocess
@@ -119,6 +122,8 @@ def is_ascii(s):
 # NOTE: currently ONLY works for FLAG EMOJIS (\U0001F1E6-\U0001F1FF)
 def is_emoji(s,print_e=False):
 	#s = s.encode('utf8').decode('utf8')
+	if s in UNICODE_EMOJI:
+		return True
 	data = regex.findall(r'\X', s)
 	flags = regex.findall(u'[\U0001F1E6-\U0001F1FF]', s)
 	if print_e:
@@ -159,7 +164,7 @@ def is_cjk(char):
 	return any([range["from"] <= ord(char) <= range["to"] for range in ranges])
 
 # uses google's API to return translated names
-def translate(text, src = '', to = 'en'):
+def translate(text, src = '', to = 'en',looped=False):
 	#parameters = ({'langpair': '{0}|{1}'.format(src, to), 'v': '1.0' })
 	translated = '@@@'
 	#dir_path = os.path.dirname(os.path.abspath(__file__))
@@ -169,13 +174,29 @@ def translate(text, src = '', to = 'en'):
 	#print(os.path.isfile(keyfile_path))
 	#subprocess.check_call(['set GOOGLE_APPLICATION_CREDENTIALS=%s'%keyfile_path])
 	#print(os.system('set GOOGLE_APPLICATION_CREDENTIALS=%s'%keyfile_path))
-	translator = Translator()
+	print(text)
+	#print(text.encode('utf-8'))
+	#print(any([is_emoji(ch) for ch in text]))
+	#translator = Translator()
+	if src == '':
+		src = translator.detect(text).lang
+	#print(text,type(text))
+	#print(text.encode('utf-8'))
 	#translate_client = g_translate.Client()
 	#for text in (text[index:index + 4500] for index in range(0, len(text), 4500)):
 		#parameters['q'] = text
 		#response = json.loads(urlopen('http://ajax.googleapis.com/ajax/services/language/translate', data = urlencode(parameters).encode('utf-8')).read().decode('utf-8'))
 		#response = translate_client.translate(text,target_language=to)
-	translated = translator.translate(text,dest=to)
+	try:
+		translated = translator.translate(text,dest=to,src=src)
+		# get around google translate's query limit
+	except JSONDecodeError:
+		time.sleep(.5)
+		#if not looped:
+		#	translated = translate(text,src=src,to=to,looped=True)
+		#else:
+		translator = Translator()
+		translated = translator.translate(text,dest=to,src=src)
 		#print(text)
 		#print(response)
 

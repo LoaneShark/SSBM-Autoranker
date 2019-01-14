@@ -236,5 +236,5 @@ def update_glicko(dicts,matches,t_info,tau=0.5):
 		# store new values & changes
 		skills['glicko'][abs_id][t_id] = (r_prime,RD_prime,sigma_prime)
 		r_del,RD_del,sigma_del = r_prime-r,RD_prime-RD,sigma_prime-sigma
-		if not(r_del == 0 and RD_del == 0 and sigma_del == 0):
-			skills['glicko_del'][abs_id][t_id] = (r_del,RD_del,sigma_del)
+		#if not(r_del == 0 and RD_del == 0 and sigma_del == 0):
+		skills['glicko_del'][abs_id][t_id] = (r_del,RD_del,sigma_del)
