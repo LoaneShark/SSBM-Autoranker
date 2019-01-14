@@ -15,7 +15,7 @@ flatten = lambda l: [item for sublist in l for item in sublist] if type(l) is li
 # format is a list of players sorted by final placement, with indexing:
 # (p_id,p_team,p_tag,p_path,p_place,p_losses,p_wins)
 def get_result(dicts,t_id,res_filt=None):
-	tourneys,ids,p_info,records = dicts
+	tourneys,ids,p_info,records,skills = dicts
 	t = tourneys[t_id]
 	t_labels = t['groups']
 
@@ -96,7 +96,7 @@ def get_result(dicts,t_id,res_filt=None):
 # returns a copy of the database containing the dicts of info relating to a given player
 # (filtered by event(s) if provided)
 def get_player(dicts,p_id,tag=None,t_ids=None,slugs=None):
-	tourneys,ids,p_info,records = dicts
+	tourneys,ids,p_info,records,skills = dicts
 	if not tag == None:
 		p_id = get_abs_id_from_tag(dicts,tag)
 	if not slugs == None:
@@ -154,7 +154,7 @@ def get_results(dicts,t_ids,res_filt=None):
 # for each tourney they attended (or only in those provided).
 # can pull the results for a whole team as well
 def get_resume(dicts,p_id,tags=None,t_ids=None,team=None,slugs=None):
-	tourneys,ids,p_info,records = dicts
+	tourneys,ids,p_info,records,skills = dicts
 	# recursion filtering
 	if type(p_id) is list:
 		return flatten([get_resume(dicts,pid,tags=tags,t_ids=t_ids,team=team,slugs=slugs) for pid in p_id])
@@ -193,7 +193,7 @@ def get_resume(dicts,p_id,tags=None,t_ids=None,team=None,slugs=None):
 
 # returns (first stored) player id given their tag in a string
 def get_abs_id_from_tag(dicts,tag,first_only=True):
-	tourneys,ids,p_info,records = dicts
+	tourneys,ids,p_info,records,skills = dicts
 	p_id = [abs_id for abs_id in p_info if tag in p_info[abs_id]['aliases']]
 	if len(p_id) > 0:
 		if first_only:
@@ -206,12 +206,12 @@ def get_abs_id_from_tag(dicts,tag,first_only=True):
 
 # returns a list of all player ids listed under this team
 def get_players_from_team(dicts,team):
-	tourneys,ids,p_info,records = dicts
+	tourneys,ids,p_info,records,skills = dicts
 	roster = [abs_id for abs_id in p_info if p_info[abs_id]['team'] == team]
 	return roster
 
 def list_tourneys(dicts,year=None):
-	tourneys,ids,p_info,records = dicts
+	tourneys,ids,p_info,records,skills = dicts
 	if year == None:
 		return [tourneys[t_id]['name'] for t_id in tourneys if t_id != 'slugs']
 	else:
@@ -219,7 +219,7 @@ def list_tourneys(dicts,year=None):
 
 # print (filtered) results for a given tourney
 def print_result(dicts,t_id,res_filt=None,max_place=64):
-	tourneys,ids,p_info,records = dicts
+	tourneys,ids,p_info,records,skills = dicts
 	res = get_result(dicts,t_id,res_filt)
 	maxlen = 0
 	t = tourneys[t_id]
@@ -284,7 +284,7 @@ def print_events(dicts,t_ids,max_place=64):
 
 # prints the specified records, grouping by the g_key criteria
 def print_resume(dicts,res,g_key='player',s_key=None,disp_raw=False,disp_wins=True):
-	tourneys,ids,p_info,records = dicts
+	tourneys,ids,p_info,records,skills = dicts
 	#print(res)
 	if not res or len(res) == 0 or res == []:
 		print("Resume was not provided or could not be found")
@@ -426,7 +426,7 @@ def print_resume_line(line,h_idx,s_idx,disp_wins=True):
 # print's an event's results (deprecated)
 def old_print_event(dicts,t_id,max_place=64):
 	maxlen = 0
-	tourneys,ids,p_info,records = dicts
+	tourneys,ids,p_info,records,skills = dicts
 	t = tourneys[t_id]
 	t_labels = t['groups']
 

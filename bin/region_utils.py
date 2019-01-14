@@ -123,7 +123,7 @@ def is_socal(geoloc,location):
 
 # returns the regional grouping given either a player id or tag or location
 def get_region(dicts,p_id,tag=None,country=None,state=None,city=None,granularity=2,to_calc=False):
-	tourneys,ids,p_info,records = dicts
+	tourneys,ids,p_info,records,skills = dicts
 	if not country == None:
 		return calc_region(country,state,city,granularity)
 	if not tag == None:
@@ -136,16 +136,16 @@ def get_region(dicts,p_id,tag=None,country=None,state=None,city=None,granularity
 
 # returns a list of player ids (and their json data if requested) given a regional name
 def get_players_by_region(dicts,region,granularity=2,get_data=False):
-	tourneys,ids,p_info,records = dicts
+	tourneys,ids,p_info,records,skills = dicts
 	if get_data:
 		return [(abs_id,get_player(dicts,abs_id)) for abs_id in p_info if get_region(dicts,abs_id,granularity=granularity) == region]
 	else:
 		return [abs_id for abs_id in p_info if get_region(dicts,abs_id,granularity=granularity) == region]
 
 def update_regions(dicts,players):
-	tourneys,ids,p_info,records = dicts
+	tourneys,ids,p_info,records,skills = dicts
 	for p_id in players:
-		p_info[p_id]['region'] = get_region((tourneys,ids,p_info,records),p_id,to_calc=True)
+		p_info[p_id]['region'] = get_region((tourneys,ids,p_info,records,skills),p_id,to_calc=True)
 
 # saves the given cities in additions, with the given classification (Socal, Norcal, or Misc)
 def save_cali_cities(cali={},to_load=True,hard_load=False):

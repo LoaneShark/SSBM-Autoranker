@@ -1,6 +1,7 @@
 #import numpy as np 
 #import scipy as sp 
 from six.moves.urllib.request import urlopen
+from urllib.error import HTTPError
 #import lxml.html as lh
 #import pandas as pd
 from bs4 import BeautifulSoup
@@ -29,6 +30,8 @@ def scrape(game,year,verb=0):
 	doc = BeautifulSoup(page,features='lxml')
 
 	t_idx = table_index(doc,game,year)
+	if t_idx == None:
+		return []
 
 	i = 0
 	res = []
@@ -46,6 +49,7 @@ def scrape(game,year,verb=0):
 		i = i+1
 	doc.decompose()
 	res = res[1:]
+	#res = [item for item in res if 'redlink' not in item[0]]
 	if v >= 5:
 		print(res)
 
@@ -59,6 +63,17 @@ def scrape_slugs(urls):
 
 # given a url for a tournament's ssbwiki page, returns the smash.gg bracket slug
 def scrape_slug(url):
+	#print(url)
+	if 'redlink' in url:
+		url = url.split('&')[0]
+		#print (url)
+		try:
+			page = urlopen(url).read()
+		except HTTPError:
+			return ((None,url.split("Tournament")[-1][1:]))
+
+
+		#return((None,doc.h1.text[11:]))
 	page = urlopen(url).read()
 	page = page.decode('UTF-8')
 	doc = BeautifulSoup(page,features='lxml')
@@ -93,7 +108,8 @@ def table_index(doc,game,year):
 	for i in range(0,min(len(tables),len(headers))):
 		table = tables[i+3]
 		header = headers[i]
-
+		#if header.span == None:
+		#	continue
 		c_year = header.span['id'].split('_')
 		if int(c_year[0]) <= old_c_year:
 			c_game = c_game + 1
@@ -106,9 +122,12 @@ def table_index(doc,game,year):
 
 		old_c_year = int(c_year[0])
 
-		if int(c_year[0]) == year and game_ids[int(c_year[1])] == name:
-			return i+3
-			break
+		if game_ids[int(c_year[1])] == name:
+			if int(c_year[0]) == year:
+				return i+3
+				break
+			if int(c_year[0]) > year:
+				return None
 
 if __name__ == "__main__":
 	print(scrape(1,2016))

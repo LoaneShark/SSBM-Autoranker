@@ -17,7 +17,7 @@ activity_min = 3
 
 # returns true if given player meets specified minimum activity requirements (default 3)
 def is_active(dicts,p_id,tag=None,min_req=activity_min):
-	tourneys,ids,p_info,records = dicts
+	tourneys,ids,p_info,records,skills = dicts
 	if tag != None:
 		p_id = get_abs_id_from_tag(dicts,tag)
 	attendance = [t_id for t_id in records[p_id]['placings'] if type(records[p_id]['placings'][t_id]) is int]
@@ -26,7 +26,7 @@ def is_active(dicts,p_id,tag=None,min_req=activity_min):
 
 # returns a list of booleans for each given player, if they meet activity requirements
 def are_active(dicts,p_ids,tags=[],min_req=activity_min):
-	tourneys,ids,p_info,records = dicts
+	tourneys,ids,p_info,records,skills = dicts
 	if type(tags) is list and len(tags) > 0:
 		p_ids = [get_abs_id_from_tag(dicts,tag) for tag in tags]
 	return [is_active(dicts,p_id,min_req=min_req) for p_id in p_ids]
@@ -179,7 +179,7 @@ def glicko_update_vol(mu,phi,sigma,p_matches,delta,v_g,tau):
 # after a given tournament
 old_glicko_tau = 0.5
 def update_glicko(dicts,matches,t_info,tau=0.5):
-	tourneys,ids,p_info,records = dicts
+	tourneys,ids,p_info,records,skills = dicts
 	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size = t_info
 	# converts match information to (s_j,mu_j,phi_j) format
 	p_info_old = dcopy(p_info)
@@ -232,3 +232,9 @@ def update_glicko(dicts,matches,t_info,tau=0.5):
 		# step 8 (unscale values)
 		r_prime,RD_prime = glicko_unscale(mu_prime,phi_prime)
 		p_info[abs_id]['glicko'] = (r_prime,RD_prime,sigma_prime)
+
+		# store new values & changes
+		skills['glicko'][abs_id][t_id] = (r_prime,RD_prime,sigma_prime)
+		r_del,RD_del,sigma_del = r_prime-r,RD_prime-RD,sigma_prime-sigma
+		if not(r_del == 0 and RD_del == 0 and sigma_del == 0):
+			skills['glicko_del'][abs_id][t_id] = (r_del,RD_del,sigma_del)

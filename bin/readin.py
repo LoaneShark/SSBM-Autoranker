@@ -258,11 +258,16 @@ def read_entrants(data,phase_data,entrants,names,xpath):
 	return entrants,names,xpath
 		
 # returns sponsor, gamertag, and player meta info for a given entrant	
-def read_names(x):
+def read_names(x,translate_cjk=False):
 	e_id = x['entrantId']
 	part_ids = x['mutations']['entrants'][str(e_id)]['participantIds']
 	abs_ids = [x['mutations']['entrants'][str(e_id)]['playerIds'][str(part_id)] for part_id in part_ids]
 	tags = [x['mutations']['participants'][str(part_id)]['gamerTag'] for part_id in part_ids]
+
+	if translate_cjk:
+		#tags = ['『'+translate(tag)+'』' for tag in tags if any([is_cjk(tag_c) for tag_c in tag])]
+		tags = ['<'+translate(tag,to='ja').pronunciation+'>' if any([is_cjk(tag_c) for tag_c in tag]) else tag for tag in tags]
+
 	prefixes = [x['mutations']['participants'][str(part_id)]['prefix'] for part_id in part_ids]
 	if len(part_ids) > 1:
 		team_name = x['mutations']['entrants'][str(e_id)]['name']
@@ -415,19 +420,21 @@ def read_phases(tourney):
 		event_ids = [[event['id'],(event['name'],event['description'])] for event in tdata['entities']['event'] if event['videogameId'] == game] #and min(event['entrantSizeMin'],4) == min(teamsize,4)]
 		#event_ids = [event['id'] for event in tdata['entities']['event'] if event['videogameId'] == game and event['entrantSizeMin'] == teamsize]
 		
+		if teamsize == 1:
+			team_string = "singles"
+		elif teamsize == 2:
+			team_string = "doubles"
+		elif teamsize > 2:
+			team_string = "crews"
+		else:
+			team_string = "[V O I D]"
+		if not count_arcadians:
+			pro_string = "PRO"
+		elif only_arcadians:
+			pro_string = "AMATEUR"
+		else:
+			pro_string = "ALL"
 		if v >= 6:
-			if teamsize == 1:
-				team_string = "singles"
-			elif teamsize == 2:
-				team_string = "doubles"
-			elif teamsize > 2:
-				team_string = "crews"
-			else:
-				team_string = "[V O I D]"
-			if not count_arcadians:
-				pro_string = "PRO"
-			else:
-				pro_string = "ALL"
 			print("only looking for brackets of game type: %s %s [%s]"%(gamemap[game][0], team_string, pro_string))
 			print("event_ids pre filtering: " + str([(event_id[0],event_id[1][0]) for event_id in event_ids]))
 		# filters out events that don't list the given game in description, to filter out stuff like low tiers/ironmans/crews etc
@@ -459,8 +466,12 @@ def read_phases(tourney):
 
 		if v >= 6:
 			print("event_ids post filtering: " + str(len(event_ids)))
+		if len(event_ids) <= 0 and v >= 1:
+			print("** No suitable events found of form: %s %s [%s] at this tournament"%(gamemap[game][0], team_string, pro_string))
+
 		if force_first_event:
 			event_ids = event_ids[:1]
+
 		# get all phases (waves) for each event (ideally filtered down to 1 by now)
 		phase_ids = [phase['id'] for phase in tdata['entities']['phase'] if phase['eventId'] in event_ids]
 		# get all groups (pools) for each phase
@@ -486,14 +497,15 @@ def read_phases(tourney):
 
 if __name__ == "__main__":
 	readin(t_slug_a)
-
+	#print(translate(translate("Zackray",to='ja').text,to='ja').pronunciation)
 	#readin('summit7',type='ss')
 	#print(get_slug('tbh8'))
 
 	#read_sets("sets.txt")
 	#pull_phase(764818)
 
-	#clean_data("./old/summit5setsraw1.txt","./old/summit5setsclean1.txt")
+	#clean_data("./old/umeburaphasesraw.txt","./old/umeburaphasesclean.txt")
+	#clean_data("./old/umeburasetsraw.txt","./old/umeburasetsclean.txt")
 	#clean_data("./old/summit5setsraw2.txt","./old/summit5setsclean2.txt")
 	#clean_data("./old/crewsraw.txt","./old/crewsclean.txt")
 	#clean_data("cextop8raw.txt","cextop8clean.txt")

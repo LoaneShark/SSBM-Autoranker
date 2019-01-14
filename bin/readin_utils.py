@@ -1,11 +1,16 @@
 #import numpy as np 
 #import scipy as sp 
 from six.moves.urllib.request import urlopen
+from six.moves.urllib.parse import urlencode
 import requests
 import re,os,pickle,time,json
 from emoji import UNICODE_EMOJI
+#from google.cloud import translate as g_translate
+from googletrans import Translator
 import regex
 import shutil
+import subprocess
+#from translation import baidu
 
 ## AUXILIARY FUNCTIONS
 # returns the full slug (needed to pull tourney data) given the short slug
@@ -19,7 +24,7 @@ def get_slug(ss):
 # returns true if the description contains explicit mention of a given game (default melee/SSBM)
 #SSB = 4 	SSBM = 1	SSBB = 5 	P:M = 2		SSB4 = 3 	SSBU = 1386
 def has_game(descr,game=1, gamemap={1: ['melee','ssbm','ssbmelee'], 2: ['P:M','project: m','project melee','project m'], \
-				3: ['ssb4','smash 4','ssb wii u','smash wii u','for wii u'], 4: ['smash 64','ssb64'], 5: ['brawl','ssbb'], 1386: ['ssbu','ultimate']}):
+				3: ['ssb4','smash 4','ssb wii u','smash wii u','for wii u'], 4: ['smash 64','ssb64'], 5: ['brawl','ssbb'], 1386: ['ssbu','ultimate','sp','special','ssbs']}):
 	if descr == None:
 		return False
 	else:
@@ -134,6 +139,54 @@ def is_emoji(s,print_e=False):
 		return True
 	return False
 
+# detects if a character is chinese, japanese, or korean
+def is_cjk(char):
+	ranges = [
+	  {"from": ord(u"\u3300"), "to": ord(u"\u33ff")},         # compatibility ideographs
+	  {"from": ord(u"\ufe30"), "to": ord(u"\ufe4f")},         # compatibility ideographs
+	  {"from": ord(u"\uf900"), "to": ord(u"\ufaff")},         # compatibility ideographs
+	  {"from": ord(u"\U0002F800"), "to": ord(u"\U0002fa1f")}, # compatibility ideographs
+	  {'from': ord(u'\u3040'), 'to': ord(u'\u309f')},         # Japanese Hiragana
+	  {"from": ord(u"\u30a0"), "to": ord(u"\u30ff")},         # Japanese Katakana
+	  {"from": ord(u"\u2e80"), "to": ord(u"\u2eff")},         # cjk radicals supplement
+	  {"from": ord(u"\u4e00"), "to": ord(u"\u9fff")},
+	  {"from": ord(u"\u3400"), "to": ord(u"\u4dbf")},
+	  {"from": ord(u"\U00020000"), "to": ord(u"\U0002a6df")},
+	  {"from": ord(u"\U0002a700"), "to": ord(u"\U0002b73f")},
+	  {"from": ord(u"\U0002b740"), "to": ord(u"\U0002b81f")},
+	  {"from": ord(u"\U0002b820"), "to": ord(u"\U0002ceaf")}  # included as of Unicode 8.0
+	]
+	return any([range["from"] <= ord(char) <= range["to"] for range in ranges])
+
+# uses google's API to return translated names
+def translate(text, src = '', to = 'en'):
+	#parameters = ({'langpair': '{0}|{1}'.format(src, to), 'v': '1.0' })
+	translated = '@@@'
+	#dir_path = os.path.dirname(os.path.abspath(__file__))
+	#parent_dir = '\\'.join(dir_path.split('\\')[:-1])
+	#keyfile_path = parent_dir + '\\lib\\gcloud_keyfile.json'
+	#print(keyfile_path)
+	#print(os.path.isfile(keyfile_path))
+	#subprocess.check_call(['set GOOGLE_APPLICATION_CREDENTIALS=%s'%keyfile_path])
+	#print(os.system('set GOOGLE_APPLICATION_CREDENTIALS=%s'%keyfile_path))
+	translator = Translator()
+	#translate_client = g_translate.Client()
+	#for text in (text[index:index + 4500] for index in range(0, len(text), 4500)):
+		#parameters['q'] = text
+		#response = json.loads(urlopen('http://ajax.googleapis.com/ajax/services/language/translate', data = urlencode(parameters).encode('utf-8')).read().decode('utf-8'))
+		#response = translate_client.translate(text,target_language=to)
+	translated = translator.translate(text,dest=to)
+		#print(text)
+		#print(response)
+
+	#try:
+	#	translated += response['translatedText']
+	#except:
+	#	pass
+
+	#print(translated.text)
+	return translated
+
 # saves a single dict
 def save_dict(data,name,ver,loc='db'):
 	if not os.path.isdir('%s'%loc):
@@ -157,6 +210,17 @@ def load_dict(name,ver,loc='db'):
 			#t['groups'] = {}
 			save_dict(t,name,ver,loc)
 			return t
+		if name == 'skills':
+			s = {}
+			s['elo'] = {}
+			s['elo_del'] = {}
+			s['glicko'] = {}
+			s['glicko_del'] = {}
+			s['sim'] = {}
+			s['sim_del'] = {}
+			s['perf'] = {}
+			save_dict(s,name,ver,loc)
+			return s
 		else:
 			save_dict({},name,ver,loc)
 			return {}
@@ -188,10 +252,13 @@ def load_slugs(game,year,loc='db'):
 # (for use once a tourney has been imported fully, to remove garbage files from accumulating)
 def delete_tourney_cache(t_id):
 	if os.path.isdir('obj/%d'%t_id):
-		shutil.rmtree('obj/%d'%t_id)
+		try:
+			shutil.rmtree('obj/%d'%t_id)
+		except OSError:
+			return
 
 # prints tournament results by player's final placing
-def print_results(res,names,entrants,losses,max_place=64):
+def print_results(res,names,entrants,losses,max_place=64,translate_cjk=True):
 	maxlen = 0
 
 	res_l = [item for item in res.items()]
@@ -236,6 +303,10 @@ def print_results(res,names,entrants,losses,max_place=64):
 					sp = "  "
 				else:
 					sp = names[player[0]][0][idx]
+					if translate_cjk:
+						if any([is_cjk(tsp_char) for sp_char in sp]):
+							#tag = '『'+''.join(translate(tag_char) for tag_char in tag)+'』'
+							sp = '<'+(translate(sp,to='ja')).pronunciation+'>'
 					if len(sp) > 12:
 						sp = sp[:8] + "... |"
 					else:
@@ -248,6 +319,11 @@ def print_results(res,names,entrants,losses,max_place=64):
 						sp_slot -= 1
 				#tag = "/".join(str(n) for n in names[player[0]][1])
 				tag = names[player[0]][1][idx]
+				if translate_cjk:
+					if any([is_cjk(tag_char) for tag_char in tag]):
+						#tag = '『'+''.join(translate(tag_char) for tag_char in tag)+'』'
+						tag = '<'+(translate(tag,to='ja')).pronunciation+'>'
+						#tag = '<'+''.join([(translate(tag_char)).text for tag_char in tag])+'>'
 				tag_slot = 24#*team_mult
 				if len(tag) > tag_slot:
 					tag = tag[:tag_slot-3]+"..."
@@ -260,9 +336,19 @@ def print_results(res,names,entrants,losses,max_place=64):
 			if player[0] in losses:
 				#print(losses)
 				if len(playerstrings) >= 4:
-					ls = "["+", ".join(entrants[loss[0]][0][2] for loss in losses[player[0]])+"]"
+					ls_list = [entrants[loss[0]][0][2] for loss in losses[player[0]]]
 				else:
-					ls = "["+", ".join(" / ".join(str(j) for j in l) for l in [names[loss[0]][1] for loss in losses[player[0]]])+"]"
+					ls_list = [" / ".join(str(j) for j in l) for l in [names[loss[0]][1] for loss in losses[player[0]]]]
+
+				if translate_cjk:
+					ls_list = ['<'+(translate(l_tag,to='ja')).pronunciation+'>' if any([is_cjk(l_tag_char) for l_tag_char in l_tag]) else l_tag for l_tag in ls_list]
+					#for l_tag in ls_list:
+					#	if any([is_cjk(l_tag_char) for l_tag_char in l_tag]):
+					#		print("ohno")
+					#		ls_list.replace(l_tag,'<'+(translate(l_tag,to='ja')).pronunciation+'>')
+					#		print(l_tag,ls_list)
+
+				ls = "["+", ".join(ls_list)+"]"
 			else:
 				ls = None
 
