@@ -7,6 +7,7 @@ import numpy as np
 import os,sys,pickle,time
 ## UTIL IMPORTS
 from calc_utils import *
+from readin_utils import *
 
 # gets a the "score" for each player, calculated as the average percentage of bracket completed
 # (average number of rounds made through the bracket, normalized to [0,1])
@@ -129,7 +130,7 @@ def get_best_performances(dicts,use_names=False,acc=3,scale_vals=False):
 
 	return best_perfs
 
-def disp_all(dicts,dispnum=20,key='elo',avg_perf=False,scale_vals=False,min_activity=3,tier_tol=-1):
+def disp_all(dicts,dispnum=20,key='elo',trans_cjk=True,avg_perf=False,scale_vals=False,min_activity=3,tier_tol=-1):
 	tourneys,ids,p_info,records,skills = dicts
 	key_idx = 1
 	if key == 'norm_all':
@@ -174,16 +175,23 @@ def disp_all(dicts,dispnum=20,key='elo',avg_perf=False,scale_vals=False,min_acti
 	#print("\n{:<20.20}".format("Player"),"{:<9.9}".format("Elo"),"{:<9.9}".format("Glicko-2"),"{:<9.9}".format("Mean %"),("{:<%d.%d}"%(perfstr_len,perfstr_len)).format(perfstr),"\n")
 	last = None
 	for player in players:
+		tagstr_len = 20
 		if tier_tol > 0:
 			val = player[key_idx]
 			if last != None:
 				if abs(last-val) >= tier_tol:
 					print('--------------------------------------------------------------------------')
 			last = val
+		if trans_cjk:
+			if has_cjk(player[0]):
+				player[0] = '<'+transliterate(player[0])+'>'
+		for tag_ch in player[0]:
+			if is_emoji(tag_ch):
+				tagstr_len -= 1
 		if key == 'norm_all':
-			print("{:<20.20}".format(player[0]),"{:<18.18}".format(str(player[1])),"{:<9.9}".format(player[2]),("{:<%d.%d}"%(perfstr_len,perfstr_len)).format(str(player[3])))
+			print(("{:<%s.%s}"%(tagstr_len,tagstr_len)).format(player[0]),"{:<18.18}".format(str(player[1])),"{:<9.9}".format(player[2]),("{:<%d.%d}"%(perfstr_len,perfstr_len)).format(str(player[3])))
 		else:
-			print("{:<20.20}".format(player[0]),"{:<9.9}".format(str(player[1])),"{:<9.9}".format(player[2]),"{:<9.9}".format(player[3]),("{:<%d.%d}"%(perfstr_len,perfstr_len)).format(str(player[4])))
+			print(("{:<%s.%s}"%(tagstr_len,tagstr_len)).format(player[0]),"{:<9.9}".format(str(player[1])),"{:<9.9}".format(player[2]),"{:<9.9}".format(player[3]),("{:<%d.%d}"%(perfstr_len,perfstr_len)).format(str(player[4])))
 
 def score(dicts,placing,t_id):
 	tourneys,ids,p_info,records,skills = dicts

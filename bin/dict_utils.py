@@ -424,7 +424,7 @@ def print_resume_line(line,h_idx,s_idx,disp_wins=True):
 	print("\t\t"+'['+', '.join(str(val) for val in temp_line[:(del_lines-3)])+', '+', '.join('['+', '.join(str(item) for item in val)+']' for val in temp_line[(del_lines-3):])+']')
 
 # print's an event's results (deprecated)
-def old_print_event(dicts,t_id,max_place=64):
+def old_print_event(dicts,t_id,max_place=64,translate_cjk=True):
 	maxlen = 0
 	tourneys,ids,p_info,records,skills = dicts
 	t = tourneys[t_id]
@@ -473,21 +473,31 @@ def old_print_event(dicts,t_id,max_place=64):
 					if sp[-2:] != " |":
 						sp = sp + " |"
 			sp_len = 13
+			if translate_cjk and has_cjk(sp):
+				sp = '<'+transliterate(sp)+'>'
 			for ch in sp:
-				if is_emoji(sp):
+				if is_emoji(ch):
+					sp_len -= 1
+				elif is_cjk(ch):
 					sp_len -= 1
 			# format player tag
 			tag_len = 24
+			if translate_cjk and has_cjk(tag):
+				tag = '<'+transliterate(tag)+'>'
 			if len(tag) > tag_len:
 				tag = tag[:tag_len-3]+"..."
 			for ch in tag:
 				if is_emoji(ch):
+					tag_len -= 1
+				elif is_cjk(ch):
 					tag_len -= 1
 			# format losses
 			if losses == None or losses == []:
 				losses = None
 			else:
 				losses = [p_info[loss_id]['tag'] for loss_id in losses]
+			if translate_cjk:
+				losses = ['<'+transliterate(loss_tag)+'>' for loss_tag in losses]
 			# format spacing
 			#if len(path) > maxlen:
 			#	maxlen = len(path)

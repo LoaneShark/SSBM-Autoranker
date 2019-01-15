@@ -108,8 +108,8 @@ def table_index(doc,game,year):
 	for i in range(0,min(len(tables),len(headers))):
 		table = tables[i+3]
 		header = headers[i]
-		#if header.span == None:
-		#	continue
+		if header.span == None and header.text == 'Views':
+			return None
 		c_year = header.span['id'].split('_')
 		if int(c_year[0]) <= old_c_year:
 			c_game = c_game + 1

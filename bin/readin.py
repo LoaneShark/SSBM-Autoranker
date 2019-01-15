@@ -266,7 +266,8 @@ def read_names(x,translate_cjk=False):
 
 	if translate_cjk:
 		#tags = ['『'+translate(tag)+'』' for tag in tags if any([is_cjk(tag_c) for tag_c in tag])]
-		tags = ['<'+translate(tag,to='ja').pronunciation+'>' if any([is_cjk(tag_c) for tag_c in tag]) else tag for tag in tags]
+		#tags = ['<'+translate(tag,to='ja').pronunciation+'>' if any([is_cjk(tag_c) for tag_c in tag]) else tag for tag in tags]
+		tags = ['<'+transliterate(tag)+'>' if any([is_cjk(tag_c) for tag_c in tag]) else tag for tag in tags]
 
 	prefixes = [x['mutations']['participants'][str(part_id)]['prefix'] for part_id in part_ids]
 	if len(part_ids) > 1:

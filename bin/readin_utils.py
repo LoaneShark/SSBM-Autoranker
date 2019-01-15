@@ -1,15 +1,17 @@
 #import numpy as np 
 #import scipy as sp 
 from six.moves.urllib.request import urlopen
-from six.moves.urllib.parse import urlencode
+#from six.moves.urllib.parse import urlencode
 import requests
 import re,os,pickle,time,json
 from emoji import UNICODE_EMOJI
-from json.decoder import JSONDecodeError
+#from json.decoder import JSONDecodeError
 #from google.cloud import translate as g_translate
-from googletrans import Translator
+#from googletrans import Translator
+#import romkan
+from pykakasi import kakasi,wakati
 #from polyglot.transliteration import Transliterator
-from polyglot.text import Text
+#from polyglot.text import Text
 import regex
 import shutil
 import subprocess
@@ -163,50 +165,66 @@ def is_cjk(char):
 	]
 	return any([range["from"] <= ord(char) <= range["to"] for range in ranges])
 
-# uses google's API to return translated names
-def translate(text, src = '', to = 'en',looped=False):
-	#parameters = ({'langpair': '{0}|{1}'.format(src, to), 'v': '1.0' })
-	translated = '@@@'
-	#dir_path = os.path.dirname(os.path.abspath(__file__))
-	#parent_dir = '\\'.join(dir_path.split('\\')[:-1])
-	#keyfile_path = parent_dir + '\\lib\\gcloud_keyfile.json'
-	#print(keyfile_path)
-	#print(os.path.isfile(keyfile_path))
-	#subprocess.check_call(['set GOOGLE_APPLICATION_CREDENTIALS=%s'%keyfile_path])
-	#print(os.system('set GOOGLE_APPLICATION_CREDENTIALS=%s'%keyfile_path))
-	print(text)
-	#print(text.encode('utf-8'))
-	#print(any([is_emoji(ch) for ch in text]))
-	#translator = Translator()
-	if src == '':
-		src = translator.detect(text).lang
-	#print(text,type(text))
-	#print(text.encode('utf-8'))
-	#translate_client = g_translate.Client()
-	#for text in (text[index:index + 4500] for index in range(0, len(text), 4500)):
-		#parameters['q'] = text
-		#response = json.loads(urlopen('http://ajax.googleapis.com/ajax/services/language/translate', data = urlencode(parameters).encode('utf-8')).read().decode('utf-8'))
-		#response = translate_client.translate(text,target_language=to)
-	try:
-		translated = translator.translate(text,dest=to,src=src)
-		# get around google translate's query limit
-	except JSONDecodeError:
-		time.sleep(.5)
-		#if not looped:
-		#	translated = translate(text,src=src,to=to,looped=True)
-		#else:
-		translator = Translator()
-		translated = translator.translate(text,dest=to,src=src)
-		#print(text)
-		#print(response)
+# detects if a string contains cjk characters
+def has_cjk(text):
+	return any([is_cjk(text_char) for text_char in text])
 
-	#try:
-	#	translated += response['translatedText']
-	#except:
-	#	pass
+# transliterates japanese text to english characters
+def transliterate(text):
 
-	#print(translated.text)
-	return translated
+	translator = kakasi()
+	translator.setMode('H','a')
+	translator.setMode('K','a')
+	translator.setMode('J','a')
+	translator.setMode('r','Hepburn')
+	#translator.setMode('s',True)
+	translator.setMode('C',True)
+	conv = translator.getConverter()
+	return conv.do(text)
+
+	## DEPRECATED
+	#trans_text = romkan.to_hepburn(text)
+	#if trans_text == text:
+	#	trans_text2 = kanji_to_romaji(text)
+	#	if trans_text2 == text:
+	#		return trans_text
+	#	else:
+	#		return trans_text2
+	#else:
+	#	return trans_text
+
+# transliterates text with mixed cjk and roman characters
+# (DEPRECATED)
+def transliterate_split_cjk(text):
+	#char_bools = [is_cjk(text_char) for text_char in text]
+	cjk_char = False
+	first_idx = 0
+	tempstr = ""
+	for i in range(len(text)):
+		# if character is in cjk block::
+		if is_cjk(text[i]) or text[i] in [' ','-']:
+			# if it's the first one, start recording indices
+			if cjk_char == False:
+				first_idx = i
+				cjk_char = True
+			# if we are in the middle of one, continue
+			else:
+				# unless it's the end of the word
+				if i == len(text)-1:
+					#print(text[first_idx:i])
+					tempstr += transliterate(text[first_idx:i+1])
+				else:
+					continue
+		else:
+			# if we are not in one, transfer characters over
+			if cjk_char == False:
+				tempstr += text[i]
+			# if we are at the end of one, transliterate whole preceding block and add it
+			else:
+				cjk_char = False
+				tempstr += transliterate(text[first_idx:i])
+				tempstr += text[i]
+	return tempstr
 
 # saves a single dict
 def save_dict(data,name,ver,loc='db'):
@@ -326,8 +344,9 @@ def print_results(res,names,entrants,losses,max_place=64,translate_cjk=True):
 					sp = names[player[0]][0][idx]
 					if translate_cjk:
 						if any([is_cjk(tsp_char) for sp_char in sp]):
-							#tag = '『'+''.join(translate(tag_char) for tag_char in tag)+'』'
-							sp = '<'+(translate(sp,to='ja')).pronunciation+'>'
+							#sp = '『'+''.join(translate(sp_char) for sp_char in sp)+'』'
+							#sp = '<'+(translate(sp,to='ja')).pronunciation+'>'
+							sp = '<'+transliterate(sp)+'>'
 					if len(sp) > 12:
 						sp = sp[:8] + "... |"
 					else:
@@ -343,7 +362,8 @@ def print_results(res,names,entrants,losses,max_place=64,translate_cjk=True):
 				if translate_cjk:
 					if any([is_cjk(tag_char) for tag_char in tag]):
 						#tag = '『'+''.join(translate(tag_char) for tag_char in tag)+'』'
-						tag = '<'+(translate(tag,to='ja')).pronunciation+'>'
+						#tag = '<'+(translate(tag,to='ja')).pronunciation+'>'
+						tag = '<'+transliterate(tag)+'>'
 						#tag = '<'+''.join([(translate(tag_char)).text for tag_char in tag])+'>'
 				tag_slot = 24#*team_mult
 				if len(tag) > tag_slot:
@@ -362,7 +382,7 @@ def print_results(res,names,entrants,losses,max_place=64,translate_cjk=True):
 					ls_list = [" / ".join(str(j) for j in l) for l in [names[loss[0]][1] for loss in losses[player[0]]]]
 
 				if translate_cjk:
-					ls_list = ['<'+(translate(l_tag,to='ja')).pronunciation+'>' if any([is_cjk(l_tag_char) for l_tag_char in l_tag]) else l_tag for l_tag in ls_list]
+					ls_list = ['<'+transliterate(l_tag)+'>' if any([is_cjk(l_tag_char) for l_tag_char in l_tag]) else l_tag for l_tag in ls_list]
 					#for l_tag in ls_list:
 					#	if any([is_cjk(l_tag_char) for l_tag_char in l_tag]):
 					#		print("ohno")
