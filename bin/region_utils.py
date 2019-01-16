@@ -155,6 +155,8 @@ def update_regions(dicts,players):
 def save_cali_cities(cali={},to_load=True,hard_load=False):
 	if to_load:
 		cali_load = load_dict('cali','cities','obj')
+		if cali_load == {}:
+			hard_load = True
 		for key in cali_load.keys():
 			if key not in cali:
 				cali[key] = cali_load[key]

@@ -88,6 +88,16 @@ def calc_performance(dicts,abs_id,t_info,use_FIDE=True):
 		return (opp_skills / float(l_count+w_count))+dp
 	return (opp_skills + 400.*float(w_count-l_count))/float(w_count+l_count)
 
+def update_performances(dicts,t_info,use_FIDE=True):
+	tourneys,ids,p_info,records,skills = dicts
+	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size = t_info
+
+	for abs_id in p_info:
+		if t_id in ids[abs_id]:
+			skills['perf'][t_id] = calc_performance(dicts,abs_id,t_info,use_FIDE)
+		else:
+			skills['perf'][t_id] = 0.
+
 # returns the player's K-factor
 # (used in Elo calculations)
 def calc_k_factor(elo,n_played):
@@ -271,7 +281,67 @@ def update_glicko(dicts,matches,t_info,tau=0.5):
 		#if not(r_del == 0 and RD_del == 0 and sigma_del == 0):
 		skills['glicko_del'][abs_id][t_id] = (r_del,RD_del,sigma_del)
 
-## SIGMOID FITTING // SIMBRACK CALCULATION UTILS
+
+## SIMBRACK CALCULATION UTILS
+# calculates and returns the probabilities of winning 
+def winprobs(wins,losses):
+	nranks = len(wins)
+	winps = np.zeros((nranks,nranks))
+	winps.fill(-1.)
+	for player in range(nranks):
+		for opp in range(nranks):
+			nw = wins[player,opp]
+			nl = losses[player,opp]
+			if (player==opp) or (nw+nl <= 0):
+				prob = -1.
+			else:
+				prob = nw/(nw+nl)
+			winps[player,opp] = prob
+	return np.array(winps, dtype=np.float64)
+
+# returns the h2h record for two given players (from p1's perspective)
+def h2h(dicts,p1_id,p2_id):
+	tourneys,ids,p_info,records,skills = dicts
+
+	w,l = 0,0
+
+	if p2_id in records[p1_id]['wins']:
+		w = len(records[p1_id]['wins'][p2_id])
+	else:
+		w = 0.
+	if p2_id in records[p1_id]['losses']:
+		l = len(records[p1_id]['losses'][p2_id])
+	else:
+		l = 0.
+
+	return (w,l) 
+
+# returns a dict with the probability that player A beats player B, based on h2h records
+# (stores -1 if no records exist)
+def winprobs(dicts):
+	tourneys,ids,p_info,records,skills = dicts
+
+	wins,losses = {},{}
+	for abs_id in p_info:
+		for opp_id in p_info:
+			
+			nw,nl = h2h(dicts,abs_id,opp_id)
+
+			if abs_id == opp_id or (nw+nl <= 0):
+				prob = -1.
+			else:
+				prob = nw/(nw+nl)
+			winps[abs_id][opp_id] = prob
+	return winps
+
+# simulates a bracket
+def calc_simbrack(dicts,t_info):
+	tourneys,ids,p_info,records,skills = dicts
+	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size = t_info
+
+	winps = winprobs(dicts)
+
+## SIGMOID FITTING UTILS (for simbrack)
 # sigmoid function, used to extrapolate probability distributions
 def sigmoid(p,x):
 	x0,y0,c,k=p
@@ -338,6 +408,7 @@ def fitsig(winps, rank, data):
 	p, cov = results
 	#p,_,_,_,_ = results
 	return p
+
 
 
 if __name__ == "__main__":

@@ -260,8 +260,9 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 					p_info[abs_id]['sets_played'] = 0
 				if 'events_entered' not in p_info[abs_id]:
 					p_info[abs_id]['events_entered'] = 0
-				if 'last_event' not in p_info[abs_id]:
-					p_info[abs_id]['last_event'] = t_id
+				#if 'last_event' not in p_info[abs_id]:
+				#	p_info[abs_id]['last_event'] = t_id
+				p_info[abs_id]['last_event'] = t_id
 				if abs_id not in skills['perf']:
 					skills['perf'][abs_id] = {}
 
@@ -284,13 +285,15 @@ def store_records(wins,losses,paths,t_info,dicts,update_ranks=True):
 	elo_deltas = skills['elo_del']
 	#glicko_history = skills['glicko']
 	#glicko_deltas = skills['glicko_del']
-	#simrank_history = skills['sim']
-	#simrank_deltas = skills['sim_del']
-	performance_history = skills['perf']
+	simrank_history = skills['sim']
+	simrank_deltas = skills['sim_del']
+	#performance_history = skills['perf']
 
 	#print(t_id)
 	for abs_id in ids:
 		if not (abs_id in tourneys or abs_id == t_id):			# ignore id for present or past tournaments
+			simrank_history[abs_id][t_id] = -9999.
+			simrank_deltas[abs_id][t_id] = 0.
 			if t_id in ids[abs_id]:								# ignore id if not an entrant in this tourney
 				e_id = ids[abs_id][t_id]
 
@@ -351,14 +354,23 @@ def store_records(wins,losses,paths,t_info,dicts,update_ranks=True):
 					# store skill ratings and event performance by tourney id
 					elo_history[abs_id][t_id] = new_elo
 					elo_deltas[abs_id][t_id] = new_elo - old_elo
-					performance_history[abs_id][t_id] = calc_performance((tourneys,ids,old_p_info,records,skills),abs_id,t_info)
+					#performance_history[abs_id][t_id] = calc_performance((tourneys,ids,old_p_info,records,skills),abs_id,t_info)
 					#records[abs_id]['performances'][t_id] = calc_performance(ids,records,wins,losses,e_id,t_id)
+				else:
+					# store new values & changes
+					if p_info[abs_id]['last_event'] == t_id:
+						skills['glicko'][abs_id][t_id] = p_info[abs_id]['glicko']
+					else:
+						skills['glicko'][abs_id][t_id] = skills['glicko'][abs_id][p_info['last_event']]
+					skills['glicko_del'][abs_id][t_id] = (0.,0.,0.)
+					skills['perf'][abs_id][t_id] = 0.
 			else:
 				elo_history[abs_id][t_id] = p_info[abs_id]['elo']
-				elo_deltas[abs_id][t_id] = 0
+				elo_deltas[abs_id][t_id] = 0.
 				#performance_history[abs_id][t_id] = 0
 
 	if update_ranks:
+		update_performances((tourneys,ids,old_p_info,records,skills),t_info)
 		if v >= 4:
 			print("Updating Glicko...")
 		update_glicko(dicts,glicko_matches,t_info,tau=glicko_tau)

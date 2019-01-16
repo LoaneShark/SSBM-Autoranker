@@ -130,7 +130,7 @@ def get_best_performances(dicts,use_names=False,acc=3,scale_vals=False):
 
 	return best_perfs
 
-def disp_all(dicts,dispnum=20,key='elo',trans_cjk=True,avg_perf=False,scale_vals=False,min_activity=3,tier_tol=-1):
+def disp_all(dicts,dispnum=20,key='elo',trans_cjk=True,avg_perf=False,scale_vals=False,min_activity=3,tier_tol=-1,plot_skills=False):
 	tourneys,ids,p_info,records,skills = dicts
 	key_idx = 1
 	if key == 'norm_all':
@@ -141,11 +141,11 @@ def disp_all(dicts,dispnum=20,key='elo',trans_cjk=True,avg_perf=False,scale_vals
 	glickos = get_glickos(dicts,scale_vals=scale_vals,activity=min_activity)
 	if avg_perf:
 		perfs = get_avg_performances(dicts)
-		perfstr = "Mean Perf"
-		perfstr_len = 9
+		perfstr = "Mean Performance"
+		perfstr_len = 16
 	else:
 		perfs = get_best_performances(dicts,use_names=True)
-		perfstr = "Breakout Performance"
+		perfstr = "Best Performance"
 		perfstr_len = 36 + max([len(perfs[p_id][1]) for p_id in perfs])
 
 	if key == 'bracket':
@@ -193,16 +193,16 @@ def disp_all(dicts,dispnum=20,key='elo',trans_cjk=True,avg_perf=False,scale_vals
 				"{:<9.9}".format(player[2]),("{:<%d.%d}"%(perfstr_len,perfstr_len)).format(str(player[3])))
 		else:
 			print(("{:<%s.%s}"%(tagstr_len,tagstr_len)).format(player[0]),"{:<9.9}".format(str(player[1])), \
-				"{:<9.9}".format(player[2]),"{:<9.9}".format(player[3]),("{:<%d.%d}"%(perfstr_len,perfstr_len)).format(str(player[4])))
+				"{:<9.9}".format(player[2]),"{:<9.9}".format(player[3]),("{:<%d.%d}"%(perfstr_len,perfstr_len)).format('['+', '.join(str(s) for s in player[4])+']'))
+	if plot_skills:
+		N = len(players)
+		xs = range(N)
+		ys = [player[key_idx] for player in players]
+		labels = [player[0] for player in players]
 
-def h2h(dicts,p1_id,p2_id):
-	tourneys,ids,p_info,records,skills = dicts
-
-	w,l = 0,0
-
-	if p2_id in records[p1_id]["wins"]:
-		w = len(records[p1_id]["wins"][p2_id])
-	if p2_id in records[p1_id]["losses"]:
-		l = len(records[p1_id]["losses"][p2_id])
-
-	return (w,l) 
+		fig = plt.figure()
+		ax = plt.axes()
+		ax.plot(xs,ys,'.')
+		ax.set(xlabel='Player Rank',ylabel='Player Skill Rating [%s]'%key,title='The Top %d'%N)
+		ax.grid()
+		plt.show()

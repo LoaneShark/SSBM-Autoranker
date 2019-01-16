@@ -26,6 +26,8 @@ def get_result(dicts,t_id,res_filt=None):
 	player_places = [records[p_id]['placings'][t_id] for p_id in player_ids]
 	player_losses = []
 	player_wins = []
+	player_skills = [[round(skills['elo'][p_id][t_id],3),round(skills['glicko'][p_id][t_id][0],3)] for p_id in player_ids]
+	#player_skills = [[skills[key][p_id][t_id] for key in ['elo','glicko','sim']] for p_id in player_ids]
 	for p_id in player_ids:
 		temp_l = []
 		for l_id in records[p_id]['losses']:
@@ -40,7 +42,7 @@ def get_result(dicts,t_id,res_filt=None):
 				temp_w.extend([w_id])
 		temp_w.reverse()
 		player_wins.extend([temp_w])
-	players = [player_ids,player_teams,player_tags,player_paths,player_places,player_losses,player_wins]
+	players = [player_ids,player_teams,player_tags,player_paths,player_places,player_losses,player_wins,player_skills]
 	#print(players)
 	#print([len(attr) for attr in players])
 	players = [[col[row] for col in players] for row in range(len(players[0]))]
@@ -49,7 +51,7 @@ def get_result(dicts,t_id,res_filt=None):
 	if not res_filt == None:
 		#print(res_filt['team'])
 		for player in players.copy():
-			p_id,p_team,p_tag,p_path,p_place,p_losses,p_wins = player
+			p_id,p_team,p_tag,p_path,p_place,p_losses,p_wins,p_skills = player
 			if 'player' in res_filt:
 				if not (p_id == res_filt['player'] and not (p_id in tourneys) and t_id in ids[p_id]):
 					players.remove(player)
@@ -90,6 +92,19 @@ def get_result(dicts,t_id,res_filt=None):
 				if not res_filt['win_tag'] in flatten([[alias for alias in p_info[win_id]['aliases']] for win_id in p_wins]):
 					players.remove(player)
 					continue
+			if 'elo' in res_filt:
+				if not res_filt['elo'] < p_skills[0]:
+					players.remove(player)
+					continue
+			if 'glicko' in res_filt:
+				if not res_filt['glicko'] < p_skills[1][0]:
+					players.remove(player)
+					continue
+			if 'simbrack' in res_filt:
+				if not res_filt['simbrack'] < p_skills[2]:
+					players.remove(player)
+					continue
+
 	return players
 
 # returns a copy of the database containing the dicts of info relating to a given player
@@ -133,7 +148,7 @@ def get_player(dicts,p_id,tag=None,t_ids=None,slugs=None):
 			print("Error: Invalid form for t_ids in call to get_player(): %s"%type(t_ids))
 			return False
 	else:
-		return p_id,p_info[p_id],records[p_id],ids[p_id]
+		return p_id,p_info[p_id],records[p_id],ids[p_id],skills[p_id]
 
 # return (filtered) results for a series of tourneys
 def get_results(dicts,t_ids,res_filt=None):
@@ -286,39 +301,39 @@ def print_resume(dicts,res,g_key='player',s_key=None,disp_raw=False,disp_wins=Tr
 	tourneys,ids,p_info,records,skills = dicts
 	#print(res)
 	if not res or len(res) == 0 or res == []:
-		print("Resume was not provided or could not be found")
+		print('Resume was not provided or could not be found')
 		return False
 	print('')
 	if g_key == 'player':
 		res = sorted(res,key=lambda r: (r[1][0],r[0]))
 		h_idx = 1
 		s_idx = 0
-		print("RESUME BY PLAYER:")
+		print('RESUME BY PLAYER:')
 	elif g_key == 'event':
 		res = sorted(res,key=lambda r: (r[0],r[1][4],r[1][0]))
 		h_idx = 0
 		s_idx = 5
-		print("RESUME BY EVENT:")
+		print('RESUME BY EVENT:')
 	elif g_key == 'team':
 		res = sorted(res,key=lambda r: (r[1][1],r[0],r[1][4],r[1][0]))
 		h_idx = 2
 		s_idx = 0
-		print("RESUME BY TEAM:")
+		print('RESUME BY TEAM:')
 	elif g_key == 'placing':
 		res = sorted(res,key=lambda r: (r[1][4],r[1][0],r[0]))
 		h_idx = 5
 		s_idx = 1
-		print("RESUME BY PLACING:")
+		print('RESUME BY PLACING:')
 	elif g_key == 'region':
 		res = sorted(res,key=lambda r: (r[1][1],r[1][0],r[0]))
 		h_idx = 4
 		s_idx = 1
-		print("RESUME BY REGION:")
+		print('RESUME BY REGION:')
 	# default to player ID grouping
 	else:
 		res = sorted(res,key=lambda r: (r[1][0],r[0]))
 		h_idx = 1
-		print("RESUME BY PLAYER:")
+		print('RESUME BY PLAYER:')
 	if not (s_key == None or s_key == g_key):
 		if s_key == 'player':
 			s_idx = 1
@@ -354,46 +369,46 @@ def print_resume(dicts,res,g_key='player',s_key=None,disp_raw=False,disp_wins=Tr
 	oldval = res[0][h_idx]
 	old_sval = res[0][s_idx]
 	if h_idx == 1:
-		tagstr = ""
-		if res[0][2] != None:
-			tagstr += "%s | "%res[0][2]
+		tagstr = ''
+		if res[0][2] != None and res[0][2] != ' ' and res[0][2] != '':
+			tagstr += '%s | '%res[0][2]
 		tagstr += res[0][3]
-		print("%s (id: %d) | %s"%(tagstr,res[0][1],res[0][4]))
+		print('%s (id: %d) || %s (Elo: %d, Glicko: %d)'%(tagstr,res[0][1],res[0][4],round(p_info[res[0][1]]['elo'],3),round(p_info[res[0][1]]['glicko'][0],3)))
 	else:
-		print(str(oldval)+": ")
-	s_tagstr = ""
+		print(str(oldval)+': ')
+	s_tagstr = ''
 	if s_idx == 1:
 		if h_idx != 2:
-			s_tagstr += str(res[0][2])+" | "
+			s_tagstr += str(res[0][2])+' | '
 		s_tagstr += res[0][3]
-		s_tagstr += " ("+str(res[0][4])+")"
-		print("\t"+s_tagstr)
+		s_tagstr += ' ('+str(res[0][4])+')'
+		print('\t'+s_tagstr)
 	else:
-		print("\t"+str(res[0][s_idx]))
+		print('\t'+str(res[0][s_idx]))
 	# iterate through list
 	for line in res:
 		# print header if on new section
 		if line[h_idx] != oldval:
 			if h_idx == 1:
-				tagstr = ""
+				tagstr = ''
 				if line[2] != None:
-					tagstr += "%s | "%line[2]
+					tagstr += '%s | '%line[2]
 				tagstr += line[3]
-				print("%s (id: %d) | %s"%(tagstr,line[1],line[4]))
+				print('%s (id: %d) || %s (Elo: %d, Glicko: %d)'%(tagstr,line[1],line[4],round(p_info[line[1]]['elo'],3),round(p_info[line[1]]['glicko'][0],3)))
 			else:
-				print(str(line[h_idx])+": ")
+				print(str(line[h_idx])+': ')
 		# print secondary header if on new subsection
 		if line[s_idx] != old_sval or line[h_idx] != oldval:
 			#temp_sline = []
-			s_tagstr = ""
+			s_tagstr = ''
 			if s_idx == 1:
 				if h_idx != 2:
-					s_tagstr += str(line[2])+" | "
+					s_tagstr += str(line[2])+' | '
 				s_tagstr += line[3]
-				s_tagstr += " ("+str(line[4])+")"
-				print("\t"+s_tagstr)
+				s_tagstr += ' ('+str(line[4])+')'
+				print('\t'+s_tagstr)
 			else:
-				print("\t"+str(line[s_idx]))
+				print('\t'+str(line[s_idx]))
 
 		old_sval = line[s_idx]
 		oldval = line[h_idx]
@@ -452,8 +467,8 @@ def old_print_event(dicts,t_id,max_place=64,translate_cjk=True):
 	roundslen = sum([len(str(name)) for name in roundnames]) + 4*num_rounds
 	#lsbuff = "\t"*(numrounds-len(players[-1][2])+1)
 
-	print("%s Results | ID: %d"%(tourneys[t_id]['name'],t_id))
-	print("\n{:>13.13}".format("Sponsor |"),"{:<24.24}".format("Tag"),"ID #\t","Place\t",("{:<%d.%d}"%(roundslen+5,roundslen+5)).format("Bracket"),"Losses\n")
+	print('%s Results | ID: %d'%(tourneys[t_id]['name'],t_id))
+	print('\n{:>13.13}'.format('Sponsor |'),'{:<24.24}'.format('Tag'),'ID #\t','Place\t',('{:<%d.%d}'%(roundslen+5,roundslen+5)).format('Bracket'),'Losses\n')
 
 	for player in players:
 		p_id,sp,tag,path,placement,losses = player
@@ -463,14 +478,14 @@ def old_print_event(dicts,t_id,max_place=64,translate_cjk=True):
 			break
 		else:
 			# format sponsor
-			if sp == None or sp == "":
-				sp = "  "
+			if sp == None or sp == '' or sp == ' ':
+				sp = '  '
 			else:
 				if len(sp) > 12:
-						sp = sp[:8] + "... |"
+						sp = sp[:8] + '... |'
 				else:
-					if sp[-2:] != " |":
-						sp = sp + " |"
+					if sp[-2:] != ' |':
+						sp = sp + ' |'
 			sp_len = 13
 			if translate_cjk and has_cjk(sp):
 				sp = '<'+transliterate(sp)+'>'
@@ -501,5 +516,5 @@ def old_print_event(dicts,t_id,max_place=64,translate_cjk=True):
 			#if len(path) > maxlen:
 			#	maxlen = len(path)
 			#lsbuff = "\t"*(maxlen-len(path)+1)
-			print(("{:>%d.%d}"%(sp_len,sp_len)).format(sp),("{:<%d.%d}"%(tag_len,tag_len)).format(tag),"{:>7.7}".format(str(p_id)), \
-				"  {:<5.5}".format(str(placement)),"\t",("{:<%d.%d}"%(roundslen+5,roundslen+5)).format(str([t_labels[group] for group in path])),losses)
+			print(('{:>%d.%d}'%(sp_len,sp_len)).format(sp),('{:<%d.%d}'%(tag_len,tag_len)).format(tag),'{:>7.7}'.format(str(p_id)), \
+				'  {:<5.5}'.format(str(placement)),'\t',('{:<%d.%d}'%(roundslen+5,roundslen+5)).format(str([t_labels[group] for group in path])),losses)

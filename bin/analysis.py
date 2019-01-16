@@ -98,7 +98,7 @@ def main():
 
 
 	#print(get_result((tourneys,ids,p_info,records),36179,res_filt={'player':1000}))
-	resume = get_resume(dicts,None,tags=['SST_Shuton','KEN','<zakurei>','<shu-ton>'])
+	resume = get_resume(dicts,None,tags=['Iago','Jobbo','Jobboman','Crimock','CrimockLyte'])
 	#update_regions((tourneys,ids,p_info,records),[1000])
 	print_resume(dicts,resume,g_key='player',s_key='event')
 	#print(get_player(dicts,None,tag='Plup'))
@@ -111,7 +111,7 @@ def main():
 	#disp_all(dicts,key='elo',dispnum=20,min_activity=2)
 	#disp_all(dicts,key='glicko',dispnum=20,min_activity=2)
 	#print(tourneys[3511]['name'])
-	disp_all(dicts,key='norm_all',dispnum=50,min_activity=min_act,tier_tol=-1)
+	disp_all(dicts,key='elo',dispnum=20,min_activity=min_act,tier_tol=-1,plot_skills=True)
 
 	#disp_all(dicts,key='elo',dispnum=35,min_activity=3,tier_tol=25)
 	#disp_all(dicts,key='glicko',dispnum=35,min_activity=3,tier_tol=50)
