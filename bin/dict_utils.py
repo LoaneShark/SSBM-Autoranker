@@ -7,7 +7,6 @@ from copy import deepcopy as dcopy
 ## UTIL IMPORTS
 from readin_utils import *
 from region_utils import *
-from readin_utils import load_dict,save_dict
 
 flatten = lambda l: [item for sublist in l for item in sublist] if type(l) is list else []
 
@@ -80,7 +79,7 @@ def get_result(dicts,t_id,res_filt=None):
 					players.remove(player)
 					continue
 			if 'loss_tag' in res_filt:
-				if not res_filt['loss_tag'] in [p_info[loss_id]['tag'] for loss_id in p_losses]:
+				if not res_filt['loss_tag'] in flatten([[alias for alias in p_info[loss_id]['aliases']] for loss_id in p_losses]):
 					players.remove(player)
 					continue
 			if 'win_id' in res_filt:
@@ -88,7 +87,7 @@ def get_result(dicts,t_id,res_filt=None):
 					players.remove(player)
 					continue
 			if 'win_tag' in res_filt:
-				if not res_filt['win_tag'] in [p_info[wins_id]['tag'] for wins_id in p_wins]:
+				if not res_filt['win_tag'] in flatten([[alias for alias in p_info[win_id]['aliases']] for win_id in p_wins]):
 					players.remove(player)
 					continue
 	return players

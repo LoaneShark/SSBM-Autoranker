@@ -189,16 +189,11 @@ def disp_all(dicts,dispnum=20,key='elo',trans_cjk=True,avg_perf=False,scale_vals
 			if is_emoji(tag_ch):
 				tagstr_len -= 1
 		if key == 'norm_all':
-			print(("{:<%s.%s}"%(tagstr_len,tagstr_len)).format(player[0]),"{:<18.18}".format(str(player[1])),"{:<9.9}".format(player[2]),("{:<%d.%d}"%(perfstr_len,perfstr_len)).format(str(player[3])))
+			print(("{:<%s.%s}"%(tagstr_len,tagstr_len)).format(player[0]),"{:<18.18}".format(str(player[1])), \
+				"{:<9.9}".format(player[2]),("{:<%d.%d}"%(perfstr_len,perfstr_len)).format(str(player[3])))
 		else:
-			print(("{:<%s.%s}"%(tagstr_len,tagstr_len)).format(player[0]),"{:<9.9}".format(str(player[1])),"{:<9.9}".format(player[2]),"{:<9.9}".format(player[3]),("{:<%d.%d}"%(perfstr_len,perfstr_len)).format(str(player[4])))
-
-def score(dicts,placing,t_id):
-	tourneys,ids,p_info,records,skills = dicts
-
-	num_entrants = tourneys[t_id]['numEntrants']
-	percent = (log(num_entrants,2)-log(placing,2)+1)/log(num_entrants,2)
-	return percent
+			print(("{:<%s.%s}"%(tagstr_len,tagstr_len)).format(player[0]),"{:<9.9}".format(str(player[1])), \
+				"{:<9.9}".format(player[2]),"{:<9.9}".format(player[3]),("{:<%d.%d}"%(perfstr_len,perfstr_len)).format(str(player[4])))
 
 def h2h(dicts,p1_id,p2_id):
 	tourneys,ids,p_info,records,skills = dicts

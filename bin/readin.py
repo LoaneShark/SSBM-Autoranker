@@ -38,6 +38,7 @@ parser.add_argument('-p','--print',help='print tournament final results to conso
 parser.add_argument('-c','--collect_garbage',help='delete phase data after tournament is done being read in (default True)',default=True)
 parser.add_argument('-ar','--use_arcadians',help='count arcadian events (default False)',default=False)
 parser.add_argument('-gt','--glicko_tau',help='tau value to be used by Glicko-2 algorithm (default 0.5)',default=0.5)
+parser.add_argument('-ma','--min_activity',help='minimum number of tournament appearances in order to be ranked. ELO etc still calculated.',default=3)
 args = parser.parse_args()
 
 v = int(args.verbosity)
@@ -125,7 +126,7 @@ def set_readin_args(args):
 	print_res = args.print
 
 # reads the match data for a given phase
-def read_groups(t_id,groups,phase_data):
+def read_groups(t_id,groups,phase_data,translate_cjk=True):
 	entrants = {}
 	wins = {}
 	losses = {}
@@ -164,6 +165,9 @@ def read_groups(t_id,groups,phase_data):
 			is_exhibition = phase_data[wave_id][5]
 			phasename = phase_data[wave_id][0]
 			groupname = data['entities']['groups']['displayIdentifier']
+			if translate_cjk:
+				if has_cjk(groupname):
+					groupname = '<'+transliterate(groupname)+'>'
 			groupstate = int(data['entities']['groups']['state'])
 			grouptype = int(data['entities']['groups']['groupTypeId'])
 
@@ -315,7 +319,8 @@ def read_sets(data,phase_data,wins,losses,xpath):
 	#print(group)
 	wave_data = phase_data[data['entities']['groups']['phaseId']]
 	grp_count = wave_data[1]
-	grp_num_prog = data['entities']['groups']['numProgressing']
+	if setdata != []:
+		grp_num_prog = data['entities']['groups']['numProgressing']
 
 	for match in setdata:
 		e1,e2 = match['entrant1Id'],match['entrant2Id']
@@ -506,8 +511,8 @@ if __name__ == "__main__":
 	#pull_phase(764818)
 
 	#clean_data("./old/umeburaphasesraw.txt","./old/umeburaphasesclean.txt")
-	#clean_data("./old/umeburasetsraw.txt","./old/umeburasetsclean.txt")
-	#clean_data("./old/summit5setsraw2.txt","./old/summit5setsclean2.txt")
+	clean_data("./old/umeburasetsraw.txt","./old/umeburasetsclean.txt")
+	#clean_data("./old/paxarenaraw.txt","./old/paxarenaclean.txt")
 	#clean_data("./old/crewsraw.txt","./old/crewsclean.txt")
 	#clean_data("cextop8raw.txt","cextop8clean.txt")
 	#clean_data("valhallasetsraw.txt","valhallasetsclean.txt")

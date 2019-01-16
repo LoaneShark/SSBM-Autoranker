@@ -71,9 +71,11 @@ def calc_region(country,state=None,city=None,granularity=2):
 				calidict = load_cali_cities()
 				if city_l in calidict:
 					return calidict[city_l]
+				elif city in calidict:
+					return calidict[city]
 				else:
 					#print("Calcuforniating... [%s]"%city)
-					geolocator = Nominatim(user_agent="SSBM_Autoranker")
+					geolocator = Nominatim(user_agent="SSBM_Autoranker",timeout=5)
 					city_loc = geolocator.geocode(city+", CA, USA")
 					city_low = geolocator.geocode(city_l+", CA, USA")
 					if city_loc == None:
@@ -82,10 +84,12 @@ def calc_region(country,state=None,city=None,granularity=2):
 						return "Misc. Cali"
 					if is_socal(geolocator,city_loc) or is_socal(geolocator,city_low):
 						calidict[city] = "SoCal"
+						calidict[city_l] = "SoCal"
 						save_cali_cities(calidict,to_load=False)
 						return "SoCal"
 					else:
 						calidict[city] = "NorCal"
+						calidict[city_l] = "NorCal"
 						save_cali_cities(calidict,to_load=False)
 						return "NorCal"
 			else:

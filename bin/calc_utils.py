@@ -7,13 +7,23 @@ from datetime import date, timedelta
 #import shutil
 #from timeit import default_timer as timer
 from copy import deepcopy as dcopy
-#import country_converter as coco
-#from geopy.geocoders import Nominatim
+## CALCULATION IMPORTS
+import numpy as np
+import scipy as sp 
+import sklearn
 from math import *
+import scipy.optimize
+from random import *
+from sklearn.cluster import KMeans as km
 ## UTIL IMPORTS
 from dict_utils import get_abs_id_from_tag
+from readin_utils import save_dict,load_dict
 
 activity_min = 3
+
+def set_default_activity_min(val):
+	activity_min = val
+	return activity_min
 
 # returns true if given player meets specified minimum activity requirements (default 3)
 def is_active(dicts,p_id,tag=None,min_req=activity_min):
@@ -31,30 +41,52 @@ def are_active(dicts,p_ids,tags=[],min_req=activity_min):
 		p_ids = [get_abs_id_from_tag(dicts,tag) for tag in tags]
 	return [is_active(dicts,p_id,min_req=min_req) for p_id in p_ids]
 
+def score(dicts,placing,t_id,t_size=None):
+	tourneys,ids,p_info,records,skills = dicts
+
+	if t_size == None:
+		num_entrants = tourneys[t_id]['numEntrants']
+	else:
+		num_entrants = t_size
+	percent = (log(num_entrants,2)-log(placing,2))/log(num_entrants,2)
+	return percent
+
 ## ELO CALCULATION UTILS
 # Calculates the event performance rating for a single event
 # using the FIDE "rule of 400" PR estimator
-def calc_performance(records,p_info,abs_id,t_id):
+# (not a very meaningful metric; unused in other calculations)
+def calc_performance(dicts,abs_id,t_info,use_FIDE=True):
+	tourneys,ids,p_info,records,skills = dicts
+	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size = t_info
 	w_count,l_count = 0.,0.
-	skills = 0.
+	opp_skills = 0.
 
 	wins = records[abs_id]['wins']
 	losses = records[abs_id]['losses']
+
+	if use_FIDE:
+		dp_table = load_dict('FIDE_dp',None,loc='../lib')
+		pct = score(dicts,records[abs_id]['placings'][t_id],t_id,t_size)
+		hi_val = max(ceil(pct*100.)/100.,0.)
+		lo_val = max(floor(pct*100.)/100.,0.)
+		dp = (dp_table[hi_val]+dp_table[lo_val])/2.
 
 	for l_id in wins:
 		#l_abs_id = ids[t_id][wins[e_id][0]]
 
 		w_count += wins[l_id].count(t_id)
-		skills += p_info[l_id]['elo']*w_count
+		opp_skills += p_info[l_id]['elo']*float(w_count)
 	for w_id in losses:
 		#w_abs_id = ids[t_id][losses[e_id][0]]
 
 		l_count += losses[w_id].count(t_id)
-		skills += p_info[w_id]['elo']*l_count
+		opp_skills += p_info[w_id]['elo']*float(l_count)
 
 	if (w_count + l_count) == 0.:
 		return 0.
-	return (skills + 400.*(w_count-l_count))/(w_count+l_count)
+	if use_FIDE:
+		return (opp_skills / float(l_count+w_count))+dp
+	return (opp_skills + 400.*float(w_count-l_count))/float(w_count+l_count)
 
 # returns the player's K-factor
 # (used in Elo calculations)
@@ -238,3 +270,84 @@ def update_glicko(dicts,matches,t_info,tau=0.5):
 		r_del,RD_del,sigma_del = r_prime-r,RD_prime-RD,sigma_prime-sigma
 		#if not(r_del == 0 and RD_del == 0 and sigma_del == 0):
 		skills['glicko_del'][abs_id][t_id] = (r_del,RD_del,sigma_del)
+
+## SIGMOID FITTING // SIMBRACK CALCULATION UTILS
+# sigmoid function, used to extrapolate probability distributions
+def sigmoid(p,x):
+	x0,y0,c,k=p
+	#print x0,y0,c,k
+	y = c / (1 + np.exp(-k*(x-x0))) + y0
+	return y
+def cfsigmoid(x,x0,c,k):
+	#x0,y0,c,k=p
+	#print x0,y0,c,k
+	y = c / (1. + np.exp(-k*(x-x0)))
+	return y
+def logsig(p,x):
+	x0,y0,c,k=p
+	#print p
+	logy = k*(x-x0)
+	return logy
+# calculates difference between observed y values and given sigmoid
+def logresiduals(p,x,y):
+	return np.log(float(y)) - logsig(p,x)
+def residuals(p,x,y):
+	return y - sigmoid(p,x)
+# normalize distribution range to [0,1]
+def resize(arr,lower=0.0,upper=1.0):
+	arr=arr.copy()
+	if lower>upper: 
+		lower,upper=upper,lower
+	arr -= arr.min()
+	arr *= (upper-lower)/arr.max()
+	arr += lower
+	return arr
+
+# fits a sigmoid function to the provided data, and then returns the parameters
+def fitsig(winps, rank, data):
+	dats = winps[rank-1]
+	N = len(data)
+	#print data[rank-1,2]
+	#print data
+	#print dats
+	xs = []
+	ys = []
+	for i in range(N):
+		ratio = float(dats[i])
+		if ratio > 0:
+			xs.append(float(i+1))
+			ys.append(ratio)
+		if ratio == 0:
+			xs.append(float(i+1))
+			ys.append(0.001)
+	x = np.array(xs, dtype=np.float64)/N
+	y = np.array(ys, dtype=np.float64)
+	#x = np.array(xs, dtype='float')
+	#y = np.array(ys, dtype='float')
+	#print len(xs)
+	#print x
+	#print y
+	# fit sigmoid function to data
+	p_guess=(np.float64(rank/N),np.float64(np.median(y)),np.float64(1.0),np.float64(1.0))
+	p_cfguess=(np.float64(rank/N),np.float(1.0),np.float(1.0))
+	#p_cfguess=(np.float64(rank/N),np.float(1.0))
+	#results = scipy.optimize.differential_evolution(residuals,[(0.,1.),(-1.,2.),(-10.,10.),(-5.,5.)],args=(x,y))  
+	#results = scipy.optimize.leastsq(residuals,p_guess,args=(x,y),full_output=1)  
+	#results = scipy.optimize.curve_fit(cfsigmoid,x,y,p0=p_cfguess,bounds=([-0.1,-1.1],[1.1,20.]))
+	results = scipy.optimize.curve_fit(cfsigmoid,x,y,p0=p_cfguess,bounds=([0.,0.,0.],[1.1,1.1,13.5]))
+	p, cov = results
+	#p,_,_,_,_ = results
+	return p
+
+
+if __name__ == "__main__":
+
+	dp_table = {}
+	with open('../lib/FIDE_dp.csv') as dp_f:
+		#dp_dats = dp_f.read_csv()
+		for line in dp_f:
+			splitline = line.split(',')
+			dp_table[float(splitline[0])] = float(splitline[1])
+
+	save_dict(dp_table,'FIDE_dp',None,loc='../lib')
+	#print(dp_table)

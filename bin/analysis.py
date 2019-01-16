@@ -17,16 +17,19 @@ from analysis_utils import *
 
 ## TODO: 
 ##	Shortterm
+##		HIGH PRIORITY:
+## 		 - how to match players that don't have smash.gg accounts/consistent player ids (mostly japanese players)
 ## 		 - debug elo/glicko (how?)
-## 		 - Add support for non-roman scripts (besides japanese)
 ## 		 - General doubles / crews support (see: scraper support/filtering out by event type)
 ## 			- static team support pls
 ## 		 - filter out invitationals for certain metrics (like % of bracket complete, etc.)
-## 		 - use res_filt format more universally for queries and such // expand get_result
-## 		 - error logs
 ## 		 - SKILL TIERSSSSS
-## 		 - use 'state' to check for status of bracket (1: unscheduled, 4: called, 2: in progress, 3: completed) [IF NOT ALREADY IMPLEMENTED]
+## 		 - Fix crashes on repeated web calls // geopy specifically timing out
+## 		LOWER PRIORITY:
+## 		 - Add support for non-roman scripts (besides japanese)
+## 		 - error logs
 ## 		 - make elo/glicko calculations faster/more efficient somehow
+## 		 - use res_filt format more universally for queries and such // expand get_result
 ##
 ##	Longterm
 ## 		 - Challonge support (player matching by tag maybe needed -- no player ids provided!)
@@ -44,7 +47,7 @@ from analysis_utils import *
 ## 		- how do we instantiate elo scores?
 ## 			- SSBMRank scores from the previous year? Normal distribution using avg tourney placing?
 ## 		- decay over time?
-## 	- fix Glicko-2
+## 	- fit Glicko-2 (?)
 ## 	- add Iagorank
 
 
@@ -68,6 +71,7 @@ parser.add_argument('-p','--print',help='print tournament final results to conso
 parser.add_argument('-c','--collect_garbage',help='delete phase data after tournament is done being read in (default True)',default=True)
 parser.add_argument('-ar','--use_arcadians',help='count arcadian events (default False)',default=False)
 parser.add_argument('-gt','--glicko_tau',help='tau value to be used by Glicko-2 algorithm (default 0.5)',default=0.5)
+parser.add_argument('-ma','--min_activity',help='minimum number of tournament appearances in order to be ranked. ELO etc still calculated.',default=3)
 args = parser.parse_args()
 
 game_idx = int(args.game)
@@ -82,6 +86,7 @@ to_load_slugs = args.load_slugs
 if args.load_slugs == "False":
 	to_load_slugs = False
 maxpl = int(args.displaysize)
+min_act = int(args.min_activity)
 
 def main():
 	dicts = main_read()
@@ -93,9 +98,9 @@ def main():
 
 
 	#print(get_result((tourneys,ids,p_info,records),36179,res_filt={'player':1000}))
-	#resume = get_resume(dicts,None,tags=['Vist','Nicki','Trif','nebbii','Avalancer'])
+	resume = get_resume(dicts,None,tags=['SST_Shuton','KEN','<zakurei>','<shu-ton>'])
 	#update_regions((tourneys,ids,p_info,records),[1000])
-	#print_resume(dicts,resume,g_key='player',s_key='event')
+	print_resume(dicts,resume,g_key='player',s_key='event')
 	#print(get_player(dicts,None,tag='Plup'))
 	#print(ids[get_abs_id_from_tag(dicts,'Plup')])
 
@@ -106,7 +111,10 @@ def main():
 	#disp_all(dicts,key='elo',dispnum=20,min_activity=2)
 	#disp_all(dicts,key='glicko',dispnum=20,min_activity=2)
 	#print(tourneys[3511]['name'])
-	disp_all(dicts,key='norm_all',dispnum=20,min_activity=2,tier_tol=0.5)
+	disp_all(dicts,key='norm_all',dispnum=50,min_activity=min_act,tier_tol=-1)
+
+	#disp_all(dicts,key='elo',dispnum=35,min_activity=3,tier_tol=25)
+	#disp_all(dicts,key='glicko',dispnum=35,min_activity=3,tier_tol=50)
 	#print_event(dicts,tourneys['slugs']['smash-summit-5'])
 
 	#disp_all(dicts,key='performance')

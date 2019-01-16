@@ -34,6 +34,7 @@ parser.add_argument('-p','--print',help='print tournament final results to conso
 parser.add_argument('-c','--collect_garbage',help='delete phase data after tournament is done being read in (default True)',default=True)
 parser.add_argument('-ar','--use_arcadians',help='count arcadian events (default False)',default=False)
 parser.add_argument('-gt','--glicko_tau',help='tau value to be used by Glicko-2 algorithm (default 0.5)',default=0.5)
+parser.add_argument('-ma','--min_activity',help='minimum number of tournament appearances in order to be ranked. ELO etc still calculated.',default=3)
 args = parser.parse_args()
 
 collect = args.collect_garbage
@@ -127,8 +128,8 @@ def set_db_args(args):
 		args.save == False
 		to_save_db = False
 	db_slug = args.slug
-	db_game = args.game
-	db_year = args.year
+	db_game = int(args.game)
+	db_year = int(args.year)
 
 ## AUXILIARY FUNCTIONS
 # loads database and stores any tournament data not already present given the url slug
@@ -143,7 +144,7 @@ def read_tourneys(slugs,ver='default',year=None,base=None):
 	else:
 		tourneys,ids,p_info,records,skills = base
 
-	if v >= 4 and len(tourneys.keys())>1:
+	if v >= 4 and len(tourneys.keys())>1 and year == db_year:
 		print("Loaded Tourneys: " + str([tourneys[t_id]['name'] for t_id in tourneys if not t_id == 'slugs']))
 	#print(tourneys)
 	#dicts = (tourneys,ids,p_info,records)
@@ -350,7 +351,7 @@ def store_records(wins,losses,paths,t_info,dicts,update_ranks=True):
 					# store skill ratings and event performance by tourney id
 					elo_history[abs_id][t_id] = new_elo
 					elo_deltas[abs_id][t_id] = new_elo - old_elo
-					performance_history[abs_id][t_id] = calc_performance(records,p_info,abs_id,t_id)
+					performance_history[abs_id][t_id] = calc_performance((tourneys,ids,old_p_info,records,skills),abs_id,t_info)
 					#records[abs_id]['performances'][t_id] = calc_performance(ids,records,wins,losses,e_id,t_id)
 			else:
 				elo_history[abs_id][t_id] = p_info[abs_id]['elo']
