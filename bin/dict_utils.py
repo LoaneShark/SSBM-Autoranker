@@ -183,7 +183,13 @@ def get_resume(dicts,p_id,tags=None,t_ids=None,team=None,slugs=None):
 			team_ids = get_players_from_team(dicts,team)
 			return flatten([get_resume(dicts,team_id,tags=tags,t_ids=t_ids,slugs=slugs) for team_id in team_ids])
 	else:
-		p_id = get_abs_id_from_tag(dicts,tags)
+		p_id = get_abs_id_from_tag(dicts,tags,first_only=False)
+		if p_id == None:
+			return []
+		elif len(p_id) == 1:
+			p_id = p_id[0]
+		else:
+			return flatten([get_resume(dicts,pid,tags=None,t_ids=t_ids,team=team,slugs=slugs) for pid in p_id])
 
 	# break if player is not in database
 	if p_id == None:

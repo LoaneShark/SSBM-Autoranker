@@ -88,7 +88,7 @@ def get_avg_performances(dicts,acc=3,scale_vals=False):
 	avg_perfs = {}
 
 	for p_id in p_info:
-		if p_id in records:
+		if p_id in skills['perf']:
 		#print(records[p_info])
 			perfs = []
 			for t_id in skills['perf'][p_id]:
@@ -107,14 +107,18 @@ def get_avg_performances(dicts,acc=3,scale_vals=False):
 
 def get_best_performances(dicts,use_names=False,acc=3,scale_vals=False):
 	tourneys,ids,p_info,records,skills = dicts
+	#print(len(records))
 	best_perfs = {}
 
 	for p_id in p_info:
-		if p_id in records:
-		#print(records[p_info])
+		if p_id in skills['perf']:
+			#print(p_info[p_id])
+			#print(records[p_id])
+			#print(skills['elo'][p_id],'\n',skills['glicko'][p_id],'\n',skills['sim'][p_id],'\n',skills['perf'][p_id])
 			best = -9999.
 			maxperf = [[round(skills['perf'][p_id][t_id],acc),t_id,records[p_id]['placings'][t_id], \
 						round(skills['elo_del'][p_id][t_id],acc),round(skills['glicko_del'][p_id][t_id][0],acc)] for t_id in skills['perf'][p_id]]
+			#print(skills['perf'][p_id])
 			maxperf = sorted(maxperf,key=lambda l: l[0],reverse=True)[0]
 			#maxperf = list(maxperf)
 			if use_names:

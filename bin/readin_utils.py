@@ -28,8 +28,8 @@ def get_slug(ss):
 
 # returns true if the description contains explicit mention of a given game (default melee/SSBM)
 #SSB = 4 	SSBM = 1	SSBB = 5 	P:M = 2		SSB4 = 3 	SSBU = 1386
-def has_game(descr,game=1, gamemap={1: ['melee','ssbm','ssbmelee'], 2: ['P:M','project: m','project melee','project m'], \
-				3: ['ssb4','smash 4','ssb wii u','smash wii u','for wii u','wii u','wiiu','sm4sh','smash4'], 4: ['smash 64','ssb64'], \
+def has_game(descr,game=1, gamemap={1: ['melee','ssbm','ssbmelee'], 2: ['P:M','project: m','project melee','project m','PM'], \
+				3: ['ssb4','smash 4','ssb wii u','smash wii u','for wii u','wii u','wiiu','sm4sh','smash4'], 4: ['smash 64','ssb64','64','n64'], \
 				5: ['brawl','ssbb'], 1386: ['ssbu','ultimate','sp','special','ssbs','smush','smultimate','5mash','5ma5h','sma5h','smash 5','smash5']}):
 	if descr == None:
 		return False
@@ -232,8 +232,15 @@ def save_dict(data,name,ver,loc='db'):
 	if not os.path.isdir('%s'%loc):
 		os.mkdir(str('%s'%loc))
 	if ver != None:
-		if not os.path.isdir('%s/%s'%(loc,ver)):
-			os.mkdir(str('%s/%s'%(loc,ver)))
+		if len(ver.split('/')) > 1:
+			pathstr = '%s'%loc
+			for sub_ver in ver.split('/'):
+				pathstr += '/%s'%sub_ver
+				if not os.path.isdir(pathstr):
+					os.mkdir(pathstr)
+		else:
+			if not os.path.isdir('%s/%s'%(loc,ver)):
+				os.mkdir(str('%s/%s'%(loc,ver)))
 	#if not os.path.isdir('%s/%s/%s'%(loc,ver,name)):
 	#	os.mkdir(str('%s/%s/%s'%(loc,ver,name)))
 		with open(str(loc)+'/'+str(ver)+'/'+name +'.pkl','wb') as f:

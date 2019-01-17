@@ -234,10 +234,15 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 					else:
 						p_info[abs_id][key] = info
 				if 'region' not in p_info[abs_id]:
-					p_info[abs_id]['region'] = get_region(dicts,abs_id,granularity=2,to_calc=True)
+					#p_info[abs_id]['region'] = get_region(dicts,abs_id,granularity=2,to_calc=True)
+					p_info[abs_id]['region'] = {}
+					for r_i in range(1,6):
+						p_info[abs_id]['region'][r_i] = get_region(dicts,abs_id,granularity=r_i,to_calc=True)
 				else:
-					if p_info[abs_id]['region'] == 'N/A' or p_info[abs_id]['region'] == None:
-						p_info[abs_id]['region'] = get_region(dicts,abs_id,granularity=2,to_calc=True)
+					if any([p_info[abs_id]['region'][r_idx] == 'N/A' for r_idx in range(1,6)]) or p_info[abs_id]['region'] == {}:
+						#p_info[abs_id]['region'] = get_region(dicts,abs_id,granularity=2,to_calc=True)
+						for r_i in range(1,6):
+							p_info[abs_id]['region'][r_i] = get_region(dicts,abs_id,granularity=r_i,to_calc=True)
 
 				if 'elo' not in skills:
 					for key in ['elo','elo_del','glicko','glicko_del','sim','sim_del','perf']:
@@ -370,6 +375,8 @@ def store_records(wins,losses,paths,t_info,dicts,update_ranks=True):
 				#performance_history[abs_id][t_id] = 0
 
 	if update_ranks:
+		if v >= 5:
+			print("Updating Performances...")
 		update_performances((tourneys,ids,old_p_info,records,skills),t_info)
 		if v >= 4:
 			print("Updating Glicko...")

@@ -18,18 +18,29 @@ from analysis_utils import *
 ## TODO: 
 ##	Shortterm
 ##		HIGH PRIORITY:
+## 		 - Fix regions
+## 			- Make it faster, i slowed it down a lot with the new system
+## 				- build up the cache I guess
+## 			- Find out how to avoid query limits / breaking terms of use
+##		 - fix errors with player ids being inconsistent somehow? (lookin' at you, We Tech Those 3 PM Singles [Pool PMA2])
 ## 		 - how to match players that don't have smash.gg accounts/consistent player ids (mostly japanese players)
+## 			- also match players that have multiple accounts // remade accounts // use them inconsistently
 ## 		 - debug elo/glicko (how?)
-## 		 - General doubles / crews support (see: scraper support/filtering out by event type)
-## 			- static team support pls
-## 		 - filter out invitationals for certain metrics (like % of bracket complete, etc.)
+## 		 - Filter out DQs somehow (if a palyer didn't attend don't penalize them for "going 0-2")
+## 			- Can we filter out sandbags somehow? intelligent decisionmaking?
+## 			- Maybe drop lowest N results from each player? does this take away from consistency as a virtue?
 ## 		 - SKILL TIERSSSSS
-## 		 - Fix crashes on repeated web calls // geopy specifically timing out
+## 		 - Fix crashes on repeated web calls
+##
 ## 		LOWER PRIORITY:
+## 		 - filter out invitationals for certain metrics (like % of bracket complete, etc.)
 ## 		 - Add support for non-roman scripts (besides japanese)
 ## 		 - error logs
 ## 		 - make elo/glicko calculations faster/more efficient somehow
 ## 		 - use res_filt format more universally for queries and such // expand get_result
+## 		 - General doubles / crews support (see: scraper support/filtering out by event type)
+## 			- static team support pls
+## 		 - Rework regions to use cached geopy results for better consistency // accuracy // granularity
 ##
 ##	Longterm
 ## 		 - Challonge support (player matching by tag maybe needed -- no player ids provided!)
@@ -98,57 +109,17 @@ def main():
 
 
 	#print(get_result((tourneys,ids,p_info,records),36179,res_filt={'player':1000}))
-	resume = get_resume(dicts,None,tags=['Iago','Jobbo','Jobboman','Crimock','CrimockLyte'])
+	#resume = get_resume(dicts,None,tags=['Iago','Jobbo','Jobboman','Crimock','CrimockLyte'])
+	#resume = get_resume(dicts,None,tags=['Draxsel','iModerz','TehGuitarLord','Joe-J','San','PikaPika!','K.I.D. Goggles','K.I.D.Goggles','Dom','Fun China'])
+	resume = get_resume(dicts,None,tags=['Pisces'])
+	#resume = get_resume(dicts,None,tags=['Mang0','Armada','Leffen','Wizzrobe','Rishi','PPMD','Axe','S2J','Zain','n0ne','Mew2King','Hungrybox','Plup','aMSa','SFAT','PewPewU','Swedish Delight'])
 	#update_regions((tourneys,ids,p_info,records),[1000])
 	print_resume(dicts,resume,g_key='player',s_key='event')
 	#print(get_player(dicts,None,tag='Plup'))
 	#print(ids[get_abs_id_from_tag(dicts,'Plup')])
 
-	#tourneys,ids,p_info,records,skills = delete_tourney((tourneys,ids,p_info,records),None,slug='smash-summit-6')
-	#tourneys,ids,p_info,records,skills = delete_tourney((tourneys,ids,p_info,records),None,slug='smash-summit-7')
-
-	#disp_all(dicts,key='elo')
-	#disp_all(dicts,key='elo',dispnum=20,min_activity=2)
-	#disp_all(dicts,key='glicko',dispnum=20,min_activity=2)
-	#print(tourneys[3511]['name'])
-	disp_all(dicts,key='elo',dispnum=20,min_activity=min_act,tier_tol=-1,plot_skills=True)
-
-	#disp_all(dicts,key='elo',dispnum=35,min_activity=3,tier_tol=25)
-	#disp_all(dicts,key='glicko',dispnum=35,min_activity=3,tier_tol=50)
-	#print_event(dicts,tourneys['slugs']['smash-summit-5'])
-
-	#disp_all(dicts,key='performance')
-	#xxx = 0
-	#for t_id in tourneys:
-	#	if 'name' in tourneys[t_id]:
-	#		if 'Shine' in tourneys[t_id]['name']:
-	#			xxx = t_id
-	#print_result((tourneys,ids,p_info,records),xxx,{'tag':'Iago'})
-	#print(p_info[65348]['elo'])
-
-	#disp_elos((tourneys,ids,p_info,records))
-	#print(list_tourneys((tourneys,ids,p_info,records)))
-	#tourneys,ids,p_info,records,skills = delete_tourney((tourneys,ids,p_info,records),None,slug='don-t-park-on-the-grass-2018-1')
-	#tourneys,ids,p_info,records,skills = delete_tourney((tourneys,ids,p_info,records),None,slug='heir-5')
-	#tourneys,ids,p_info,records,skills = delete_tourney((tourneys,ids,p_info,records),None,slug='full-bloom-4')
-	#print(list_tourneys((tourneys,ids,p_info,records)))
-
-	#dicts = delete_tourney((tourneys,ids,p_info,records),None,'valhalla')
-	#res = get_player((tourneys,ids,p_info,records),None,tag='Free Palestine')
-	#out = get_players_by_region((tourneys,ids,p_info,records),'California',get_data=True)
-	#for res in out:
-	#	print(res[1][1]['tag'],"|",res[1][1]['city'],"|",res[1][1]['region']," (old) |",calc_region(res[1][1]['country'],res[1][1]['state'],res[1][1]['city']))
-	#for seg in [out[(i-1)*10:i*10] for i in range(int(len(out)/10))]:
-	#p_ids = [res[0] for res in out]
-	#update_regions((tourneys,ids,p_info,records),p_ids)
-	#print("Saving Updated DB...")
-	#save_db((tourneys,ids,p_info,records),str(game_idx)+"/"+str(year))
-	#print([res[1]['team'][0],res[1]['team'][0].encode()])
-	#print([len(res[1]['team'][0]),len(res[1]['team'][0].encode())])
-	#print(["hello","hello".encode()])
-	#print([len("hello"),len("hello".encode())])
-	#print_event((tourneys,ids,p_info,records),tourneys['slugs']['full-bloom-4'],max_place=int(args.displaysize))
-	#print_event((tourneys,ids,p_info,records),tourneys['slugs']['valhalla'],max_place=int(args.displaysize))
+	#print(skills['perf'])
+	disp_all(dicts,key='elo',dispnum=20,min_activity=min_act,tier_tol=-1)
 
 	return True
 

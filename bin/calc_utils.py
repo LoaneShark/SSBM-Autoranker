@@ -58,6 +58,7 @@ def score(dicts,placing,t_id,t_size=None):
 def calc_performance(dicts,abs_id,t_info,use_FIDE=True):
 	tourneys,ids,p_info,records,skills = dicts
 	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size = t_info
+	#print("Calculating performance: %d :: %s"%(abs_id,t_name))
 	w_count,l_count = 0.,0.
 	opp_skills = 0.
 
@@ -85,8 +86,11 @@ def calc_performance(dicts,abs_id,t_info,use_FIDE=True):
 	if (w_count + l_count) == 0.:
 		return 0.
 	if use_FIDE:
-		return (opp_skills / float(l_count+w_count))+dp
-	return (opp_skills + 400.*float(w_count-l_count))/float(w_count+l_count)
+		 res = (opp_skills / float(l_count+w_count))+dp
+	else:
+		res = (opp_skills + 400.*float(w_count-l_count))/float(w_count+l_count)
+	#print(res)
+	return res
 
 def update_performances(dicts,t_info,use_FIDE=True):
 	tourneys,ids,p_info,records,skills = dicts
@@ -94,9 +98,10 @@ def update_performances(dicts,t_info,use_FIDE=True):
 
 	for abs_id in p_info:
 		if t_id in ids[abs_id]:
-			skills['perf'][t_id] = calc_performance(dicts,abs_id,t_info,use_FIDE)
-		else:
-			skills['perf'][t_id] = 0.
+			skills['perf'][abs_id][t_id] = calc_performance(dicts,abs_id,t_info,use_FIDE)
+		#else:
+		#	skills['perf'][abs_id][t_id] = 0.
+		#print(skills['perf'][abs_id][t_id])
 
 # returns the player's K-factor
 # (used in Elo calculations)
@@ -374,9 +379,10 @@ def resize(arr,lower=0.0,upper=1.0):
 	return arr
 
 # fits a sigmoid function to the provided data, and then returns the parameters
-def fitsig(winps, rank, data):
-	dats = winps[rank-1]
-	N = len(data)
+def fitsig(winps, p_id, rank):
+	dats = [winps[p_id][opp_id] for opp_id in winps[p_id]]
+	N = len(dats)
+	rank
 	#print data[rank-1,2]
 	#print data
 	#print dats
@@ -392,24 +398,17 @@ def fitsig(winps, rank, data):
 			ys.append(0.001)
 	x = np.array(xs, dtype=np.float64)/N
 	y = np.array(ys, dtype=np.float64)
-	#x = np.array(xs, dtype='float')
-	#y = np.array(ys, dtype='float')
-	#print len(xs)
-	#print x
-	#print y
 	# fit sigmoid function to data
-	p_guess=(np.float64(rank/N),np.float64(np.median(y)),np.float64(1.0),np.float64(1.0))
+	#p_guess=(np.float64(rank/N),np.float64(np.median(y)),np.float64(1.0),np.float64(1.0))
 	p_cfguess=(np.float64(rank/N),np.float(1.0),np.float(1.0))
 	#p_cfguess=(np.float64(rank/N),np.float(1.0))
 	#results = scipy.optimize.differential_evolution(residuals,[(0.,1.),(-1.,2.),(-10.,10.),(-5.,5.)],args=(x,y))  
 	#results = scipy.optimize.leastsq(residuals,p_guess,args=(x,y),full_output=1)  
 	#results = scipy.optimize.curve_fit(cfsigmoid,x,y,p0=p_cfguess,bounds=([-0.1,-1.1],[1.1,20.]))
 	results = scipy.optimize.curve_fit(cfsigmoid,x,y,p0=p_cfguess,bounds=([0.,0.,0.],[1.1,1.1,13.5]))
-	p, cov = results
+	p,cov = results
 	#p,_,_,_,_ = results
 	return p
-
-
 
 if __name__ == "__main__":
 
