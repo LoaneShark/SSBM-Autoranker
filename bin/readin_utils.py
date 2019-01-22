@@ -168,7 +168,7 @@ def is_cjk(char):
 
 # detects if a string contains cjk characters
 def has_cjk(text):
-	return any([is_cjk(text_char) for text_char in text])
+	return any([is_cjk(text_char) for text_char in str(text)])
 
 # transliterates japanese text to english characters
 def transliterate(text):
@@ -359,7 +359,7 @@ def print_results(res,names,entrants,losses,max_place=64,translate_cjk=True):
 				else:
 					sp = names[player[0]][0][idx]
 					if translate_cjk:
-						if any([is_cjk(tsp_char) for sp_char in sp]):
+						if any([is_cjk(sp_char) for sp_char in sp]):
 							#sp = '『'+''.join(translate(sp_char) for sp_char in sp)+'』'
 							#sp = '<'+(translate(sp,to='ja')).pronunciation+'>'
 							sp = '<'+transliterate(sp)+'>'

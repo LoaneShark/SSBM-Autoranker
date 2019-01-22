@@ -46,19 +46,19 @@ v = int(args.verbosity)
 lv = 8
 save_res = args.save
 load_res = args.load
-if args.save == "False":
+if args.save == 'False':
 	save_res = False
-if args.load == "False":
+if args.load == 'False':
 	load_res = False
 force_first_event = args.force_first
-if args.force_first == "False":
+if args.force_first == 'False':
 	force_first_event = True
 teamsize = int(args.teamsize)
 game = int(args.game)
 if args.force_game:
 	game = int(args.force_game)
 if game not in [1,2,3,4,5,1386] and not force_game:		#SSB = 4 	SSBM = 1	SSBB = 5 	P:M = 2		SSB4 = 3 	SSBU = 1386
-	print("Invalid game number provided. Forcing melee (id=1) instead.")
+	print('Invalid game number provided. Forcing melee (id=1) instead.')
 	game = 1
 disp_num = int(args.displaysize)
 t_slug_a = args.slug
@@ -75,13 +75,16 @@ else:
 	only_arcadians = False
 
 ## MAIN FUNCTIONS
-def readin(tourney,t_type="slug"):
-	if t_type == "slug":
+def readin(tourney,t_type='slug'):
+	if t_type == 'slug':
 		slug = tourney
-	elif t_type == "ss":
+	elif t_type == 'ss':
 		slug = get_slug(tourney)
 	else:
-		print("Error: invalid tourney identifier type")
+		print('Error: invalid tourney identifier type')
+		return None
+
+	if slug == 'we-tech-those-3':
 		return None
 
 	if v >= 2 and v < 4:
@@ -95,7 +98,7 @@ def readin(tourney,t_type="slug"):
 		es,ws,ls,rs,ns = read_groups(t_id,ps,pdata)
 
 		if v >= 2 and v < 4:
-			print("{:.3f}".format(timer()-start) + " s")
+			print("{:.3f}".format(timer()-start) + ' s')
 
 		t = (t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,len(es.keys()))
 		if print_res:
@@ -114,7 +117,7 @@ def set_readin_args(args):
 	teamsize = int(args.teamsize)
 	game = int(args.game)
 	if game not in [1,2,3,4,5,1386] and False:		#SSB = 4 	SSBM = 1	SSBB = 5 	P:M = 2		SSB4 = 3 	SSBU = 1386
-		print("Invalid game number provided. Forcing melee (id=1) instead.")
+		print('Invalid game number provided. Forcing melee (id=1) instead.')
 		game = 1
 	disp_num = int(args.displaysize)
 	t_slug_a = args.slug
@@ -136,7 +139,7 @@ def read_groups(t_id,groups,phase_data,translate_cjk=True):
 	end_buff = False
 
 	if load_res and v >= 3:
-		print("Loading cached files...")
+		print('Loading cached files...')
 
 	for group in groups:
 		pstart = timer()
@@ -144,12 +147,12 @@ def read_groups(t_id,groups,phase_data,translate_cjk=True):
 		if load_res and not end_buff:
 			try:
 				if v >= lv:
-					print("Loading %d..."%group)
+					print('Loading %d...'%group)
 				entrants,wins,losses,paths,names = load_all(t_id,group)
 				load_succ = True
 			except FileNotFoundError:
 				if v >= lv:
-					print("Phase group %d not found locally"%group)
+					print('Phase group %d not found locally'%group)
 				end_buff = True
 				load_succ = False
 
@@ -179,31 +182,31 @@ def read_groups(t_id,groups,phase_data,translate_cjk=True):
 					if groupstate < 3:
 						if v >= 4 :
 							if groupstate == 2:
-								errstr = "it is still in progress!"
+								errstr = 'it is still in progress!'
 							elif groupstate == 1:
-								errstr = "it hasn't started yet!"
+								errstr = 'it hasn\'t started yet!'
 							else:
-								errstr = "it doesn't exist yet!"
+								errstr = 'it doesn\'t exist yet!'
 
-							print("ERROR: Could not read in group %s | %s | %d because %s"%(phasename,groupname,group,errstr))
+							print('ERROR: Could not read in group %s | %s | %d because %s'%(phasename,groupname,group,errstr))
 					# use groupTypeId to check for bracket structure 
 					# (1: single elim, 2: double elim, 3: round-robin, 4: swiss, 5: exhibition, 6: custom schedule, 7: ladder/matchmaking, 8: elimination rounds, 9: race)
 					else:	
 						if grouptype not in [1,2,3,4]:
 							if v >= 5:
-								errstr = "%d is an unsupported group format"%grouptype
-								print("ERROR: Could not read in group %s | %s | %d because %s"%(phasename,groupname,group,errstr))
+								errstr = '%d is an unsupported group format'%grouptype
+								print('ERROR: Could not read in group %s | %s | %d because %s'%(phasename,groupname,group,errstr))
 						else:
 							read_entrants(data,phase_data,entrants,names,paths)
 							read_sets(data,phase_data,wins,losses,paths)
 
 						if save_res:
 							if v >= lv:
-								print("Saving %d..."%group)
+								print('Saving %d...'%group)
 							save_all(t_id,group,[entrants,wins,losses,paths,names])
 
 					if v >= 4:
-						print("{:.0f}".format(1000*(timer()-pstart)) + " ms")
+						print('{:.0f}'.format(1000*(timer()-pstart)) + ' ms')
 		# sort paths according to proper bracket structure
 		#for e_id in paths:
 
@@ -230,7 +233,7 @@ def read_entrants(data,phase_data,entrants,names,xpath):
 		else:
 			names['groups'][group] = groupname
 		if v >= 4:
-			print("Reading: %s | %s | %d"%(phasename,groupname,group)) 
+			print('Reading: %s | %s | %d'%(phasename,groupname,group)) 
 		seedata = data['entities']['seeds']
 
 		for x in seedata:
@@ -258,7 +261,7 @@ def read_entrants(data,phase_data,entrants,names,xpath):
 			entrants[e_id] = (names[e_id],abs_id,e_id,metainfo)
 	else:
 		if v >= 5:
-			print("Ignoring group: %s | %d. (Is Exhibition)"%(groupname,group))
+			print('Ignoring group: %s | %d. (Is Exhibition)'%(groupname,group))
 	return entrants,names,xpath
 		
 # returns sponsor, gamertag, and player meta info for a given entrant	
@@ -328,20 +331,39 @@ def read_sets(data,phase_data,wins,losses,xpath):
 		set_id = match['id']
 		is_bye = False
 
+		# Filter out DQs
+		is_DQ = lambda n: match['entrant%dScore'%n] == -1 if not match['entrant%dScore'%n] == None else False
+		e1_DQ,e2_DQ = is_DQ(1),is_DQ(2)
+		if w_id == e1 and l_id == e2:
+			w_DQ = e1_DQ
+			l_DQ = e2_DQ
+		elif w_id == e2 and l_id == e1:
+			w_DQ = e2_DQ
+			l_DQ = e1_DQ
+		else:
+			w_DQ,l_DQ = False,False
+		#print(e1_DQ,e2_DQ,match['entrant1Score'],match['entrant2Score'])
+
+		# Move past byes
 		if w_id == None or l_id == None or w_id == l_id:
 			is_bye = True
 
 		if not is_bye:
-			if v >= 7:
-				print(set_id,match['phaseGroupId'],match['identifier'],[w_id,l_id],[e1,e2])
-			if w_id not in wins:
-				wins[w_id] = [(l_id,[set_id,group])]
+			# Don't count DQs for win/loss records (still do for placings)
+			if not (w_DQ or l_DQ):
+				if v >= 7:
+					print(set_id,match['phaseGroupId'],match['identifier'],[w_id,l_id],[e1,e2])
+				if w_id not in wins:
+					wins[w_id] = [(l_id,[set_id,group])]
+				else:
+					wins[w_id].extend([(l_id,[set_id,group])])
+				if l_id not in losses:
+					losses[l_id] = [(w_id,[set_id,group])]
+				else:
+					losses[l_id].extend([(w_id,[set_id,group])])
 			else:
-				wins[w_id].extend([(l_id,[set_id,group])])
-			if l_id not in losses:
-				losses[l_id] = [(w_id,[set_id,group])]
-			else:
-				losses[l_id].extend([(w_id,[set_id,group])])
+				if v >= 7:
+					print(set_id,match['phaseGroupId'],match['identifier'],[w_id,'DQ'],[e1,e2])
 
 			# update final placement if it is further than their current one (people can't regress in bracket except for in GF)
 			if not match['wOverallPlacement'] == None:
@@ -356,7 +378,8 @@ def read_sets(data,phase_data,wins,losses,xpath):
 					xpath[w_id][0] = match['wPlacement']
 			else:
 				if v >= 7:
-					print("Error: Could not update winner placement (%d)"%w_id)
+					print('Error: Could not update winner placement (%d)'%w_id)
+
 			if not match['lOverallPlacement'] == None:
 				if type(xpath[l_id][0]) is list:
 					xpath[l_id][0] = match['lOverallPlacement']
@@ -369,10 +392,10 @@ def read_sets(data,phase_data,wins,losses,xpath):
 					xpath[l_id][0] = match['lPlacement']
 			else:
 				if v >= 7:
-					print("Error: Could not update loser placement (%d)"%l_id)
+					print('Error: Could not update loser placement (%d)'%l_id)
 		else:
 			if v >= 7:
-				print(set_id,match['phaseGroupId'],match['identifier'],["bye","bye"],[e1,e2])
+				print(set_id,match['phaseGroupId'],match['identifier'],['bye','bye'],[e1,e2])
 
 	# populate overall final bracket placements if not already provided
 	for x_id in sorted([x['entrantId'] for x in data['entities']['seeds'] if type(xpath[x['entrantId']][0]) is list],key=lambda p_id: xpath[p_id][0][0]):
@@ -395,7 +418,7 @@ def read_phases(tourney):
 	#with open(filepath) as f:
 	#	data = json.loads(f.read())
 
-	phaselink ="https://api.smash.gg/tournament/%s?expand[]=event&expand[]=groups&expand[]=phase"%tourney
+	phaselink ='https://api.smash.gg/tournament/%s?expand[]=event&expand[]=groups&expand[]=phase'%tourney
 	try:
 		tfile = urlopen(phaselink).read()
 		tdata = json.loads(tfile.decode("UTF-8"))
@@ -411,7 +434,7 @@ def read_phases(tourney):
 		t_info = (t_id,t_name,t_slug,t_ss,t_type,t_date,t_region)
 
 		if v >= 1:
-			print("Reading tournament: %s | %d"%(t_name,t_id))
+			print('Reading tournament: %s | %d'%(t_name,t_id))
 
 		# can't read a tourney's results if it hasn't happened yet!
 		day_after = datetime.datetime(t_date[0],t_date[1],t_date[2])
@@ -419,7 +442,7 @@ def read_phases(tourney):
 			day_after += datetime.timedelta(days=1)
 		if day_after > datetime.datetime.today():
 			if v >= 1:
-				print("Cannot read %s: Tournament hasn't happened yet!"%t_name)
+				print('Cannot read %s: Tournament hasn\'t happened yet!'%t_name)
 			return False
 
 		# get all event_id's for events that are specified gametype (default=1 [melee]) and entrantcount (default=1 [singles]) 
@@ -427,22 +450,22 @@ def read_phases(tourney):
 		#event_ids = [event['id'] for event in tdata['entities']['event'] if event['videogameId'] == game and event['entrantSizeMin'] == teamsize]
 		
 		if teamsize == 1:
-			team_string = "singles"
+			team_string = 'singles'
 		elif teamsize == 2:
-			team_string = "doubles"
+			team_string = 'doubles'
 		elif teamsize > 2:
-			team_string = "crews"
+			team_string = 'crews'
 		else:
-			team_string = "[V O I D]"
+			team_string = '[V O I D]'
 		if not count_arcadians:
-			pro_string = "PRO"
+			pro_string = 'PRO'
 		elif only_arcadians:
-			pro_string = "AMATEUR"
+			pro_string = 'AMATEUR'
 		else:
-			pro_string = "ALL"
+			pro_string = 'ALL'
 		if v >= 6:
-			print("only looking for brackets of game type: %s %s [%s]"%(gamemap[game][0], team_string, pro_string))
-			print("event_ids pre filtering: " + str([(event_id[0],event_id[1][0]) for event_id in event_ids]))
+			print('only looking for brackets of game type: %s %s [%s]'%(gamemap[game][0], team_string, pro_string))
+			print('event_ids pre filtering: ' + str([(event_id[0],event_id[1][0]) for event_id in event_ids]))
 		# filters out events that don't list the given game in description, to filter out stuff like low tiers/ironmans/crews etc
 		game_events = [event_id[0] for event_id in event_ids if has_game(event_id[1][0],game) or has_game(event_id[1][1],game)]
 		if teamsize > 1:
@@ -471,9 +494,9 @@ def read_phases(tourney):
 			event_ids = arcadian_events
 
 		if v >= 6:
-			print("event_ids post filtering: " + str(len(event_ids)))
+			print('event_ids post filtering: ' + str(len(event_ids)))
 		if len(event_ids) <= 0 and v >= 1:
-			print("** No suitable events found of form: %s %s [%s] at this tournament"%(gamemap[game][0], team_string, pro_string))
+			print('** No suitable events found of form: %s %s [%s] at this tournament'%(gamemap[game][0], team_string, pro_string))
 
 		if force_first_event:
 			event_ids = event_ids[:1]
@@ -497,11 +520,11 @@ def read_phases(tourney):
 		return (t_info,group_ids,waves)
 
 	except HTTPError:
-		print("Error 404: tourney [%s] not found"%tourney)
+		print('Error 404: tourney [%s] not found'%tourney)
 		return False
 	
 
-if __name__ == "__main__":
+if __name__ == '__main__':
 	readin(t_slug_a)
 	#print(translate(translate("Zackray",to='ja').text,to='ja').pronunciation)
 	#readin('summit7',type='ss')
@@ -511,7 +534,7 @@ if __name__ == "__main__":
 	#pull_phase(764818)
 
 	#clean_data("./old/umeburaphasesraw.txt","./old/umeburaphasesclean.txt")
-	clean_data("./old/umeburasetsraw.txt","./old/umeburasetsclean.txt")
+	#clean_data("./old/wetechthose3setsraw.txt","./old/wetechthose3setsclean.txt")
 	#clean_data("./old/paxarenaraw.txt","./old/paxarenaclean.txt")
 	#clean_data("./old/crewsraw.txt","./old/crewsclean.txt")
 	#clean_data("cextop8raw.txt","cextop8clean.txt")

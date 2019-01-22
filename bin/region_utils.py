@@ -20,9 +20,35 @@ def calc_region(country,state=None,city=None,granularity=2):
 		state == None
 	if country in ['N/A','n/a','',' ','  ','None']:
 		country == None
-	if country == 'United States Virgin Islands':
-		country = 'United States'
-		state = 'VI'
+	if (country.replace('.','')).lower() in ['america','united states of america','usa','us','us of a','us of america']:
+		country == 'United States'
+
+	if country != None:
+		country_low = country.lower()
+		if 'virgin islands' in country_low:
+			country = 'United States'
+			state = 'VI'
+		if 'guam' in country_low:
+			country = 'United States'
+			state = 'GU'
+		if 'american samoa' in country_low or ('samoa' in country and any(['united states' in country,'us' in country,'u.s.' in country])):
+			country = 'United States'
+			state = 'AS'
+		if 'marshall islands' in country_low:
+			country = 'United States'
+			state = 'MH'
+		if 'micronesia' in country_low or 'micronesia' in str(state).lower():
+			country = 'United States'
+			state = 'FM','Palau'
+		if 'northern marianas' in country_low:
+			country = 'United States'
+			state = 'MP'
+		if 'palau' in country_low:
+			country = 'United States'
+			state = 'PW'
+		if 'd.r.' == country_low:
+			country = 'DR'
+
 
 	# remove anything in parentheses or brackets from location names
 	locale_list = [city,state,country]
@@ -47,6 +73,9 @@ def calc_region(country,state=None,city=None,granularity=2):
 		return 'N/A'
 	if dictstr == '':
 		return 'N/A'
+	else:
+		dictstr = dictstr.replace('/',',')
+		dictstr = dictstr.replace('\\',',')
 
 	locdict = load_city_dict(dictstr)
 	if locstr not in locdict:
@@ -62,7 +91,7 @@ def calc_region(country,state=None,city=None,granularity=2):
 
 		if loc == None:
 			temp_locstr = ', '.join(locstr.split(', ')[1:])
-			time.sleep(1.1-(time.perf_counter()-first_call_time))
+			time.sleep(max(1.1-(time.perf_counter()-first_call_time),0.01))
 			loc = geoloc.geocode(temp_locstr,language='en',addressdetails=True)
 			if loc == None:
 				#print('Location not found: %s'%locstr)
@@ -94,7 +123,13 @@ def calc_region(country,state=None,city=None,granularity=2):
 			l_county = loc['city_district']
 		else:
 			l_county = None
-		l_country = loc['country']
+		# Can't believe I had to add this check but here we are
+		if 'continent' in loc and loc['continent'] == 'Antarctica':
+			l_country = None
+		else:
+			l_country = loc['country']
+		if l_country == 'America':
+			l_country = 'United States'
 		l_continent = cc.convert(names=[l_country],to='continent')
 		locdict[locstr] = [l_city,l_state,l_county,l_country,l_continent]
 		save_city_dict(dictstr,locdict)
@@ -127,8 +162,8 @@ def calc_region(country,state=None,city=None,granularity=2):
 		#	return "N/A"
 		if l_country == 'Japan':
 			return l_state
-		elif l_country in ['United States','USA','U.S.A.','US','US of A','United States of America','Canada','CA','CAN'] or \
-				country in ['United States','USA','U.S.A.','US','US of A','United States of America','Canada','CA','CAN']:
+		elif l_country in ['United States','USA','U.S.A.','US','US of A','United States of America','America','Canada','CA','CAN'] or \
+				country in ['United States','USA','U.S.A.','US','US of A','United States of America','America','Canada','CA','CAN']:
 			if state in ['ME','VT','NH','MA','RI','CT'] or \
 						l_state in ['Maine','Vermont','New Hampshire','Massachusetts','Rhode Island','Connecticut']:
 				return 'New England'
@@ -322,9 +357,12 @@ def get_region(dicts,p_id,tag=None,country=None,state=None,city=None,granularity
 		p_id = get_abs_id_from_tag(dicts,tag)
 	if to_calc or not 'region' in p_info[p_id]:
 		#print(p_info[p_id])
-		return calc_region(p_info[p_id]['country'],p_info[p_id]['state'],p_info[p_id]['city'],granularity)
+		if country != None and state != None and city != None:
+			return calc_region(p_info[p_id]['country'],p_info[p_id]['state'],p_info[p_id]['city'],granularity)
+		else:
+			return calc_region(country,state,city,granularity)
 	else:
-		return p_info[p_id]['region']
+		return p_info[p_id]['region'][granularity]
 
 # returns a list of player ids (and their json data if requested) given a regional name
 def get_players_by_region(dicts,region,granularity=2,get_data=False):

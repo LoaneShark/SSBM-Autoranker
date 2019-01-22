@@ -233,12 +233,13 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 							p_info[abs_id][key] = info
 					else:
 						p_info[abs_id][key] = info
-				if 'region' not in p_info[abs_id]:
+				if 'region' not in p_info[abs_id] or p_info[abs_id]['region'] == None:
 					#p_info[abs_id]['region'] = get_region(dicts,abs_id,granularity=2,to_calc=True)
 					p_info[abs_id]['region'] = {}
 					for r_i in range(1,6):
 						p_info[abs_id]['region'][r_i] = get_region(dicts,abs_id,granularity=r_i,to_calc=True)
 				else:
+					#print(p_info[abs_id]['region'])
 					if any([p_info[abs_id]['region'][r_idx] == 'N/A' for r_idx in range(1,6)]) or p_info[abs_id]['region'] == {}:
 						#p_info[abs_id]['region'] = get_region(dicts,abs_id,granularity=2,to_calc=True)
 						for r_i in range(1,6):

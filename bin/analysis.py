@@ -22,7 +22,18 @@ from analysis_utils import *
 ## 			- Make it faster, i slowed it down a lot with the new system
 ## 				- build up the cache I guess
 ## 			- Find out how to avoid query limits / breaking terms of use
+## 			- restructure data to be stored in a single dict / one dict per country (cities folder is messy)
+## 		 - Use numpy arrays / vectorize to speed up computations
+## 		 - add optional caching of tournament data / json files?
+## 		 - add fully offline mode toggle  // prefer offline argument
+## 		 - add a 'tourney memory' duration (default 1 year) -- delete all events that are older than this from DB, including records etc.
+## 		     - elo etc still calculated this way, but only recent events 'count' (???)
+## 		 - config file
 ##		 - fix errors with player ids being inconsistent somehow? (lookin' at you, We Tech Those 3 PM Singles [Pool PMA2])
+## 		 - query mode
+## 		 - MIGRATE TO NEW API
+##
+##		MEDIUM PRIORITY:
 ## 		 - how to match players that don't have smash.gg accounts/consistent player ids (mostly japanese players)
 ## 			- also match players that have multiple accounts // remade accounts // use them inconsistently
 ## 		 - debug elo/glicko (how?)
@@ -60,6 +71,10 @@ from analysis_utils import *
 ## 		- decay over time?
 ## 	- fit Glicko-2 (?)
 ## 	- add Iagorank
+
+## TOURNEY SHITLIST:
+## 	- We Tech Those 3: PM Pool PMA2
+##	- DPOTG 2018: Redemption ladder (kinda)
 
 
 ## ARGUMENT PARSING
@@ -111,7 +126,7 @@ def main():
 	#print(get_result((tourneys,ids,p_info,records),36179,res_filt={'player':1000}))
 	#resume = get_resume(dicts,None,tags=['Iago','Jobbo','Jobboman','Crimock','CrimockLyte'])
 	#resume = get_resume(dicts,None,tags=['Draxsel','iModerz','TehGuitarLord','Joe-J','San','PikaPika!','K.I.D. Goggles','K.I.D.Goggles','Dom','Fun China'])
-	resume = get_resume(dicts,None,tags=['Pisces'])
+	resume = get_resume(dicts,None,tags=['Magi','Iago'])
 	#resume = get_resume(dicts,None,tags=['Mang0','Armada','Leffen','Wizzrobe','Rishi','PPMD','Axe','S2J','Zain','n0ne','Mew2King','Hungrybox','Plup','aMSa','SFAT','PewPewU','Swedish Delight'])
 	#update_regions((tourneys,ids,p_info,records),[1000])
 	print_resume(dicts,resume,g_key='player',s_key='event')
@@ -119,7 +134,7 @@ def main():
 	#print(ids[get_abs_id_from_tag(dicts,'Plup')])
 
 	#print(skills['perf'])
-	disp_all(dicts,key='elo',dispnum=20,min_activity=min_act,tier_tol=-1)
+	disp_all(dicts,key='norm_all',dispnum=35,min_activity=min_act,tier_tol=-1,plot_skills=True)
 
 	return True
 

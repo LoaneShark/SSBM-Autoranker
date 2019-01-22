@@ -65,6 +65,9 @@ def calc_performance(dicts,abs_id,t_info,use_FIDE=True):
 	wins = records[abs_id]['wins']
 	losses = records[abs_id]['losses']
 
+	#if t_id not in records[abs_id]['placings']:
+		#return 0.
+
 	if use_FIDE:
 		dp_table = load_dict('FIDE_dp',None,loc='../lib')
 		pct = score(dicts,records[abs_id]['placings'][t_id],t_id,t_size)
@@ -96,8 +99,8 @@ def update_performances(dicts,t_info,use_FIDE=True):
 	tourneys,ids,p_info,records,skills = dicts
 	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size = t_info
 
-	for abs_id in p_info:
-		if t_id in ids[abs_id]:
+	for abs_id in records:
+		if t_id in records[abs_id]['placings']:
 			skills['perf'][abs_id][t_id] = calc_performance(dicts,abs_id,t_info,use_FIDE)
 		#else:
 		#	skills['perf'][abs_id][t_id] = 0.
@@ -225,7 +228,7 @@ def glicko_update_vol(mu,phi,sigma,p_matches,delta,v_g,tau):
 # updates the glicko ratings for all players that entered,
 # after a given tournament
 old_glicko_tau = 0.5
-def update_glicko(dicts,matches,t_info,tau=0.5):
+def update_glicko(dicts,matches,t_info,tau=0.5,ranking_period=60):
 	tourneys,ids,p_info,records,skills = dicts
 	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size = t_info
 	# converts match information to (s_j,mu_j,phi_j) format
@@ -269,7 +272,7 @@ def update_glicko(dicts,matches,t_info,tau=0.5):
 				last_date = t_date
 			else:
 				last_date = tourneys[p_info[abs_id]['last_event']]['date']
-			if date(last_date[0],last_date[1],last_date[2]) < (date(t_date[0],t_date[1],t_date[2])-timedelta(days=30)):
+			if date(last_date[0],last_date[1],last_date[2]) < (date(t_date[0],t_date[1],t_date[2])-timedelta(days=ranking_period)):
 				phi_prime = phi
 			else:
 				phi_prime = sqrt(phi**2 + sigma**2)

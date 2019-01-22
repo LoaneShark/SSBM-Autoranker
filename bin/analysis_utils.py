@@ -111,7 +111,7 @@ def get_best_performances(dicts,use_names=False,acc=3,scale_vals=False):
 	best_perfs = {}
 
 	for p_id in p_info:
-		if p_id in skills['perf']:
+		if p_id in skills['perf'] and not skills['perf'][p_id] == {}:
 			#print(p_info[p_id])
 			#print(records[p_id])
 			#print(skills['elo'][p_id],'\n',skills['glicko'][p_id],'\n',skills['sim'][p_id],'\n',skills['perf'][p_id])
@@ -145,11 +145,11 @@ def disp_all(dicts,dispnum=20,key='elo',trans_cjk=True,avg_perf=False,scale_vals
 	glickos = get_glickos(dicts,scale_vals=scale_vals,activity=min_activity)
 	if avg_perf:
 		perfs = get_avg_performances(dicts)
-		perfstr = "Mean Performance"
+		perfstr = 'Mean Performance'
 		perfstr_len = 16
 	else:
 		perfs = get_best_performances(dicts,use_names=True)
-		perfstr = "Best Performance"
+		perfstr = 'Best Performance'
 		perfstr_len = 36 + max([len(perfs[p_id][1]) for p_id in perfs])
 
 	if key == 'bracket':
@@ -168,18 +168,20 @@ def disp_all(dicts,dispnum=20,key='elo',trans_cjk=True,avg_perf=False,scale_vals
 	if key == 'norm_all':
 		for p_id in elos:
 			elos[p_id] = round((elos[p_id]+glickos[p_id])/2.,3)
-		players = sorted([[p_info[p_id]['tag'],elos[p_id],scores[p_id],perfs[p_id]] for p_id in p_info if p_id in elos if p_id in scores if p_id in perfs],key=lambda x: x[key_idx],reverse=True)
-		print("\n{:<20.20}".format("Player"),"{:<18.18}".format("Combo Score [0,10]"),"{:<9.9}".format("Mean %"),("{:<%d.%d}"%(perfstr_len,perfstr_len)).format(perfstr),"\n")
+		players = sorted([[str(p_info[p_id]['tag']),elos[p_id],scores[p_id],perfs[p_id]] for p_id in p_info if p_id in elos if p_id in scores if p_id in perfs],key=lambda x: x[key_idx],reverse=True)
+		print('\n{:<7.7}'.format('Place'),'{:<20.20}'.format('Player'),'{:<18.18}'.format('Combo Score [0,10]'),'{:<9.9}'.format('Mean %'),('{:<%d.%d}'%(perfstr_len,perfstr_len)).format(perfstr),'\n')
 	else:
-		players = sorted([[p_info[p_id]['tag'],elos[p_id],glickos[p_id],scores[p_id],perfs[p_id]] for p_id in p_info if p_id in elos if p_id in scores if p_id in perfs],key=lambda x: x[key_idx],reverse=True)
-		print("\n{:<20.20}".format("Player"),"{:<9.9}".format("Elo"),"{:<9.9}".format("Glicko-2"),"{:<9.9}".format("Mean %"),("{:<%d.%d}"%(perfstr_len,perfstr_len)).format(perfstr),"\n")
+		players = sorted([[str(p_info[p_id]['tag']),elos[p_id],glickos[p_id],scores[p_id],perfs[p_id]] for p_id in p_info if p_id in elos if p_id in scores if p_id in perfs],key=lambda x: x[key_idx],reverse=True)
+		print('\n{:<7.7}'.format('Place'),'{:<20.20}'.format('Player'),'{:<9.9}'.format('Elo'),'{:<9.9}'.format('Glicko-2'),'{:<9.9}'.format('Mean %'),('{:<%d.%d}'%(perfstr_len,perfstr_len)).format(perfstr),'\n')
 	players = players[:dispnum]
 	#print(players)
 
 	#print("\n{:<20.20}".format("Player"),"{:<9.9}".format("Elo"),"{:<9.9}".format("Glicko-2"),"{:<9.9}".format("Mean %"),("{:<%d.%d}"%(perfstr_len,perfstr_len)).format(perfstr),"\n")
 	last = None
+	rank = 0
 	for player in players:
 		tagstr_len = 20
+		rank += 1
 		if tier_tol > 0:
 			val = player[key_idx]
 			if last != None:
@@ -193,11 +195,11 @@ def disp_all(dicts,dispnum=20,key='elo',trans_cjk=True,avg_perf=False,scale_vals
 			if is_emoji(tag_ch):
 				tagstr_len -= 1
 		if key == 'norm_all':
-			print(("{:<%s.%s}"%(tagstr_len,tagstr_len)).format(player[0]),"{:<18.18}".format(str(player[1])), \
-				"{:<9.9}".format(player[2]),("{:<%d.%d}"%(perfstr_len,perfstr_len)).format(str(player[3])))
+			print('{:<7.7}'.format(' '+str(rank)),('{:<%s.%s}'%(tagstr_len,tagstr_len)).format(player[0]),'{:<18.18}'.format(str(player[1])), \
+				'{:<9.9}'.format(player[2]),('{:<%d.%d}'%(perfstr_len,perfstr_len)).format(str(player[3])))
 		else:
-			print(("{:<%s.%s}"%(tagstr_len,tagstr_len)).format(player[0]),"{:<9.9}".format(str(player[1])), \
-				"{:<9.9}".format(player[2]),"{:<9.9}".format(player[3]),("{:<%d.%d}"%(perfstr_len,perfstr_len)).format('['+', '.join(str(s) for s in player[4])+']'))
+			print('{:<7.7}'.format(' '+str(rank)),('{:<%s.%s}'%(tagstr_len,tagstr_len)).format(player[0]),'{:<9.9}'.format(str(player[1])), \
+				'{:<9.9}'.format(player[2]),'{:<9.9}'.format(player[3]),('{:<%d.%d}'%(perfstr_len,perfstr_len)).format('['+', '.join(str(s) for s in player[4])+']'))
 	if plot_skills:
 		N = len(players)
 		xs = range(N)
