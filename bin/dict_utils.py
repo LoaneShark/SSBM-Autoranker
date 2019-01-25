@@ -19,7 +19,7 @@ def get_result(dicts,t_id,res_filt=None):
 	t_labels = t['groups']
 
 	# import all players from this event
-	player_ids = [p_id for p_id in ids if (not (p_id in tourneys) and t_id in ids[p_id])]
+	player_ids = [p_id for p_id in ids if (not type(p_id) is str and t_id in ids[p_id])]
 	player_teams = [p_info[p_id]['team'] for p_id in player_ids]
 	player_tags = [p_info[p_id]['tag'] for p_id in player_ids]
 	player_paths = [records[p_id]['paths'][t_id] for p_id in player_ids]
@@ -53,7 +53,7 @@ def get_result(dicts,t_id,res_filt=None):
 		for player in players.copy():
 			p_id,p_team,p_tag,p_path,p_place,p_losses,p_wins,p_skills = player
 			if 'player' in res_filt:
-				if not (p_id == res_filt['player'] and not (p_id in tourneys) and t_id in ids[p_id]):
+				if not (p_id == res_filt['player'] and not (type(p_id) is str) and t_id in ids[p_id]):
 					players.remove(player)
 					continue
 			if 'tag' in res_filt:
@@ -205,6 +205,8 @@ def get_resume(dicts,p_id,tags=None,t_ids=None,team=None,slugs=None):
 	if len(t_ids) > 0:
 		res = [flatten([[t_id],get_result(dicts,t_id,res_filt={'player': p_id})]) for t_id in t_ids if not get_result(dicts,t_id,res_filt={'player': p_id}) == []]
 	else:
+		if p_id not in records:
+			return []
 		res = [flatten([[t_id],get_result(dicts,t_id,res_filt={'player': p_id})]) for t_id in ids[p_id] if not get_result(dicts,t_id,res_filt={'player': p_id}) == []]
 
 		#t_losses = [records[p_id]['losses'][l_id] for l_id in records[p_id]['losses'] if t_id ]
@@ -450,7 +452,7 @@ def old_print_event(dicts,t_id,max_place=64,translate_cjk=True):
 	t = tourneys[t_id]
 	t_labels = t['groups']
 
-	player_ids = [p_id for p_id in ids if (not (p_id in tourneys) and t_id in ids[p_id])]
+	player_ids = [p_id for p_id in ids if (not (type(p_id) is str) and t_id in ids[p_id])]
 	player_teams = [p_info[p_id]['team'] for p_id in player_ids]
 	player_tags = [p_info[p_id]['tag'] for p_id in player_ids]
 	player_paths = [records[p_id]['paths'][t_id] for p_id in player_ids]

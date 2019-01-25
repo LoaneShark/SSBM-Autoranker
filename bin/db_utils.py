@@ -198,9 +198,9 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 				if abs_id not in ids:
 					ids[abs_id] = {}
 				ids[abs_id][t_id] = e_id
-				if t_id not in ids:
-					ids[t_id] = {}
-				ids[t_id][e_id] = abs_id
+				if 't_'+str(t_id) not in ids:
+					ids['t_'+str(t_id)] = {}
+				ids['t_'+str(t_id)][e_id] = abs_id
 
 				# store dict for each player with keys for:
 				# team, tag, firstname, lastname, state, country
@@ -297,7 +297,7 @@ def store_records(wins,losses,paths,t_info,dicts,update_ranks=True):
 
 	#print(t_id)
 	for abs_id in ids:
-		if not (abs_id in tourneys or abs_id == t_id):			# ignore id for present or past tournaments
+		if not (type(abs_id) is str or abs_id == 't_'+str(t_id)):			# ignore id for present or past tournaments
 			simrank_history[abs_id][t_id] = -9999.
 			simrank_deltas[abs_id][t_id] = 0.
 			if t_id in ids[abs_id]:								# ignore id if not an entrant in this tourney
@@ -324,7 +324,7 @@ def store_records(wins,losses,paths,t_info,dicts,update_ranks=True):
 				# store wins and losses
 				if e_id in wins:
 					for win in wins[e_id]:
-						l_id = ids[t_id][win[0]]
+						l_id = ids['t_'+str(t_id)][win[0]]
 						if l_id not in records[abs_id]['wins']:
 							records[abs_id]['wins'][l_id] = {}
 							records[abs_id]['wins'][l_id] = [t_id]
@@ -338,7 +338,7 @@ def store_records(wins,losses,paths,t_info,dicts,update_ranks=True):
 						glicko_scores.extend([(1.,l_id)])
 				if e_id in losses:
 					for loss in losses[e_id]:
-						w_id = ids[t_id][loss[0]]
+						w_id = ids['t_'+str(t_id)][loss[0]]
 						if w_id not in records[abs_id]['losses']:
 							records[abs_id]['losses'][w_id] = {}
 							records[abs_id]['losses'][w_id] = [t_id]
@@ -422,7 +422,7 @@ def delete_tourney(dicts,t_id,slug=None):
 				if t_id in ids[abs_id] and t_id in ids:
 					# remove entrant ids/data
 					del ids[abs_id][t_id]
-					del ids[t_id]
+					del ids['t_'+str(t_id)]
 
 				if abs_id in records and t_id in records[abs_id]['placings']:
 					# remove player records for this tourney
@@ -436,18 +436,22 @@ def delete_tourney(dicts,t_id,slug=None):
 						if t_id in records[abs_id]['wins'][win]:
 							records[abs_id]['wins'][win] = [tempid for tempid in records[abs_id]['wins'][win] if not tempid == t_id]
 
-				# remove tournament records for this tourney
-				for t_s in dcopy(tourneys['slugs']):
-					if tourneys['slugs'][t_s] == t_id:
-						del tourneys['slugs'][t_s]
-				if t_id in tourneys:
-					del tourneys[t_id]
+		# remove tournament records for this tourney'
+		for t_s in dcopy(tourneys['slugs']):
+			if tourneys['slugs'][t_s] == t_id:
+				#slug = t_s
+				del tourneys['slugs'][t_s]
+		if t_id in tourneys:
+			del tourneys[t_id]
+
+		# remove tournament from imported slugs
+
 	return tourneys,ids,p_info,records,skills
 
 # delete all data associated with a given player
 # (player id, meta info, tourney results/records are deleted!!!)
 # **does NOT save db automatically**
-def delete_player(dicts,p_id,tag=None):
+def delete_player(dicts,p_id,tag=None,delete_sets=True):
 	tourneys,ids,p_info,records,skills = dicts
 	abs_id,p_meta,p_records,p_ids = get_player(dicts,p_id,tag)
 
@@ -456,10 +460,11 @@ def delete_player(dicts,p_id,tag=None):
 	del p_info[abs_id]
 	del ids[abs_id]
 	# delete instances of player from other players' records
-	for l_id in p_records['losses']:
-		del[records][l_id]['wins'][abs_id]
-	for w_id in p_records['wins']:
-		del[records][w_id]['losses'][abs_id]
+	if delete_sets:
+		for l_id in p_records['losses']:
+			del [records][l_id]['wins'][abs_id]
+		for w_id in p_records['wins']:
+			del [records][w_id]['losses'][abs_id]
 
 	return tourneys,ids,p_info,records,skills
 

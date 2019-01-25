@@ -2,16 +2,17 @@ import country_converter as coco
 from geopy.geocoders import Nominatim,PickPoint
 from copy import deepcopy as dcopy
 from math import *
-from readin_utils import save_dict,load_dict
+from readin_utils import save_dict,load_dict,delete_dict
 import re
 from geopy.exc import GeocoderQuotaExceeded
 import time
+import glob
 
 ## REGION UTILS
 # returns the region given a location and granularity
 # granularity: 1 = country/continent, 2 = region/country, 3 = state, 4 = county/municipality, 5 = city/suburb
 ## Need to find a better consistent solution for this; keep exceeding query limits for APIs
-def calc_region(country,state=None,city=None,granularity=2):
+def calc_region(country,state=None,city=None,granularity=2,force_new=False):
 	cc = coco.CountryConverter()
 	#geoloc = None
 	if city in ['N/A','n/a','',' ','  ','None']:
@@ -20,11 +21,13 @@ def calc_region(country,state=None,city=None,granularity=2):
 		state == None
 	if country in ['N/A','n/a','',' ','  ','None']:
 		country == None
-	if (country.replace('.','')).lower() in ['america','united states of america','usa','us','us of a','us of america']:
-		country == 'United States'
 
 	if country != None:
+		# remove periods
+		country.replace('.','')
 		country_low = country.lower()
+		if country_low in ['america','united states of america','usa','us','us of a','us of america']:
+			country = 'United States'
 		if 'virgin islands' in country_low:
 			country = 'United States'
 			state = 'VI'
@@ -54,7 +57,11 @@ def calc_region(country,state=None,city=None,granularity=2):
 	locale_list = [city,state,country]
 	for l_idx in range(len(locale_list)):
 		if locale_list[l_idx] != None:
-			re.sub('[\(\[].*?[\)\]]', '', locale_list[l_idx])
+			# remove parentheses and their contents
+			locale_list[l_idx] = re.sub('[\(\[].*?[\)\]]', '', locale_list[l_idx])
+			# remove slashes
+			locale_list[l_idx] = ' '.join(locale_list[l_idx].split('/'))
+			locale_list[l_idx] = ' '.join(locale_list[l_idx].split('\\'))
 	city,state,country = locale_list
 	# Load archive to ease strain on geopy
 	locstr = ''
@@ -71,13 +78,41 @@ def calc_region(country,state=None,city=None,granularity=2):
 		dictstr += country
 	elif locstr == '':
 		return 'N/A'
+	else:
+		if locstr[0] == ',':
+			if locstr[1] == ' ':
+				locstr = locstr[2:]
+			else:
+				locstr = locstr[1:]
+		if locstr[-1] == ' ':
+			locstr = locstr[:-1]
+		if locstr[-1] == ',':
+			locstr = locstr[:-1]
 	if dictstr == '':
 		return 'N/A'
 	else:
-		dictstr = dictstr.replace('/',',')
-		dictstr = dictstr.replace('\\',',')
+		dictstr.replace('/',', ')
+		dictstr.replace('\\',', ')
+		# prune out leading/trailing commas and spaces
+		if len(dictstr) > 2:
+			if dictstr[0] == ' ':
+				dictstr = dictstr[1:]
+			if dictstr[0] == ',':
+				if dictstr[1] == ' ':
+					dictstr = dictstr[2:]
+				else:
+					dictstr = dictstr[1:]
+			if dictstr[-1] == ' ':
+				dictstr = dictstr[:-1]
+			if dictstr[-1] == ',':
+				dictstr = dictstr[:-1]
+		elif dictstr == ', ' or dictstr == ' ' or dictstr == '':
+			return 'N/A'
 
-	locdict = load_city_dict(dictstr)
+	if force_new:
+		locdict = {}
+	else:
+		locdict = load_city_dict(dictstr)
 	if locstr not in locdict:
 		first_call_time = time.perf_counter()
 		geocoder_name = 'Nominatim'
@@ -134,6 +169,10 @@ def calc_region(country,state=None,city=None,granularity=2):
 		locdict[locstr] = [l_city,l_state,l_county,l_country,l_continent]
 		save_city_dict(dictstr,locdict)
 	else:
+		#print(locstr)
+		#print(dictstr)
+		#print(len(locdict[locstr]))
+		#print(locdict[locstr])
 		[l_city,l_state,l_county,l_country,l_continent] = locdict[locstr]
 
 
@@ -216,7 +255,7 @@ def calc_region(country,state=None,city=None,granularity=2):
 				for qual in ["north ","south ","east ","west ","central ","outer ","new ","old ",", CA"]:
 					city_l = city_l.replace(qual," ")
 				city_l = city.strip()
-				calidict = load_city_dict('CA')
+				calidict = load_city_dict('CA_cities')
 				if city_l in calidict:
 					return calidict[city_l]
 				elif city in calidict:
@@ -233,17 +272,17 @@ def calc_region(country,state=None,city=None,granularity=2):
 					#city_low = geolocator.geocode(city_l+", CA, USA")
 					if city_loc == None:
 						calidict[city] = "Misc. Cali"
-						save_city_dict('CA',calidict,to_load=False)
+						save_city_dict('CA_cities',calidict,to_load=False)
 						return "Misc. Cali"
 					if is_socal(geolocator,city_loc): #or is_socal(geolocator,city_low):
 						calidict[city] = "SoCal"
 						calidict[city_l] = "SoCal"
-						save_city_dict('CA',calidict,to_load=False)
+						save_city_dict('CA_cities',calidict,to_load=False)
 						return "SoCal"
 					else:
 						calidict[city] = "NorCal"
 						calidict[city_l] = "NorCal"
-						save_city_dict('CA',calidict,to_load=False)
+						save_city_dict('CA_cities',calidict,to_load=False)
 						return "NorCal"
 			elif state in ['FL']:
 				if city == None:
@@ -252,7 +291,7 @@ def calc_region(country,state=None,city=None,granularity=2):
 				for qual in ["north ","south ","east ","west ","central ","outer ","new ","old ",", FL"]:
 					city_l = city_l.replace(qual," ")
 				city_l = city.strip()
-				floridict = load_city_dict('FL')
+				floridict = load_city_dict('FL_cities')
 				if city_l in floridict:
 					return floridict[city_l]
 				elif city in floridict:
@@ -269,17 +308,17 @@ def calc_region(country,state=None,city=None,granularity=2):
 					#city_low = geolocator.geocode(city_l+", FL, USA")
 					if city_loc == None:
 						floridict[city] = "Misc. FL"
-						save_city_dict('FL',floridict,to_load=False)
+						save_city_dict('FL_cities',floridict,to_load=False)
 						return "Misc. FL"
 					if is_sfl(geolocator,city_loc): #or is_sfl(geolocator,city_low):
 						floridict[city] = "SFL"
 						floridict[city_l] = "SFL"
-						save_city_dict('FL',floridict,to_load=False)
+						save_city_dict('FL_cities',floridict,to_load=False)
 						return "SFL"
 					else:
 						floridict[city] = "CFL"
 						floridict[city_l] = "CFL"
-						save_city_dict('FL',floridict,to_load=False)
+						save_city_dict('FL_cities',floridict,to_load=False)
 						return "CFL"
 			else:
 				return 'N/A'
@@ -357,7 +396,7 @@ def get_region(dicts,p_id,tag=None,country=None,state=None,city=None,granularity
 		p_id = get_abs_id_from_tag(dicts,tag)
 	if to_calc or not 'region' in p_info[p_id]:
 		#print(p_info[p_id])
-		if country != None and state != None and city != None:
+		if country == None and state == None and city == None:
 			return calc_region(p_info[p_id]['country'],p_info[p_id]['state'],p_info[p_id]['city'],granularity)
 		else:
 			return calc_region(country,state,city,granularity)
@@ -372,16 +411,17 @@ def get_players_by_region(dicts,region,granularity=2,get_data=False):
 	else:
 		return [abs_id for abs_id in p_info if get_region(dicts,abs_id,granularity=granularity) == region]
 
-def update_regions(dicts,players):
+def update_regions(dicts,players,granularities=range(1,6)):
 	tourneys,ids,p_info,records,skills = dicts
 	for p_id in players:
-		p_info[p_id]['region'] = get_region((tourneys,ids,p_info,records,skills),p_id,to_calc=True)
+		for gran in granularities:
+			p_info[p_id]['region'][gran] = get_region((tourneys,ids,p_info,records,skills),p_id,granularity=gran,to_calc=True)
 
 # saves the given cities in additions, with the given classification (Socal, Norcal, or Misc)
 def save_city_dict(state,cities={},to_load=True,hard_cali_load=False):
 	if to_load:
 		city_load = load_dict(state,'cities','obj')
-		if city_load == {} and state == 'CA':
+		if city_load == {} and state == 'CA_cities':
 			hard_cali_load = True
 		for key in city_load.keys():
 			if key not in cities:
@@ -425,11 +465,53 @@ def save_city_dict(state,cities={},to_load=True,hard_cali_load=False):
 
 	return save_dict(cities,state,'cities','obj')
 
+# loads city dicts
 def load_city_dict(state):
 	return load_dict(state,'cities','obj')
 
+# cleans up deprecated dict filenames, and merges subsequent duplicates
+def clean_city_dicts():
+	i = 0
+	for dictfile in glob.iglob('.\\obj\\cities\\*.pkl'):
+		i += 1
+		#print (dictfile)
+		dictname = dictfile.split('\\')[-1] # remove the directories
+		#print(dictname)
+		dictname = dictname[:-4] 	# remove the .pkl
+		#print(dictname)
+
+		tempname = str(dictname)
+		clear_front = False
+		while not clear_front:
+			if len(tempname) == 0 or tempname == '' or tempname == None:
+				clear_front = True
+			elif tempname[0] in [' ',',']:
+				tempname = tempname[1:]
+			else:
+				clear_front = True
+		clear_back = False
+		while not clear_back:
+			if len(tempname) == 0 or tempname == '' or tempname == None:
+				clear_back = True
+			elif tempname[-1] in [' ',',']:
+				tempname = tempname[:-1]
+			elif tempname[-1] in ['.']:
+				if tempname.count('.') == 1:
+					tempname = tempname[:-1]
+				else:
+					print(tempname.count('.'))
+			else:
+				clear_back = True
+
+		dictdata = load_city_dict(dictname)
+		print(dictname,'\t',tempname)
+		save_city_dict(tempname,cities=dictdata)
+		#print(delete_dict(dictname,'cities',loc='obj'))
+		if i > 10:
+			break
+
 if __name__ == "__main__":
-	geoloc = Nominatum(user_agent="SSBM_Autoranker",timeout=5)
+	#geoloc = Nominatum(user_agent="SSBM_Autoranker",timeout=5)
 	#geoloc = PickPoint(user_agent="SSBM_Autoranker",timeout=5,api_key='yeaJ8X8QQoJtB7Uo4TsL')
 	#p1 = geoloc.geocode("Atascadero, CA")
 	#p2 = geoloc.geocode("Fresno, CA")
@@ -445,5 +527,7 @@ if __name__ == "__main__":
 	#print(x1,y1)
 	#print(x2,y2)
 
-	p = geoloc.geocode("Cardiff, UK",language='en',addressdetails=True)
-	print(p.raw)
+	#p = geoloc.geocode("Cardiff, UK",language='en',addressdetails=True)
+	#print(p.raw)
+
+	clean_city_dicts()

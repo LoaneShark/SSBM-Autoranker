@@ -122,19 +122,33 @@ def main():
 	#tourneys,ids,p_info,records,skills = load_db(str(game_idx)+"/"+yearstr)
 	#tourneys,ids,p_info,records,skills = load_db(str(game_idx)+"/"+str(year))
 
-
 	#print(get_result((tourneys,ids,p_info,records),36179,res_filt={'player':1000}))
+
 	#resume = get_resume(dicts,None,tags=['Iago','Jobbo','Jobboman','Crimock','CrimockLyte'])
 	#resume = get_resume(dicts,None,tags=['Draxsel','iModerz','TehGuitarLord','Joe-J','San','PikaPika!','K.I.D. Goggles','K.I.D.Goggles','Dom','Fun China'])
-	resume = get_resume(dicts,None,tags=['Magi','Iago'])
-	#resume = get_resume(dicts,None,tags=['Mang0','Armada','Leffen','Wizzrobe','Rishi','PPMD','Axe','S2J','Zain','n0ne','Mew2King','Hungrybox','Plup','aMSa','SFAT','PewPewU','Swedish Delight'])
-	#update_regions((tourneys,ids,p_info,records),[1000])
-	print_resume(dicts,resume,g_key='player',s_key='event')
-	#print(get_player(dicts,None,tag='Plup'))
-	#print(ids[get_abs_id_from_tag(dicts,'Plup')])
-
-	#print(skills['perf'])
-	disp_all(dicts,key='norm_all',dispnum=35,min_activity=min_act,tier_tol=-1,plot_skills=True)
+	
+	if game_idx == 1:
+		#print(tourneys[6076])
+		#delete_tourney(dicts,6076)
+		#dicts = read_majors(1,2017,base=dicts)
+		#tourneys,ids,p_info,records,skills = dicts
+		#print(tourneys[5643])
+		print(p_info[5643])
+		print(records[5643])
+		#print(records[5643]['paths'])
+		#resume = get_resume(dicts,5643)
+		#resume = get_resume(dicts,None,tags=['Mang0','Armada','Leffen','Wizzrobe','Rishi','PPMD','Axe','S2J','Zain','n0ne','Mew2King','Hungrybox','Plup','aMSa','SFAT','PewPewU','Swedish Delight'])
+		#print_resume(dicts,resume,g_key='player',s_key='event')
+	if game_idx == 3:
+		#print(p_info[14514])
+		#print(p_info[490223])
+		#print(len(get_players_by_region(dicts,'SoCal')))
+		print(get_region(dicts,14514,to_calc=True))
+		#resume = get_resume(dicts,14514)
+		#print_resume(dicts,resume,g_key='player',s_key='event')
+	#disp_all(dicts,key='elo',dispnum=10,min_activity=min_act,tier_tol=-1,plot_skills=False)
+	#if game_idx == 1386 or game_idx == 3:
+	calc_simbrack(dicts,None,min_req=min_act,max_iter=10)
 
 	return True
 
@@ -143,13 +157,13 @@ def main_read():
 	if year_count == 0:
 		yearstr = str(year)
 	else:
-		yearstr = str(year)+"-"+str(year+year_count)
-	tourneys,ids,p_info,records,skills = easy_load_db(str(game_idx)+"/"+yearstr)
+		yearstr = str(year)+'-'+str(year+year_count)
+	tourneys,ids,p_info,records,skills = easy_load_db(str(game_idx)+'/'+yearstr)
 	tourneys,ids,p_info,records,skills = read_majors(game_idx,year,base=(tourneys,ids,p_info,records,skills))
 	for i in range(1,year_count+1):
 		tourneys,ids,p_info,records,skills = read_majors(game_idx,year+i,base=(tourneys,ids,p_info,records,skills))
 
 	return tourneys,ids,p_info,records,skills
 
-if __name__ == "__main__":
+if __name__ == '__main__':
 	main()

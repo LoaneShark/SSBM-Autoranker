@@ -10,8 +10,6 @@ from emoji import UNICODE_EMOJI
 #from googletrans import Translator
 #import romkan
 from pykakasi import kakasi,wakati
-#from polyglot.transliteration import Transliterator
-#from polyglot.text import Text
 import regex
 import shutil
 import subprocess
@@ -279,6 +277,24 @@ def load_dict(name,ver,loc='db'):
 		else:
 			save_dict({},name,ver,loc)
 			return {}
+
+# deletes a single dict
+def delete_dict(name,ver,loc='db'):
+	if os.path.isdir('%s'%loc):
+		if ver != None and ver != '':
+			if os.path.isdir('%s/%s'%(loc,ver)):
+				verstr = str(ver)+'/'+str(name)+'.pkl'
+			else:
+				return False
+		else:
+			verstr = str(name)+'.pkl'
+		try:
+			os.remove('%s/%s'%(loc,verstr))
+			return True
+		except FileNotFoundError:
+			return False
+	else:
+		return False
 
 # saves the slugs pulled by scraper to avoid having to rescrape every time
 def save_slugs(slugs,game,year,loc='db',to_save_db=True):
