@@ -226,6 +226,32 @@ def get_abs_id_from_tag(dicts,tag,first_only=True):
 		return None
 	#print(p_info[1000]['aliases'])
 
+# returns an english tag either from cache or transliterated directly, given either p_id or japanese tag
+def get_en_tag(dicts,tag=None,p_id=None):
+	tourneys,ids,p_info,records,skills = dicts
+
+	# get p_id if not already provided
+	if p_id == None:
+		if tag == None:
+			return None
+		else:
+			p_id = get_abs_id_from_tag(dicts,tag)
+	# get tag if not already provided
+	if tag == None:
+		tag = p_info[p_id]['tag']
+
+	# find transliterated aliases stored, or manually transliterate if not already provided
+	if has_cjk(tag):
+		if any([not(has_cjk(al)) for al in p_info[p_id]['aliases']]):
+			for al in p_info[p_id]['aliases']:
+				if not has_cjk(al):
+					return al
+		else:
+			return transliterate(tag)
+	else:
+		return tag
+
+
 # returns a list of all player ids listed under this team
 def get_players_from_team(dicts,team):
 	tourneys,ids,p_info,records,skills = dicts

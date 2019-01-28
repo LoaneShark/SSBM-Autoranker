@@ -70,7 +70,11 @@ from analysis_utils import *
 ## 			- SSBMRank scores from the previous year? Normal distribution using avg tourney placing?
 ## 		- decay over time?
 ## 	- fit Glicko-2 (?)
-## 	- add Iagorank
+
+## SIMBRACK TODO:
+##  - do I need to simbrack? Can I just use sigmoid integral / y-intercept?
+##	- track deltas to ensure convergence
+##	- how do I calculate uncertainty in original winps
 
 ## TOURNEY SHITLIST:
 ## 	- We Tech Those 3: PM Pool PMA2
@@ -127,14 +131,14 @@ def main():
 	#resume = get_resume(dicts,None,tags=['Iago','Jobbo','Jobboman','Crimock','CrimockLyte'])
 	#resume = get_resume(dicts,None,tags=['Draxsel','iModerz','TehGuitarLord','Joe-J','San','PikaPika!','K.I.D. Goggles','K.I.D.Goggles','Dom','Fun China'])
 	
-	if game_idx == 1:
+	#if game_idx == 1:
 		#print(tourneys[6076])
 		#delete_tourney(dicts,6076)
 		#dicts = read_majors(1,2017,base=dicts)
 		#tourneys,ids,p_info,records,skills = dicts
 		#print(tourneys[5643])
-		print(p_info[5643])
-		print(records[5643])
+		#print(p_info[5643])
+		#print(records[5643])
 		#print(records[5643]['paths'])
 		#resume = get_resume(dicts,5643)
 		#resume = get_resume(dicts,None,tags=['Mang0','Armada','Leffen','Wizzrobe','Rishi','PPMD','Axe','S2J','Zain','n0ne','Mew2King','Hungrybox','Plup','aMSa','SFAT','PewPewU','Swedish Delight'])
