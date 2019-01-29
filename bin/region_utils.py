@@ -51,6 +51,8 @@ def calc_region(country,state=None,city=None,granularity=2,force_new=False):
 			state = 'PW'
 		if 'd.r.' == country_low:
 			country = 'DR'
+		if 'prc' == country_low:
+			country = 'China'
 
 
 	# remove anything in parentheses or brackets from location names

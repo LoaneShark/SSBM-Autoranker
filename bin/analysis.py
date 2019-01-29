@@ -75,6 +75,8 @@ from analysis_utils import *
 ##  - do I need to simbrack? Can I just use sigmoid integral / y-intercept?
 ##	- track deltas to ensure convergence
 ##	- how do I calculate uncertainty in original winps
+##	
+##	- Fourier analysis lmao
 
 ## TOURNEY SHITLIST:
 ## 	- We Tech Those 3: PM Pool PMA2
@@ -143,16 +145,16 @@ def main():
 		#resume = get_resume(dicts,5643)
 		#resume = get_resume(dicts,None,tags=['Mang0','Armada','Leffen','Wizzrobe','Rishi','PPMD','Axe','S2J','Zain','n0ne','Mew2King','Hungrybox','Plup','aMSa','SFAT','PewPewU','Swedish Delight'])
 		#print_resume(dicts,resume,g_key='player',s_key='event')
-	if game_idx == 3:
+	#if game_idx == 3:
 		#print(p_info[14514])
 		#print(p_info[490223])
 		#print(len(get_players_by_region(dicts,'SoCal')))
-		print(get_region(dicts,14514,to_calc=True))
+		#print(get_region(dicts,14514,to_calc=True))
 		#resume = get_resume(dicts,14514)
 		#print_resume(dicts,resume,g_key='player',s_key='event')
 	#disp_all(dicts,key='elo',dispnum=10,min_activity=min_act,tier_tol=-1,plot_skills=False)
 	#if game_idx == 1386 or game_idx == 3:
-	calc_simbrack(dicts,None,min_req=min_act,max_iter=10)
+	calc_simbrack(dicts,None,min_req=min_act,max_iter=100,rank_size=1000)
 
 	return True
 

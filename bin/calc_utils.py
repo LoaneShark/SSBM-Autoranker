@@ -310,7 +310,7 @@ def calc_simbrack(dicts,t_info,max_iter=100,min_req=3,rank_size=None,disp_size=1
 		disp_size = min(disp_size,rank_size)
 		id_list = id_list[:rank_size]
 	# get the win probs for the whole db
-	winps = winprobs(dicts,id_list=None)
+	winps,chis = winprobs(dicts,id_list=None)
 	# initialize data with [id, tag, elo, glicko] structure
 	data = np.array([[p_id,get_en_tag(dicts,tag=p_info[p_id]['tag']),float(p_info[p_id]['elo']),float(p_info[p_id]['glicko'][0])] for p_id in winps],dtype='object')
 	# get initial skillranks by rescaling all ranks (elo and glicko) to be between 0 and 1 (for sigmoid fitting)
@@ -330,7 +330,7 @@ def calc_simbrack(dicts,t_info,max_iter=100,min_req=3,rank_size=None,disp_size=1
 
 	print('Simulating Bracket... (%d entrants)'%len(id_list))
 	#new_data_dict,sigs = simbrack(data_dict,winps,id_list,max_iter=max_iter)
-	new_data_dict,sigs = simbrack(data_dict,winps,id_list,max_iter=max_iter,simulate_bracket=False)
+	new_data_dict,sigs,data_hist = simbrack(data_dict,winps,chis,id_list,max_iter=max_iter,simulate_bracket=False,score_intsigs=True,learn_rate=0.5,learn_decay=False,simple_sigmoid=True)
 
 	print('===================')
 	p_list = [sigs[p_id] for p_id in sigs]
@@ -344,36 +344,63 @@ def calc_simbrack(dicts,t_info,max_iter=100,min_req=3,rank_size=None,disp_size=1
 	print('===================')
 	print('Integrating sigmoids...')
 	n = len(sigs.keys())
-	intsig_res = [[new_data_dict[p_id][0],1.-integrate_sigmoid(sigs[p_id],N),new_data_dict[p_id][1],p_id] for p_id in sigs]
+	#intsigs = {p_id: 1.-integrate_sigmoid(sigs[p_id],N) for p_id in sigs}
+	#intsig_res = [[new_data_dict[p_id][0],1.-integrate_sigmoid(sigs[p_id],N),new_data_dict[p_id][1],p_id] for p_id in sigs]
+	intsig_res = [[new_data_dict[p_id][0],new_data_dict[p_id][1],inv_sigmoid(0.5,sigs[p_id][0],sigs[p_id][1],sigs[p_id][2],sigs[p_id][3]),p_id] for p_id in sigs]
 	intsig_res = sorted(intsig_res,key=lambda l: l[1])
+	intsigs = {intsig[-1]: intsig[:-1] for intsig in intsig_res}
 	if disp_size <= len(intsig_res):
 		intsig_res = intsig_res[:disp_size]
+	print('---------------------------------------------')
+	print('{:<21.21}'.format('Tag'),'{:<6.6}'.format('Intsig'),'{:<6.6}'.format('Y-int'),'Player ID')
+	print('---------------------------------------------')
 	for intsig_line in intsig_res:
-		print('{:<20.20}'.format(str(intsig_line[0])),'','{:<5.5}'.format(str(round(intsig_line[1],3))),'','{:<5.5}'.format(str(round(intsig_line[2],3))),intsig_line[3])
+		print('{:<21.21}'.format(str(intsig_line[0])),'{:<6.6}'.format(str(round(intsig_line[1],3))),'{:<6.6}'.format(str(round(intsig_line[2],3))),intsig_line[3])
+		#print(sigs[int(intsig_line[3])])
+		#print(len([opp_id for opp_id in winps[int(intsig_line[3])]]))
 	#plot_skills(data_dict,id_list)
 	plot_skills(new_data_dict,id_list,plot_tags=True)
+	#plot_skills(intsigs,id_list,plot_tags=True)
 	if 23277 in id_list:
+		plot_winprobs(new_data_dict,winps,sigs,15768,plot_tags=True)
+		plot_hist(data_hist,15768)
 		plot_winprobs(new_data_dict,winps,sigs,23277,plot_tags=True)
-		plot_winprobs(new_data_dict,winps,sigs,432879,plot_tags=True)
+		plot_hist(data_hist,23277)
+		#plot_winprobs(new_data_dict,winps,sigs,432879,plot_tags=True)
+		#plot_hist(data_hist,432879)
+		plot_winprobs(new_data_dict,winps,sigs,1055,plot_tags=True)
+		plot_hist(data_hist,1055)
 	if 1000 in id_list:
 		plot_winprobs(new_data_dict,winps,sigs,1000,plot_tags=True)
+		plot_hist(data_hist,1000)
 		plot_winprobs(new_data_dict,winps,sigs,1004,plot_tags=True)
+		plot_hist(data_hist,1004)
+		plot_winprobs(new_data_dict,winps,sigs,19554,plot_tags=True)
+		plot_hist(data_hist,19554)
 
 	#plot_winprobs(dicts,new_data_dict,winps,sigs,larry_id,plot_tags=True)
 	#plot_winprobs(dicts,new_data_dict,winps,sigs,T_id,plot_tags=True)
 	#plot_winprobs(dicts,new_data_dict,winps,sigs,jtails_id,plot_tags=True)
 
 # NEEDS TO BE TWEAKED: Just getting it functional for now
-def simbrack(data,winps,id_list,max_iter=100,learn_rate=0.5,simulate_bracket=True):
+def simbrack(data,winps,chis,id_list,max_iter=100,learn_rate=0.5,tol=0.0005,simulate_bracket=True,score_intsigs=True,learn_decay=True,simple_sigmoid=False):
 	N = float(len(data.keys()))
 	n = float(len(id_list))
 	print("N:",N," n:",n)
+	if learn_rate == None:
+		learn_decay = False
+	elif learn_rate < 0:
+		learn_rate = 0
+		learn_decay = False
 	#void_id,dabuz_id,larry_id = 23277,4702,1035
 
 	count = 0
 	new_data = dcopy(data)
 	old_data = dcopy(data)
-	while count < max_iter:
+	#data_history = {p_id: list(data[p_id][1]) for p_id in data}
+	data_history = {}
+	all_converged = False
+	while count < max_iter and not all_converged:
 		print(count)
 		#for s4_id,tag in zip([void_id,dabuz_id,larry_id],['VoiD','Dabuz','Larry Lurr']):
 			#print(tag)
@@ -397,7 +424,12 @@ def simbrack(data,winps,id_list,max_iter=100,learn_rate=0.5,simulate_bracket=Tru
 			#print(old_data[p_id])
 			#print(new_data[p_id])
 			#print(len(winps[p_id]))
-			sigres = fitsig(new_data,winps,p_id)
+			if p_id in sigs:
+				#sigres = fitsig(new_data,winps,chis,p_id,sigres[p_id][0],method='least_squares')
+				sigres = fitsig(new_data,winps,chis,p_id,sigres[p_id][0],simple_sigmoid=simple_sigmoid)
+			else:
+				sigres = fitsig(new_data,winps,chis,p_id,simple_sigmoid=simple_sigmoid)
+				#sigres = fitsig(new_data,winps,chis,p_id)
 			sigs[p_id] = sigres[0]
 			covs[p_id] = sigres[1]
 			if type(sigs[p_id]) is type(None):
@@ -453,16 +485,40 @@ def simbrack(data,winps,id_list,max_iter=100,learn_rate=0.5,simulate_bracket=Tru
 				new_data[abs_id][1] = old_data[abs_id][1] + (learn_rate/sqrt(10.*float(count)))*(res[abs_id]-old_data[abs_id][1])
 
 		else:
+			# update step for all ids [empirical]
+			all_converged = True
 			for abs_id in id_list:
+				#if simple_sigmoid:
+				#	x0,k = sigs[abs_id]
+				#	if score_intsigs:
+				#		s_new = 1.-integrate_sigmoid((x0,0.,1.,k),n)
+				#	else:
+				#		s_new = inv_sigmoid(0.5,x0,0.,1.,k)
+				#else:
 				x0,y0,c,k = sigs[abs_id]
-				s_new = inv_sigmoid(0.5,x0,y0,c,k)
+				if score_intsigs:
+					s_new = 1.-integrate_sigmoid((x0,y0,c,k),n)
+				else:
+					s_new = inv_sigmoid(0.5,x0,y0,c,k)
+				#if np.isnan(s_new):
+				#	print(new_data[abs_id][0])
 				s_old = old_data[abs_id][1]
-				new_data[abs_id][1] = s_old + (learn_rate/sqrt(float(count)))*(s_new-s_old)
-				#new_data[abs_id][1] = s_new
+				update_diff = abs(s_new-s_old)
+				if update_diff > tol:
+					all_converged = False
+				if learn_decay:
+					new_data[abs_id][1] = s_old + (learn_rate/sqrt(float(count)))*(s_new-s_old)
+				else:
+					new_data[abs_id][1] = s_old + learn_rate*(s_new-s_old)
+
+				# append score to history dict
+				if abs_id not in data_history:
+					data_history[abs_id] = []
+				data_history[abs_id].extend([new_data[abs_id][1]])
 
 		# data(t) -> data(t-1)
 		#old_data = dcopy(new_data)
-	return new_data,sigs
+	return new_data,sigs,data_history
 
 ## SIMBRACK HELPER UTILS
 # returns the h2h record for two given players (from p1's perspective)
@@ -486,10 +542,12 @@ def winprobs(dicts,id_list=None):
 	tourneys,ids,p_info,records,skills = dicts
 	
 	winps = {}
+	chis = {}
 	if id_list == None:
 		id_list = [p_id for p_id in records]
 	for abs_id in id_list:
 		winps[abs_id] = {}
+		chis[abs_id] = {}
 		'''if 'wins' not in records[abs_id] or 'losses' not in records[abs_id]:
 			print(abs_id)
 			print(p_info[abs_id]['tag'])
@@ -502,20 +560,34 @@ def winprobs(dicts,id_list=None):
 			nw,nl = h2h(dicts,abs_id,opp_id)
 			if abs_id == opp_id or (nw+nl <= 0):
 				prob = -1.
+				chis[abs_id][opp_id] = 0.
 			else:
 				prob = nw/(nw+nl)
+				# calculate standard error/uncertainty
+				h2h_scores = [1 for win in range(int(nw))]
+				h2h_scores.extend([0 for loss in range(int(nl))])
+				if nw+nl <= 1:
+					chis[abs_id][opp_id] = 0.5
+				else:
+					p_sigma = np.sqrt(sum([(gamescore-prob)**2. for gamescore in h2h_scores])/(nw+nl-1.))
+					if p_sigma == 0:
+						p_sigma = 0.5/np.sqrt(nw+nl-1.)
+					chis[abs_id][opp_id] = p_sigma
 			winps[abs_id][opp_id] = prob
-	return winps
+	return winps,chis
 
 ## SIMBRACK PRINTING UTILS
 # plots the win probabilities for a player given their rank, and 
 # calculates and plots the logistic function regression
-def plot_winprobs(data,winps,sigs,p_id,plot_sigmoid=True,plot_tags=False):
+def plot_winprobs(data,winps,sigs,p_id,plot_sigmoid=True,plot_tags=False,simple_sigmoid=False):
 	#tourneys,ids,p_info,records,skills = dicts
 	#dats = winps[p_id]
 	skill_rank = data[p_id][1]
 	N = float(len(data.keys()))
-	#n = float(len(data.keys()))
+	if plot_sigmoid:
+		n = float(len(sigs.keys()))
+	else:
+		n = 1.
 	#print data
 	#print dats
 	xs = []
@@ -524,7 +596,7 @@ def plot_winprobs(data,winps,sigs,p_id,plot_sigmoid=True,plot_tags=False):
 	for opp_id in winps[p_id]:
 		ratio = float(winps[p_id][opp_id])
 		if ratio >= 0:
-			xs.append(data[opp_id][1]*N)
+			xs.append(data[opp_id][1]*n)
 			ys.append(ratio)
 			ts.append(data[opp_id][0])
 	#x = np.array(xs)/N
@@ -533,18 +605,22 @@ def plot_winprobs(data,winps,sigs,p_id,plot_sigmoid=True,plot_tags=False):
 	if plot_sigmoid:
 		# get plotting data for sigmoid
 		p = sigs[p_id]
-		print(p)
-		#x0,c,k = p
-		x0,y0,c,k = p
 		xp = np.linspace(0, 1, 15000)
+		#print(p)
+		#x0,c,k = p
+		#if simple_sigmoid:
+		#	x0,k = p 
+		#	pxp = simple_cfsigmoid(xp,x0,k)
+		#else:
+		x0,y0,c,k = p
 		#pxp = sigmoid(p,xp)
 		pxp = cfsigmoid(xp,x0,y0,c,k)
-		#pxp = cfsigmoid(xp,x0,c,k)
+			#pxp = cfsigmoid(xp,x0,c,k)
 
 	fig = plt.figure()
 	ax = fig.add_subplot(111)
 	if plot_sigmoid:
-		plt.plot(x,y,'b.',N*xp,pxp,'g-')
+		plt.plot(x,y,'b.',n*xp,pxp,'g-')
 		#plt.plot(N*x,y,'b.',N*xp,pxp,'g-')
 	else:
 		plt.plot(x,y,'b.')
@@ -553,9 +629,10 @@ def plot_winprobs(data,winps,sigs,p_id,plot_sigmoid=True,plot_tags=False):
 	if plot_tags:
 		for x,y,t in zip(xs,ys,ts):
 			ax.annotate(t,xy=(x,y),textcoords='data',fontsize='small',rotation=-45)
-	plt.title('%s\'s chance of winning vs the field\nN=%d (skill-rank %.3f)'%(name, N, data[p_id][1]*N))
+	plt.title('%s\'s chance of winning vs the field\nN=%d n=%d (skill-rank %.3f)'%(name, N, n, data[p_id][1]*n))
 	plt.ylabel('Probability of winning a set')
 	plt.xlabel('Opponent skill-rank')
+	plt.ylim(-0.1,1.1)
 	plt.show()
 
 # plots the skills of players against their ordered rank
@@ -585,6 +662,17 @@ def plot_skills(data, id_list,plot_tags=False):
 	plt.ylabel("(Normalized) Skill-Rank")
 	plt.show()
 
+def plot_hist(skill_hist,p_id):
+	xs = range(len(skill_hist[p_id]))
+	ys = skill_hist[p_id]
+
+	plt.plot(xs,ys,'r-')
+	plt.grid()
+	plt.title('Skill History for %d'%p_id)
+	plt.ylabel('Skill-Rank')
+	plt.xlabel('Iteration')
+	plt.show()
+
 ## SIGMOID FITTING UTILS (for simbrack)
 # sigmoid function, used to extrapolate probability distributions
 def sigmoid(p,x):
@@ -602,6 +690,7 @@ def inv_sigmoid(y,x0,y0,c,k):
 	if np.isinf(x) or np.isnan(x):
 		print(x)
 		print(y,x0,y0,c,k)
+		#return 0.
 	return x
 # strictly binds cfsigmoid to y in [0,1]
 def bounded_cfsigmoid(x,x0,y0,c,k):
@@ -611,12 +700,13 @@ def bounded_cfsigmoid(x,x0,y0,c,k):
 	y = min(y,1.)
 	y = max(y,0.)
 	return y
-def simple_cfsigmoid(x,x0,k):
-	return 1 / (1.+np.exp(-k*10*(x-x0)))
+def simple_cfsigmoid(x,x0,c,k):
+	return c / (1.+np.exp(-k*10*(x-x0)))
 def integrate_sigmoid(p,n):
-	x0,y0,c,k = p
+	#x0,y0,c,k = p
+	#print(len(p))
 	#area = sp.integrate.quad(cfsigmoid,0.,1.,args=p)
-	area = sp.integrate.quad(bounded_cfsigmoid,0.,1.,args=p)
+	area = sp.integrate.quad(bounded_cfsigmoid,0.,1.,args=tuple(p))
 	return area[0]
 #def logcfsig(x,x0,c,k):
 #	logy = np.log(1/(1+c))
@@ -632,8 +722,26 @@ def cfarctan(x,x0,y0,c,k):
 # calculates difference between observed y values and given sigmoid
 def logresiduals(p,x,y):
 	return np.log(float(y)) - logsig(p,x)
-def residuals(p,x,y):
-	return y - sigmoid(p,x)
+def cfresiduals(p,x,y):
+	x0,y0,c,k = p
+	return cfsigmoid(x,x0,y0,c,k) - y
+# jacobian matrix for sigmoid fitting
+def cfjac(p,x,y):
+	x0,y0,c,k = p
+	J = np.empty((x.size,p.size))
+	expval = np.exp(-k*10*(x-x0))
+	den = 1. + expval
+
+	# d/dx0
+	J[:,0] = -k*expval*(den**-2.)
+	# d/dy0
+	J[:,1] = 1.
+	# d/dc
+	J[:,2] = 1./den
+	# d/dk
+	J[:,3] = -expval*(x-x0)*(den**-2.)
+	return J
+
 # normalize distribution range to [0,1]
 def resize(arr,lower=0.0,upper=1.0):
 	arr = arr.copy()
@@ -645,7 +753,7 @@ def resize(arr,lower=0.0,upper=1.0):
 	return arr
 
 # fits a sigmoid function to the provided data, and then returns the parameters
-def fitsig(data,winps,p_id):
+def fitsig(data,winps,chis,p_id,old_guess=None,method='curve_fit',simple_sigmoid=False):
 	skill_rank = data[p_id][1]
 	#dats = [winps[p_id][opp_id] for opp_id in winps[p_id]]
 	N = float(len(data.keys()))
@@ -656,6 +764,7 @@ def fitsig(data,winps,p_id):
 	#print dats
 	xs = []
 	ys = []
+	ss = []
 	for opp_id in winps[p_id]:
 		ratio = float(winps[p_id][opp_id])
 		#print(p_id,opp_id)
@@ -668,38 +777,74 @@ def fitsig(data,winps,p_id):
 		if ratio > 0:
 			xs.append(opp_skill)
 			ys.append(ratio)
+			ss.append(chis[p_id][opp_id])
 		if ratio == 0:
 			xs.append(opp_skill)
 			ys.append(0.001)
+			ss.append(chis[p_id][opp_id])
 
 	#print('xlen:',len(xs),' xmax:',max(xs),' xmin:',min(xs))
 	#print('ylen:',len(ys),' ymax:',max(ys),' ymin:',min(ys))
-	x = np.array(xs, dtype=float)#/N
-	y = np.array(ys, dtype=float)
+	x = np.array(xs, dtype=np.float64)#/N
+	y = np.array(ys, dtype=np.float64)
+	s = np.array(ss, dtype=np.float64)
 	# fit sigmoid function to data
+	if old_guess == None:
 	#p_guess=(np.float64(rank/N),np.float64(np.median(y)),np.float64(1.0),np.float64(1.0))
 	#p_cfguess=(np.float64(skill_rank/N),np.float(1.0),np.float(1.0))
 	#p_cfguess=(np.float64(skill_rank),np.float(0.0),np.float(1.0),np.float(10.0))
-	p_cfguess=(np.float64(skill_rank),np.float(0.0),np.float(1.0),np.float(4.0))
+		if simple_sigmoid:
+			p_cfguess = (np.float64(skill_rank),np.float(1.0),np.float(4.0))
+		else:
+			p_cfguess = (np.float64(skill_rank),np.float(0.1),np.float(0.5),np.float(4.0))
+
+		#p_cfguess=(np.float64(0.5),np.float(0.1),np.float(1.0),np.float(4.0))
 	#p_cfguess=(np.float64(skill_rank),np.float(1.0),np.float(1.0),np.float(4.0))
 	#p_cfguess=(np.float64(0.5),np.float(0.0),np.float(1.0),np.float(4.0))
 	#p_cfguess=(np.float64(rank/N),np.float(1.0))
 	#results = scipy.optimize.differential_evolution(residuals,[(0.,1.),(-1.,2.),(-10.,10.),(-5.,5.)],args=(x,y))  
 	#results = scipy.optimize.leastsq(residuals,p_guess,args=(x,y),full_output=1)  
 	#results = scipy.optimize.curve_fit(cfsigmoid,x,y,p0=p_cfguess,bounds=([-0.1,-1.1],[1.1,20.]))
+	else:
+		#p_cfguess = old_guess
+		if simple_sigmoid:
+			p_cfguess = (np.float64(skill_rank),np.float(1.0),np.float(4.0))
+		else:
+			p_cfguess = (np.float64(skill_rank),np.float(0.1),np.float(1.0),np.float(4.0))
 
 
 	# variables are (x_0,y_0,c,k)
 	# f(x) in [0,1] :: 
 	# 		x_0 in [-1,1]		y_0 in (-1,1) 		c in (0,inf) 		k in (0,inf)
+	#
 	# 		x-x_0 must be in [0,1]	
-	v_b = [[-1.,1],[-1.,1.],[0.,3.],[0.,10.]]
+	#		y <= c+y_0   so c+y_0 must be in (0,inf)
+	#		
+	#		
+	if simple_sigmoid:
+		v_b = [[-1.,1.],[0.,10.]]
+		#v_b_2 = [[-1.,1.],[0.,1.],[0.,10.]]
+	else:
+		v_b = [[-1.,1.],[-1.,0.5],[0.,2.],[0.,10.]]
+	# v_b = [[-1.,1.],[-1.,1.],[0.,3.],[0.,10.]]
 	# fit first params (x_0,k)
 	try:
-
+		if simple_sigmoid:
+			#print('aaaa')
+			p,cov = sp.optimize.curve_fit(lambda x,x0,k:simple_cfsigmoid(x,x0,1.,k),x,y,p0=(p_cfguess[0],p_cfguess[2]),sigma=ss,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf')
+			#print('test')
+			#p,cov = sp.optimize.curve_fit(simple_cfsigmoid,x,y,p0=(p[0],p_cfguess[1],p[1]),sigma=ss,bounds=([b[0] for b in v_b_2],[b[1] for b in v_b_2]),method='trf')
+			return [p[0],0.,1.,p[1]],cov
 		# first fit x_0 and k
-		first_guess,cov_guess = sp.optimize.curve_fit(lambda x,x0,k:cfsigmoid(x,x0,p_cfguess[1],p_cfguess[2],k),x,y,p0=(p_cfguess[0],p_cfguess[3]),bounds=([v_b[0][0],v_b[3][0]],[v_b[0][1],v_b[3][1]]),method='trf',tr_solver='lsmr')
-		x0_guess,k_guess = first_guess
+		if method == 'curve_fit':
+			first_guess,cov_guess = sp.optimize.curve_fit(lambda x,x0,k:cfsigmoid(x,x0,p_cfguess[1],p_cfguess[2],k),x,y,p0=(p_cfguess[0],p_cfguess[3]),sigma=ss,bounds=([v_b[0][0],v_b[3][0]],[v_b[0][1],v_b[3][1]]),method='trf',tr_solver='lsmr',x_scale='jac')
+			x0_guess,k_guess = first_guess
+		else:
+			first_res = sp.optimize.least_squares(cfresiduals,p_cfguess,jac=cfjac,args=(x,y),bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf')
+			p = first_res.x
+			cov = first_res.jac
+			return p,cov
+
 	except RuntimeError:
 		print('x_0, k')
 		plot_winprobs(data,winps,None,p_id,plot_sigmoid=False,plot_tags=True)
@@ -709,7 +854,7 @@ def fitsig(data,winps,p_id):
 	#print(x0_guess,k_guess)
 	# fit second params (y_0,c)
 	try:
-		second_guess,second_cov_guess = sp.optimize.curve_fit(lambda x,y0,c:cfsigmoid(x,x0_guess,y0,c,k_guess),x,y,p0=(p_cfguess[1],p_cfguess[2]),bounds=([v_b[1][0],v_b[2][0]],[v_b[1][1],v_b[2][1]]),method='trf',tr_solver='lsmr')
+		second_guess,second_cov_guess = sp.optimize.curve_fit(lambda x,y0,c:cfsigmoid(x,x0_guess,y0,c,k_guess),x,y,p0=(p_cfguess[1],p_cfguess[2]),sigma=ss,bounds=([v_b[1][0],v_b[2][0]],[v_b[1][1],v_b[2][1]]),method='trf',tr_solver='lsmr',x_scale='jac')
 		y0_guess,c_guess = second_guess
 		#results = sp.optimize.curve_fit(cfsigmoid,x,y,p0=(x0_guess,p_cfguess[1],p_cfguess[2],k_guess),bounds=([-1.,-1.,0.,0.5],[2.,1.,3.,10.]),method='trf',tr_solver='lsmr',x_scale='jac')
 		#results = sp.optimize.curve_fit(cfsigmoid,x,y,p0=p_cfguess,bounds=([-0.1,-2.5,0.,0.],[1.1,1.,3.,5.]),method='trf',tr_solver='lsmr',x_scale='jac')
@@ -721,12 +866,18 @@ def fitsig(data,winps,p_id):
 	fit_guess = (x0_guess,y0_guess,c_guess,k_guess)
 	# fit first params again with new guesses
 	try:
-		final_guess,final_cov_guess = sp.optimize.curve_fit(lambda x,x0,k:cfsigmoid(x,x0,p_cfguess[1],p_cfguess[2],k),x,y,p0=(p_cfguess[0],p_cfguess[3]),bounds=([v_b[0][0],v_b[3][0]],[v_b[0][1],v_b[3][1]]),method='trf',tr_solver='lsmr')
+		final_guess,final_cov_guess = sp.optimize.curve_fit(lambda x,x0,k:cfsigmoid(x,x0,p_cfguess[1],p_cfguess[2],k),x,y,p0=(p_cfguess[0],p_cfguess[3]),sigma=ss,bounds=([v_b[0][0],v_b[3][0]],[v_b[0][1],v_b[3][1]]),method='trf',tr_solver='lsmr',x_scale='jac')
+		#soft_bounds = [[max(val-.25*abs(val),bound[0]),min(val+.25*abs(val),bound[1])] for val,bound in zip(fit_guess,v_b)]
 		x0_guess,k_guess = final_guess
-		#soft_bounds = [[val-.5*abs(val),val+.5*abs(val)] for val in fit_guess]
+		cov_guess = final_cov_guess
 		#p,cov = sp.optimize.curve_fit(cfsigmoid,x,y,p0=fit_guess,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf',tr_solver='lsmr')
-		#p,cov = sp.optimize.curve_fit(cfsigmoid,x,y,p0=fit_guess,method='trf',tr_solver='lsmr')
-		#return p
+		#try:
+		#	final_p,final_cov = sp.optimize.curve_fit(cfsigmoid,x,y,p0=fit_guess,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf',tr_solver='lsmr',x_scale='jac')
+			#final_p,final_cov = sp.optimize.curve_fit(cfsigmoid,x,y,p0=fit_guess,bounds=([b[0] for b in soft_bounds],[b[1] for b in soft_bounds]),method='trf',tr_solver='lsmr',x_scale='jac')
+		#except ValueError:
+		#	print ([var > b[0] and var < b[1] for b in v_b])
+		#	return None
+		#return final_p,final_cov
 	except RuntimeError:
 		print('final pass (x_0, k)')
 		print(fit_guess)
@@ -745,7 +896,7 @@ def fitsig(data,winps,p_id):
 	#p,_,_,_,_ = results
 	#return p
 	#y0_guess,c_guess = p
-	final_cov = (final_cov_guess[0],second_cov_guess[0],second_cov_guess[1],final_cov_guess[1])
+	final_cov = (cov_guess[0],second_cov_guess[0],second_cov_guess[1],cov_guess[1])
 	return (x0_guess,y0_guess,c_guess,k_guess),final_cov
 
 if __name__ == "__main__":
