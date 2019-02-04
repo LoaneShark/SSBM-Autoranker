@@ -74,7 +74,7 @@ from analysis_utils import *
 ## SIMBRACK TODO:
 ##  - do I need to simbrack? Can I just use sigmoid integral / y-intercept?
 ##	- track deltas to ensure convergence
-##	- how do I calculate uncertainty in original winps
+##	- how do I calculate uncertainty in original winprobs
 ##	
 ##	- Fourier analysis lmao
 
@@ -154,7 +154,51 @@ def main():
 		#print_resume(dicts,resume,g_key='player',s_key='event')
 	#disp_all(dicts,key='elo',dispnum=10,min_activity=min_act,tier_tol=-1,plot_skills=False)
 	#if game_idx == 1386 or game_idx == 3:
-	calc_simbrack(dicts,None,min_req=min_act,max_iter=100,rank_size=1000)
+	dict_t = timer()
+	iagorank_params = calc_simbrack(dicts,None,min_req=min_act,max_iter=100,rank_size=1000,disp_size=300,plot_ranks=False,mode='dict')
+	dict_time = timer()-dict_t
+	array_t = timer()
+	iagorank_params = calc_simbrack(dicts,None,min_req=min_act,max_iter=100,rank_size=1000,disp_size=300,plot_ranks=False,mode='array')
+	array_time = timer()-array_t
+	iagoranks,winprobs,sigmoids,data_hist,id_list = iagorank_params
+	print('N: %d'%len(id_list))
+	print('Array time elapsed:','{:.3f}'.format(array_time) + ' s')
+	print('Dict time elapsed:','{:.3f}'.format(dict_time) + ' s')
+
+	if game_idx == 1:
+		# plot hbox
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1000,plot_tags=True)
+		plot_hist(data_hist,p_id=1000)
+		# plot mango
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1004,plot_tags=True)
+		plot_hist(data_hist,p_id=1004)
+		# plot ibdw
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,19554,plot_tags=True)
+		plot_hist(data_hist,p_id=19554)
+		# plot gahtzu
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1077,plot_tags=True)
+		plot_hist(data_hist,p_id=1077)
+		# plot army
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,23458,plot_tags=True)
+		plot_hist(data_hist,p_id=23458)
+	if game_idx == 3 or game_idx == 1386:
+		# plot void
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,15768,plot_tags=True)
+		plot_hist(data_hist,p_id=15768)
+		# plot larry lurr
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,23277,plot_tags=True)
+		plot_hist(data_hist,p_id=23277)
+		if game_idx == 1386:
+			# plot schrader the toolbag
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,432879,plot_tags=True)
+			plot_hist(data_hist,p_id=432879)
+			# plot calvin
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,6546,plot_tags=True)
+			plot_hist(data_hist,p_id=6546)
+		# plot swedish delight (only for -ma 2)
+		if 1055 in id_list:
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1055,plot_tags=True)
+			plot_hist(data_hist,p_id=1055)
 
 	return True
 

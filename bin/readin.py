@@ -98,7 +98,7 @@ def readin(tourney,t_type='slug'):
 		es,ws,ls,rs,ns = read_groups(t_id,ps,pdata)
 
 		if v >= 2 and v < 4:
-			print("{:.3f}".format(timer()-start) + ' s')
+			print('{:.3f}'.format(timer()-start) + ' s')
 
 		t = (t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,len(es.keys()))
 		if print_res:

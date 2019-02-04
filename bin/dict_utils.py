@@ -251,7 +251,6 @@ def get_en_tag(dicts,tag=None,p_id=None):
 	else:
 		return tag
 
-
 # returns a list of all player ids listed under this team
 def get_players_from_team(dicts,team):
 	tourneys,ids,p_info,records,skills = dicts
