@@ -150,55 +150,180 @@ def main():
 		#print(p_info[490223])
 		#print(len(get_players_by_region(dicts,'SoCal')))
 		#print(get_region(dicts,14514,to_calc=True))
-		#resume = get_resume(dicts,14514)
-		#print_resume(dicts,resume,g_key='player',s_key='event')
+	#resume = get_resume(dicts,[1000,4465,1004])
+	#resume = get_resume(dicts,None,tags=['Surfero','kla','ZENT','FriedLizard','Katsu','Bread'])
+	#print_resume(dicts,resume,g_key='player',s_key='event')
 	#disp_all(dicts,key='elo',dispnum=10,min_activity=min_act,tier_tol=-1,plot_skills=False)
 	#if game_idx == 1386 or game_idx == 3:
-	dict_t = timer()
-	iagorank_params = calc_simbrack(dicts,None,min_req=min_act,max_iter=100,rank_size=1000,disp_size=300,plot_ranks=False,mode='dict')
-	dict_time = timer()-dict_t
-	array_t = timer()
-	iagorank_params = calc_simbrack(dicts,None,min_req=min_act,max_iter=100,rank_size=1000,disp_size=300,plot_ranks=False,mode='array')
-	array_time = timer()-array_t
+	
+	res = np.empty((9,20),dtype='object')
+	opts = np.empty((9,2))
+	for ma in range(11,3,-1):
+		opt_iter_num = 100		
+		for a in range(1,21):
+			alpha = 1./float(a)
+
+			start_t = timer()
+			iagorank_params = calc_simbrack(dicts,None,min_req=ma,max_iter=500,disp_size=300,print_res=False,plot_ranks=False,alpha=alpha,mode='array')
+			runtime = timer()-start_t
+			iagoranks,winprobs,sigmoids,data_hist,id_list = iagorank_params
+			N = len(id_list)
+			iter_num = len(data_hist[id_list[0]])
+
+			if iter_num < opt_iter_num:
+				opt_iter_num = iter_num
+				opts[ma-3,0] = a
+				opts[ma-3,1] = alpha
+
+			if 19554 in data_hist:
+				codyhist = data_hist[19554]
+			else:
+				codyhist = None
+			res[ma-3,a-1] = [alpha,N,runtime,iter_num,data_hist[1000],codyhist]
+
+	print(opts)
+	#m_hists = []
+	#c_hists = []
+	# for each N
+	for row in res:
+		# x = learnrate
+		xs = [run[0] for run in row]
+		# y = convergence iterations
+		ys = [run[3] for run in row]
+
+		# plot their histories
+		#m_hist = [run[4] for run in row]
+		#m_hists.append(m_hist)
+		#c_hist = [run[5] for run in row if run[5] is not None]
+		#c_hists.append(c_hist)
+
+		plt.plot(xs,ys,label=row[0][1])
+	plt.xlabel('learn rate')
+	plt.ylabel('num iterations')
+	plt.legend()
+	plt.show()
+	
+	# plot mango history over learnrate (for ma=3)
+	for i in range(20):
+		#opt_a, opt_learnrate = opts[i,:]
+		hist = res[0,i][4]
+	plt.title('mang0 history for N: %d'%res[0,0][1])
+	plt.xlabel('iteration')
+	plt.ylabel('skill_rank')
+	plt.legend()
+	plt.show()
+
+	# plot cody history over learnrate (for ma=3)
+	for i in range(20):
+		#opt_a, opt_learnrate = opts[i,:]
+		hist = res[0,i][5]
+		if hist != None:
+			plt.plot(np.linspace(0,len(hist)),hist,label=str(res[0,i][0]))
+	plt.title('ibdw history for N: %d'%res[0,0][1])
+	plt.xlabel('iteration')
+	plt.ylabel('skill_rank')
+	plt.legend()
+	plt.show()
+
+
+
+	to_calc_simbrack = False
+	if to_calc_simbrack:
+		array_t = timer()
+		iagorank_params = calc_simbrack(dicts,None,min_req=min_act,max_iter=100,disp_size=300,print_res=True,plot_ranks=False,mode='array')
+		array_time = timer()-array_t
+		print('Array time elapsed:','{:.3f}'.format(array_time) + ' s')
+		ISR = {'params': iagorank_params}
+		save_dict(ISR,'ISR_%d_%d_%d'%(game_idx,year,year_count),None,'..\\lib')
+	else:
+		iagorank_params = load_dict('ISR_%d_%d_%d'%(game_idx,year,year_count),None,'..\\lib')['params']
+
+
 	iagoranks,winprobs,sigmoids,data_hist,id_list = iagorank_params
 	print('N: %d'%len(id_list))
-	print('Array time elapsed:','{:.3f}'.format(array_time) + ' s')
-	print('Dict time elapsed:','{:.3f}'.format(dict_time) + ' s')
+	iter_num = len(data_hist[id_list[0]])
+	#print('Dict time elapsed:','{:.3f}'.format(dict_time) + ' s')
 
 	if game_idx == 1:
-		# plot hbox
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1000,plot_tags=True)
-		plot_hist(data_hist,p_id=1000)
 		# plot mango
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1000,plot_tags=True)
+		plot_hist(data_hist,p_id=1000,plot_delta=True)
+		# plot hbox
 		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1004,plot_tags=True)
-		plot_hist(data_hist,p_id=1004)
+		plot_hist(data_hist,p_id=1004,plot_delta=True)
 		# plot ibdw
 		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,19554,plot_tags=True)
-		plot_hist(data_hist,p_id=19554)
+		plot_hist(data_hist,p_id=19554,plot_delta=True)
 		# plot gahtzu
 		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1077,plot_tags=True)
-		plot_hist(data_hist,p_id=1077)
+		plot_hist(data_hist,p_id=1077,plot_delta=True)
 		# plot army
 		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,23458,plot_tags=True)
-		plot_hist(data_hist,p_id=23458)
+		plot_hist(data_hist,p_id=23458,plot_delta=True)
+		if 1 < 0:
+			'''# plot surfero
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,16054,plot_tags=True)
+			plot_hist(data_hist,p_id=16054,plot_delta=True)
+			# plot ZENT
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,10905,plot_tags=True)
+			plot_hist(data_hist,p_id=10905,plot_delta=True)
+			# plot Bread
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,597196,plot_tags=True)
+			plot_hist(data_hist,p_id=597196,plot_delta=True)
+			# plot kla
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,153070,plot_tags=True)
+			plot_hist(data_hist,p_id=153070,plot_delta=True)
+			# plot FriedLizard
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,262266,plot_tags=True)
+			plot_hist(data_hist,p_id=262266,plot_delta=True)
+			# plot Katsu
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,126476,plot_tags=True)
+			plot_hist(data_hist,p_id=126476,plot_delta=True)'''
+			'''# plot Funke Master Flex
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,67075,plot_tags=True)
+			plot_hist(data_hist,p_id=67075,plot_delta=True)
+			# plot ShineSpike
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,60617,plot_tags=True)
+			plot_hist(data_hist,p_id=60617,plot_delta=True)'''
+
+			# plot Offendors
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,23466,plot_tags=True)
+			plot_hist(data_hist,p_id=23466,plot_delta=True)
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,3939,plot_tags=True)
+			plot_hist(data_hist,p_id=3939,plot_delta=True)
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,565971,plot_tags=True)
+			plot_hist(data_hist,p_id=565971,plot_delta=True)
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,33499,plot_tags=True)
+			plot_hist(data_hist,p_id=33499,plot_delta=True)
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,44674,plot_tags=True)
+			plot_hist(data_hist,p_id=44674,plot_delta=True)
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,411867,plot_tags=True)
+			plot_hist(data_hist,p_id=411867,plot_delta=True)
+
+			#print([p_id for p_id in id_list if sigmoids[p_id][2] > 1.1])
+
 	if game_idx == 3 or game_idx == 1386:
 		# plot void
 		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,15768,plot_tags=True)
-		plot_hist(data_hist,p_id=15768)
+		plot_hist(data_hist,p_id=15768,plot_delta=True)
 		# plot larry lurr
 		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,23277,plot_tags=True)
-		plot_hist(data_hist,p_id=23277)
+		plot_hist(data_hist,p_id=23277,plot_delta=True)
 		if game_idx == 1386:
 			# plot schrader the toolbag
 			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,432879,plot_tags=True)
-			plot_hist(data_hist,p_id=432879)
+			plot_hist(data_hist,p_id=432879,plot_delta=True)
 			# plot calvin
 			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,6546,plot_tags=True)
-			plot_hist(data_hist,p_id=6546)
+			plot_hist(data_hist,p_id=6546,plot_delta=True)
 		# plot swedish delight (only for -ma 2)
 		if 1055 in id_list:
 			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1055,plot_tags=True)
-			plot_hist(data_hist,p_id=1055)
+			plot_hist(data_hist,p_id=1055,plot_delta=True)
+		if 4465 in id_list:
+			# plot leffen
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,4465,plot_tags=True)
+			plot_hist(data_hist,p_id=4465,plot_delta=True)
 
 	return True
 

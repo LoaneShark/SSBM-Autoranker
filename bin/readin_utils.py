@@ -80,6 +80,7 @@ def save_obj(t_id,phase,obj, name):
 		os.mkdir(str('obj/%d/%d'%(t_id,phase)))
 	with open('obj/'+str(t_id)+'/'+str(phase)+'/'+name +'.pkl','wb') as f:
 		pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+	return True
 
 # used to load datasets/hashtables
 def load_obj(t_id,phase,name):
@@ -89,21 +90,21 @@ def load_obj(t_id,phase,name):
 # saves all params for the load_sets function
 def save_all(t_id,phase,params):
 	names = ["entrants","wins","losses","results","names"]
-	for param,name in zip(params,names):
-		save_obj(t_id,phase,param,name)
+	return all([save_obj(t_id,phase,param,name) for param,name in zip(params,names)])
 
 # load all params for the load_sets function
 def load_all(t_id,phase):
 	names = ["entrants","wins","losses","results","names"]
 	return [load_obj(t_id,phase,name) for name in names]
 
-# prints smash.gg query pulls as pretty JSON .txt files
+# prints smash.gg query pulls as pretty JSON .txt files (for human readability)
 def clean_data(infile, outfile):
 	with open(infile) as i_f:
 		data = json.loads(i_f.read())
 	o_f = open(outfile,"w")
 	o_f.write(json.dumps(data,indent=4))
 	o_f.close()
+	return True
 
 # unshortens a shortened url, if shortened
 # (used to get slugs from short slugs)
@@ -246,6 +247,7 @@ def save_dict(data,name,ver,loc='db'):
 	else:
 		with open(str(loc)+'/'+name +'.pkl','wb') as f:
 			pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+	return True
 
 # loads a single dict
 def load_dict(name,ver,loc='db'):
@@ -325,8 +327,9 @@ def delete_tourney_cache(t_id):
 	if os.path.isdir('obj/%d'%t_id):
 		try:
 			shutil.rmtree('obj/%d'%t_id)
+			return True
 		except OSError:
-			return
+			return False
 
 # prints tournament results by player's final placing
 def print_results(res,names,entrants,losses,max_place=64,translate_cjk=True):
