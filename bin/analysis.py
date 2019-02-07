@@ -18,12 +18,6 @@ from analysis_utils import *
 ## TODO: 
 ##	Shortterm
 ##		HIGH PRIORITY:
-## 		 - Fix regions
-## 			- Make it faster, i slowed it down a lot with the new system
-## 				- build up the cache I guess
-## 			- Find out how to avoid query limits / breaking terms of use
-## 			- restructure data to be stored in a single dict / one dict per country (cities folder is messy)
-## 		 - Use numpy arrays / vectorize to speed up computations
 ## 		 - add optional caching of tournament data / json files?
 ## 		 - add fully offline mode toggle  // prefer offline argument
 ## 		 - add a 'tourney memory' duration (default 1 year) -- delete all events that are older than this from DB, including records etc.
@@ -35,10 +29,9 @@ from analysis_utils import *
 ##
 ##		MEDIUM PRIORITY:
 ## 		 - how to match players that don't have smash.gg accounts/consistent player ids (mostly japanese players)
-## 			- also match players that have multiple accounts // remade accounts // use them inconsistently
+## 			- also match players that have multiple accounts // remade accounts // use them inconsistently (???)
 ## 		 - debug elo/glicko (how?)
-## 		 - Filter out DQs somehow (if a palyer didn't attend don't penalize them for "going 0-2")
-## 			- Can we filter out sandbags somehow? intelligent decisionmaking?
+## 		 - Can we filter out sandbags somehow? intelligent decisionmaking?
 ## 			- Maybe drop lowest N results from each player? does this take away from consistency as a virtue?
 ## 		 - SKILL TIERSSSSS
 ## 		 - Fix crashes on repeated web calls
@@ -51,7 +44,8 @@ from analysis_utils import *
 ## 		 - use res_filt format more universally for queries and such // expand get_result
 ## 		 - General doubles / crews support (see: scraper support/filtering out by event type)
 ## 			- static team support pls
-## 		 - Rework regions to use cached geopy results for better consistency // accuracy // granularity
+## 		 - Character data / matchup analysis
+## 		    - Weighted by player skill? Does one depend on the other?
 ##
 ##	Longterm
 ## 		 - Challonge support (player matching by tag maybe needed -- no player ids provided!)
@@ -155,77 +149,8 @@ def main():
 	#print_resume(dicts,resume,g_key='player',s_key='event')
 	#disp_all(dicts,key='elo',dispnum=10,min_activity=min_act,tier_tol=-1,plot_skills=False)
 	#if game_idx == 1386 or game_idx == 3:
-	
-	res = np.empty((9,20),dtype='object')
-	opts = np.empty((9,2))
-	for ma in range(11,3,-1):
-		opt_iter_num = 100		
-		for a in range(1,21):
-			alpha = 1./float(a)
 
-			start_t = timer()
-			iagorank_params = calc_simbrack(dicts,None,min_req=ma,max_iter=500,disp_size=300,print_res=False,plot_ranks=False,alpha=alpha,mode='array')
-			runtime = timer()-start_t
-			iagoranks,winprobs,sigmoids,data_hist,id_list = iagorank_params
-			N = len(id_list)
-			iter_num = len(data_hist[id_list[0]])
-
-			if iter_num < opt_iter_num:
-				opt_iter_num = iter_num
-				opts[ma-3,0] = a
-				opts[ma-3,1] = alpha
-
-			if 19554 in data_hist:
-				codyhist = data_hist[19554]
-			else:
-				codyhist = None
-			res[ma-3,a-1] = [alpha,N,runtime,iter_num,data_hist[1000],codyhist]
-
-	print(opts)
-	#m_hists = []
-	#c_hists = []
-	# for each N
-	for row in res:
-		# x = learnrate
-		xs = [run[0] for run in row]
-		# y = convergence iterations
-		ys = [run[3] for run in row]
-
-		# plot their histories
-		#m_hist = [run[4] for run in row]
-		#m_hists.append(m_hist)
-		#c_hist = [run[5] for run in row if run[5] is not None]
-		#c_hists.append(c_hist)
-
-		plt.plot(xs,ys,label=row[0][1])
-	plt.xlabel('learn rate')
-	plt.ylabel('num iterations')
-	plt.legend()
-	plt.show()
-	
-	# plot mango history over learnrate (for ma=3)
-	for i in range(20):
-		#opt_a, opt_learnrate = opts[i,:]
-		hist = res[0,i][4]
-	plt.title('mang0 history for N: %d'%res[0,0][1])
-	plt.xlabel('iteration')
-	plt.ylabel('skill_rank')
-	plt.legend()
-	plt.show()
-
-	# plot cody history over learnrate (for ma=3)
-	for i in range(20):
-		#opt_a, opt_learnrate = opts[i,:]
-		hist = res[0,i][5]
-		if hist != None:
-			plt.plot(np.linspace(0,len(hist)),hist,label=str(res[0,i][0]))
-	plt.title('ibdw history for N: %d'%res[0,0][1])
-	plt.xlabel('iteration')
-	plt.ylabel('skill_rank')
-	plt.legend()
-	plt.show()
-
-
+	opts = find_opt_hyperparams(dicts,20,9,key_ids=[1000,19554])
 
 	to_calc_simbrack = False
 	if to_calc_simbrack:
@@ -339,6 +264,83 @@ def main_read():
 		tourneys,ids,p_info,records,skills = read_majors(game_idx,year+i,base=(tourneys,ids,p_info,records,skills))
 
 	return tourneys,ids,p_info,records,skills
+
+def find_opt_hyperparams(dicts,a_rng=20,ma_rng=9,plot_res=True,key_ids=[1000]):
+	tourneys,ids,p_info,records,skills = dicts
+
+	#a_rng = 2
+	#ma_rng = 2
+	#a_rng = 20
+	#ma_rng = 9
+	res = np.empty((ma_rng,a_rng),dtype='object')
+	opts = np.empty((ma_rng,2))
+	for ma in range(11,11-ma_rng,-1):
+		opt_iter_num = 100		
+		for a in range(1,a_rng+1):
+			alpha = 1./float(a)
+
+			start_t = timer()
+			iagorank_params = calc_simbrack(dicts,None,min_req=ma,max_iter=500,disp_size=100,print_res=False,plot_ranks=False,alpha=alpha,mode='array')
+			runtime = timer()-start_t
+			iagoranks,winprobs,sigmoids,data_hist,id_list = iagorank_params
+			N = len(id_list)
+			iter_num = len(data_hist[id_list[0]])
+
+			if iter_num < opt_iter_num:
+				opt_iter_num = iter_num
+				#opts[ma-3,0] = a
+				#opts[ma-3,1] = alpha
+				opts[ma-(12-ma_rng),0] = a
+				opts[ma-(12-ma_rng),1] = alpha
+
+			#if 19554 in data_hist:
+			#	codyhist = data_hist[19554]
+			#else:
+				#codyhist = None
+			#res[ma-3,a-1] = [alpha,N,runtime,iter_num,data_hist[1000],codyhist]
+			res[ma-(12-ma_rng),a-1] = [alpha,N,runtime,iter_num,{p_id: data_hist[p_id] if p_id in data_hist else None for p_id in key_ids}]
+
+	#m_hists = []
+	#c_hists = []
+	# for each N
+	#for row in res:
+	if plot_res:
+		for i in range(ma_rng):
+			# x = learnrate
+			#print(res[i])
+			#print(res[i,:])
+			xs = [run[0] for run in res[i,:]]
+			# y = convergence iterations
+			ys = [run[3] for run in res[i,:]]
+
+			# plot their histories
+			#m_hist = [run[4] for run in row]
+			#m_hists.append(m_hist)
+			#c_hist = [run[5] for run in row if run[5] is not None]
+			#c_hists.append(c_hist)
+
+			plt.plot(xs,ys,label=str(res[i,0][1]))
+		plt.xlabel('learn rate')
+		plt.ylabel('num iterations')
+		plt.legend(title='N')
+		plt.show()
+	
+		# plot designated key players skill fitting
+		for key_id in key_ids:
+			for i in range(a_rng):
+				#opt_a, opt_learnrate = opts[i,:]
+				hist = res[0,i][4][key_id]
+				if type(hist) != type(None) and len(hist) > 0:
+					plt.plot(range(len(hist)),hist,label=str(res[0,i][0]))
+			plt.title('%s history for N: %d'%(p_info[key_id]['tag'],res[0,0][1]))
+			plt.xlabel('iteration')
+			plt.ylabel('skill_rank')
+			plt.legend(title='learn rate')
+			plt.show()
+
+	print(opts)
+
+	return opts
 
 if __name__ == '__main__':
 	main()

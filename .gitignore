@@ -4,3 +4,4 @@ bin/obj/**
 !bin/obj/cities/**
 bin/db/**
 bin/old
+lib/San Token.txt
