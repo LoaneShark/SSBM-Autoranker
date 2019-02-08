@@ -166,10 +166,10 @@ def read_tourneys(slugs,ver='default',year=None,base=None):
 
 # helper function to store all data from a call to readin
 def store_data(readins,dicts,slug):
-	t_info,entrants,names,paths,wins,losses = readins
+	t_info,entrants,names,paths,wins,losses,characters = readins
 	tourneys,ids,p_info,records,skills = dicts
 	if len(entrants.keys()) > 1:
-		if store_players(entrants,names,t_info,dicts):
+		if store_players(entrants,names,characters,t_info,dicts):
 			if store_records(wins,losses,paths,t_info,dicts):
 				if store_tourney(slug,t_info,names['groups'],dicts):
 					return True
@@ -179,7 +179,7 @@ def store_data(readins,dicts,slug):
 # entrants = ([name],[abs_id],e_id,[metainfo]) where name, abs_id, metainfo are a list for each member of the team
 # and name = (sponsor, tag, teamname (or None))
 # and metainfo = [firstname, lastname, state, country, city]
-def store_players(entrants,names,t_info,dicts,translate_cjk=True):
+def store_players(entrants,names,characters,t_info,dicts,translate_cjk=True):
 	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size = t_info
 	tourneys,ids,p_info,records,skills = dicts
 	if t_id not in tourneys:
@@ -245,10 +245,16 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 						for r_i in range(1,6):
 							p_info[abs_id]['region'][r_i] = get_region(dicts,abs_id,granularity=r_i,to_calc=True)
 
+				# store W/L record per character
+				if 'character' not in p_info[abs_id]:
+					p_info[abs_id]['character'] = {}
+				for character in characters[e_id]:
+					p_info[abs_id]['characters'] = characters[e_id]
+
+				# store ranking data, with initial values if needed
 				if 'elo' not in skills:
 					for key in ['elo','elo_del','glicko','glicko_del','sim','sim_del','perf']:
 						skills[key] = {}
-				# store ranking data, with initial values if needed
 				if 'elo' not in p_info[abs_id]:
 					p_info[abs_id]['elo'] = 1500.
 					skills['elo'][abs_id] = {}

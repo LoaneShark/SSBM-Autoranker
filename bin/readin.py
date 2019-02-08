@@ -95,15 +95,15 @@ def readin(tourney,t_type='slug'):
 	if out:
 		t,ps,pdata = out
 		t_id,t_name,t_slug,t_ss,t_type,t_date,t_region = t
-		es,ws,ls,rs,ns = read_groups(t_id,ps,pdata)
+		es,ws,ls,rs,ns,cs = read_groups(t_id,ps,pdata)
 
 		if v >= 2 and v < 4:
 			print('{:.3f}'.format(timer()-start) + ' s')
 
 		t = (t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,len(es.keys()))
 		if print_res:
-			print_results(rs,ns,es,ls,max_place=disp_num)
-		return t,es,ns,rs,ws,ls
+			print_results(rs,ns,es,ls,cs,game=game,max_place=disp_num)
+		return t,es,ns,rs,ws,ls,cs
 	else:
 		return False
 
@@ -136,6 +136,7 @@ def read_groups(t_id,groups,phase_data,translate_cjk=True):
 	paths = {}
 	bracket = {}
 	names = {}
+	characters = {}
 	end_buff = False
 
 	if load_res and v >= 3:
@@ -148,7 +149,7 @@ def read_groups(t_id,groups,phase_data,translate_cjk=True):
 			try:
 				if v >= lv:
 					print('Loading %d...'%group)
-				entrants,wins,losses,paths,names = load_all(t_id,group)
+				entrants,wins,losses,paths,names,characters = load_all(t_id,group)
 				load_succ = True
 			except FileNotFoundError:
 				if v >= lv:
@@ -198,19 +199,19 @@ def read_groups(t_id,groups,phase_data,translate_cjk=True):
 								print('ERROR: Could not read in group %s | %s | %d because %s'%(phasename,groupname,group,errstr))
 						else:
 							read_entrants(data,phase_data,entrants,names,paths)
-							read_sets(data,phase_data,wins,losses,paths)
+							read_sets(data,phase_data,wins,losses,paths,characters)
 
 						if save_res:
 							if v >= lv:
 								print('Saving %d...'%group)
-							save_all(t_id,group,[entrants,wins,losses,paths,names])
+							save_all(t_id,group,[entrants,wins,losses,paths,names,characters])
 
 					if v >= 4:
 						print('{:.0f}'.format(1000*(timer()-pstart)) + ' ms')
 		# sort paths according to proper bracket structure
 		#for e_id in paths:
 
-	return entrants,wins,losses,paths,names
+	return entrants,wins,losses,paths,names,characters
 
 # reads in and returns data for all entrants in a given phase group
 def read_entrants(data,phase_data,entrants,names,xpath):
@@ -315,7 +316,7 @@ def read_names(x,translate_cjk=False):
 	return e_id,abs_ids,tags,prefixes,metainfo,None
 
 # reads the sets for a given phase group and returns match results
-def read_sets(data,phase_data,wins,losses,xpath):
+def read_sets(data,phase_data,wins,losses,xpath,characters):
 	setdata = data['entities']['sets']
 	group = data['entities']['groups']['id']
 	#print(phase_data)
@@ -397,6 +398,29 @@ def read_sets(data,phase_data,wins,losses,xpath):
 			if v >= 7:
 				print(set_id,match['phaseGroupId'],match['identifier'],['bye','bye'],[e1,e2])
 
+		# populate character data if available
+		if 'games' in match:
+			for game in match['games']:
+				#print(game['selections'])
+				#if 'stageId' in game:
+				#	stage = game['stageId']
+				if 'selections' in game and type(game['selections']) is not type(None):
+					for game_e_id in [e1,e2]:
+					#for selection in game['selections']:
+						#game_e_id = game['selections'][selection]['character']['entrantId']
+						if 'character' in game['selections'][str(game_e_id)]:
+							game_char_id = game['selections'][str(game_e_id)]['character'][0]['selectionValue']
+							if game_e_id not in characters:
+								characters[game_e_id] = {}
+							if game_char_id not in characters[game_e_id]:
+								characters[game_e_id][game_char_id] = [0,0]
+							# store wins and losses separately
+							if game_e_id == w_id:
+								characters[game_e_id][game_char_id][0] += 1
+							else:
+								characters[game_e_id][game_char_id][1] += 1
+
+
 	# populate overall final bracket placements if not already provided
 	for x_id in sorted([x['entrantId'] for x in data['entities']['seeds'] if type(xpath[x['entrantId']][0]) is list],key=lambda p_id: xpath[p_id][0][0]):
 		if type(xpath[x_id][0]) is list:
@@ -408,7 +432,7 @@ def read_sets(data,phase_data,wins,losses,xpath):
 			final_place = 1 + people_missed + spots_missed*grp_count
 			xpath[x_id][0] = final_place
 
-	return wins,losses
+	return wins,losses,xpath,characters
 
 # reads the phase data for a given tournament
 def read_phases(tourney):
@@ -421,7 +445,7 @@ def read_phases(tourney):
 	phaselink ='https://api.smash.gg/tournament/%s?expand[]=event&expand[]=groups&expand[]=phase'%tourney
 	try:
 		tfile = urlopen(phaselink).read()
-		tdata = json.loads(tfile.decode("UTF-8"))
+		tdata = json.loads(tfile.decode('UTF-8'))
 
 		t_id = tdata['entities']['tournament']['id']
 		t_name = tdata['entities']['tournament']['name']
@@ -525,6 +549,8 @@ def read_phases(tourney):
 	
 
 if __name__ == '__main__':
+	#print(save_character_dicts())
+
 	readin(t_slug_a)
 	#print(translate(translate("Zackray",to='ja').text,to='ja').pronunciation)
 	#readin('summit7',type='ss')
@@ -534,7 +560,7 @@ if __name__ == '__main__':
 	#pull_phase(764818)
 
 	#clean_data("./old/umeburaphasesraw.txt","./old/umeburaphasesclean.txt")
-	#clean_data("./old/wetechthose3setsraw.txt","./old/wetechthose3setsclean.txt")
+	#clean_data("./old/genesis6top64setsraw.txt","./old/genesis6top64setsclean.txt")
 	#clean_data("./old/paxarenaraw.txt","./old/paxarenaclean.txt")
 	#clean_data("./old/crewsraw.txt","./old/crewsclean.txt")
 	#clean_data("cextop8raw.txt","cextop8clean.txt")

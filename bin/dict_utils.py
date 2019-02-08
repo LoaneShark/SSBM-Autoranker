@@ -28,6 +28,7 @@ def get_result(dicts,t_id,res_filt=None):
 	player_wins = []
 	player_skills = [[round(skills['elo'][p_id][t_id],3),round(skills['glicko'][p_id][t_id][0],3)] for p_id in player_ids]
 	#player_skills = [[skills[key][p_id][t_id] for key in ['elo','glicko','sim']] for p_id in player_ids]
+	player_chars = [p_char for p_char in p_info[p_id]['characters']]
 	for p_id in player_ids:
 		temp_l = []
 		for l_id in records[p_id]['losses']:
@@ -42,7 +43,7 @@ def get_result(dicts,t_id,res_filt=None):
 				temp_w.extend([w_id])
 		temp_w.reverse()
 		player_wins.extend([temp_w])
-	players = [player_ids,player_teams,player_tags,player_paths,player_places,player_losses,player_wins,player_skills]
+	players = [player_ids,player_teams,player_tags,player_paths,player_places,player_losses,player_wins,player_skills,player_chars]
 	#print(players)
 	#print([len(attr) for attr in players])
 	players = [[col[row] for col in players] for row in range(len(players[0]))]
@@ -51,7 +52,7 @@ def get_result(dicts,t_id,res_filt=None):
 	if not res_filt == None:
 		#print(res_filt['team'])
 		for player in players.copy():
-			p_id,p_team,p_tag,p_path,p_place,p_losses,p_wins,p_skills = player
+			p_id,p_team,p_tag,p_path,p_place,p_losses,p_wins,p_skills,p_chars = player
 			if 'player' in res_filt:
 				if not (p_id == res_filt['player'] and not (type(p_id) is str) and t_id in ids[p_id]):
 					players.remove(player)
@@ -102,6 +103,10 @@ def get_result(dicts,t_id,res_filt=None):
 					continue
 			if 'simbrack' in res_filt:
 				if not res_filt['simbrack'] < p_skills[2]:
+					players.remove(player)
+					continue
+			if 'character' in res_filt:
+				if not res_filt['character'] in p_chars:
 					players.remove(player)
 					continue
 
@@ -167,21 +172,26 @@ def get_results(dicts,t_ids,res_filt=None):
 # returns a list (in printing format) containing a player's final placing, bracket path, wins/losses, and metainfo
 # for each tourney they attended (or only in those provided).
 # can pull the results for a whole team as well
-def get_resume(dicts,p_id,tags=None,t_ids=None,team=None,slugs=None):
+def get_resume(dicts,p_id,tags=None,t_ids=None,team=None,slugs=None,chars=None):
 	tourneys,ids,p_info,records,skills = dicts
 	# recursion filtering
 	if type(p_id) is list:
-		return flatten([get_resume(dicts,pid,tags=tags,t_ids=t_ids,team=team,slugs=slugs) for pid in p_id])
+		return flatten([get_resume(dicts,pid,tags=tags,t_ids=t_ids,team=team,slugs=slugs,chars=chars) for pid in p_id])
 	elif type(tags) is list:
-		return flatten([get_resume(dicts,p_id,tags=tag,t_ids=t_ids,team=team,slugs=slugs) for tag in tags])
+		return flatten([get_resume(dicts,p_id,tags=tag,t_ids=t_ids,team=team,slugs=slugs,chars=chars) for tag in tags])
 	elif type(team) is list:
-		return flatten([get_resume(dicts,p_id,tags=tags,t_ids=t_ids,team=tm,slugs=slugs) for tm in team])
+		return flatten([get_resume(dicts,p_id,tags=tags,t_ids=t_ids,team=tm,slugs=slugs,chars=chars) for tm in team])
+	elif type(chars) is list:
+		return flatten([get_resume(dicts,p_id,tags=tags,t_ids=t_ids,team=team,slugs=slugs,chars=char) for char in chars])
 	if tags == None:
 		if type(p_id) is str:
 			p_id = get_abs_id_from_tag(dicts,p_id)
 		if not team == None:
 			team_ids = get_players_from_team(dicts,team)
-			return flatten([get_resume(dicts,team_id,tags=tags,t_ids=t_ids,slugs=slugs) for team_id in team_ids])
+			return flatten([get_resume(dicts,team_id,tags=tags,t_ids=t_ids,slugs=slugs,chars=chars) for team_id in team_ids])
+		if not chars == None:
+			rep_ids = get_players_by_character(dicts,chars)
+			return flatten([get_resume(dicts,rep_id,tags=tags,t_ids=t_ids,slugs=slugs,team=team) for rep_id in rep_ids])
 	else:
 		p_id = get_abs_id_from_tag(dicts,tags,first_only=False)
 		if p_id == None:
@@ -189,7 +199,7 @@ def get_resume(dicts,p_id,tags=None,t_ids=None,team=None,slugs=None):
 		elif len(p_id) == 1:
 			p_id = p_id[0]
 		else:
-			return flatten([get_resume(dicts,pid,tags=None,t_ids=t_ids,team=team,slugs=slugs) for pid in p_id])
+			return flatten([get_resume(dicts,pid,tags=None,t_ids=t_ids,team=team,slugs=slugs,chars=chars) for pid in p_id])
 
 	# break if player is not in database
 	if p_id == None:
@@ -256,6 +266,12 @@ def get_players_from_team(dicts,team):
 	tourneys,ids,p_info,records,skills = dicts
 	roster = [abs_id for abs_id in p_info if p_info[abs_id]['team'] == team]
 	return roster
+
+# returns a list of all player ids that have at least one recorded game with a given character
+def get_players_by_character(dicts,character):
+	tourneys,ids,p_info,records,skills = dicts
+	reps = [abs_id for abs_id in p_info if character in p_info['characters']]
+	return reps
 
 def list_tourneys(dicts,year=None):
 	tourneys,ids,p_info,records,skills = dicts
