@@ -300,7 +300,7 @@ def update_glicko(dicts,matches,t_info,tau=0.5,ranking_period=60):
 
 # simulates a bracket
 ## WIP
-def calc_simbrack(dicts,t_info,max_iter=1000,min_req=3,rank_size=None,disp_size=100,mode='array',print_res=False,plot_ranks=True,alpha=0.5):
+def calc_simbrack(dicts,max_iter=1000,min_req=3,rank_size=None,disp_size=100,mode='array',print_res=False,plot_ranks=True,alpha=0.75):
 	tourneys,ids,p_info,records,skills = dicts
 	#larry_id,T_id,jtails_id = get_abs_id_from_tag(dicts,'Tweek'),get_abs_id_from_tag(dicts,'Ally'),get_abs_id_from_tag(dicts,'Jtails')
 	#print(void_id,dabuz_id,larry_id)
@@ -342,7 +342,7 @@ def calc_simbrack(dicts,t_info,max_iter=1000,min_req=3,rank_size=None,disp_size=
 	print('Simulating Bracket... (%d entrants)'%n)
 	#new_data_dict,sigs = simbrack(data_dict,winps,id_list,max_iter=max_iter)
 	#new_data_dict,sigs,data_hist = simbrack(data_dict,winps,chis,id_list,max_iter=max_iter,simulate_bracket=False,score_intsigs=True,learn_rate=0.5,learn_decay=False,simple_sigmoid=False)
-	new_data,sigs,data_hist = simbrack(data_dict,winps,chis,id_list,max_iter=max_iter,simulate_bracket=False,score_intsigs=True,learn_rate=alpha,learn_decay=True,simple_sigmoid=False,mode=mode,tol=0.008)
+	new_data,sigs,data_hist = simbrack(data_dict,winps,chis,id_list,max_iter=max_iter,simulate_bracket=False,score_intsigs=True,learn_rate=alpha,learn_decay=True,simple_sigmoid=False,mode=mode)
 	if mode == 'dict':
 		new_data_dict = dcopy(new_data)
 
@@ -410,7 +410,7 @@ def calc_simbrack(dicts,t_info,max_iter=1000,min_req=3,rank_size=None,disp_size=
 	#plot_winprobs(dicts,new_data_dict,winps,sigs,jtails_id,plot_tags=True)
 
 # NEEDS TO BE TWEAKED: Just getting it functional for now
-def simbrack(data,winps,chis,id_list,max_iter=100,learn_rate=0.5,beta=0.9,tol=0.0001,simulate_bracket=True,score_intsigs=True,learn_decay=True,simple_sigmoid=False,mode='array'):
+def simbrack(data,winps,chis,id_list,max_iter=1000,learn_rate=0.75,beta=0.9,tol=0.0001,simulate_bracket=True,score_intsigs=True,learn_decay=True,simple_sigmoid=False,mode='array'):
 	N = float(len(data.keys()))
 	n = float(len(id_list))
 	print("N:",N," n:",n)
@@ -419,10 +419,8 @@ def simbrack(data,winps,chis,id_list,max_iter=100,learn_rate=0.5,beta=0.9,tol=0.
 	elif learn_rate < 0:
 		learn_rate = 0
 		learn_decay = False
-	#void_id,dabuz_id,larry_id = 23277,4702,1035
 
 	count = 0
-	#new_data = dcopy(data)
 	if mode == 'dict':
 		skill_ranks = dcopy(data)
 		new_skills = dcopy(data)
@@ -431,11 +429,6 @@ def simbrack(data,winps,chis,id_list,max_iter=100,learn_rate=0.5,beta=0.9,tol=0.
 		skill_ranks = [data[p_id][1] for p_id in id_list]
 		new_skills = np.array(skill_ranks,copy=True)
 		old_skills = np.array(skill_ranks,copy=True)
-
-	#print(len(skill_ranks))
-	#print(new_skills)
-	#print(new_skills.shape)
-	#print(old_skills.shape)
 
 	p_guess = lambda p_id:[np.float64(data[p_id][1]),np.float(0.1),np.float(1.0),np.float(4.0)]
 	if mode == 'dict':
@@ -449,43 +442,19 @@ def simbrack(data,winps,chis,id_list,max_iter=100,learn_rate=0.5,beta=0.9,tol=0.
 
 	all_converged = False
 	while count < max_iter and not all_converged:
-		print('iter:',count)
-		#for s4_id,tag in zip([void_id,dabuz_id,larry_id],['VoiD','Dabuz','Larry Lurr']):
-			#print(tag)
-			#print(s4_id)
-			#if count == 0:
-			#	print(data[s4_id])
-			#else:
-			#	print(old_data[s4_id])
-			#print(new_data[s4_id])
+		#print('iter:',count)
 		count += 1
-		#skill_rank = old_data
-		p_count = 0
-
-		#vfitsig = np.vectorize(fitsig,excluded=['data','winps','chis'])
-
-		#sigres = vfitsig(data=new_data,winps=winps,chis=chis,p_id=id_list,old_guess=[sigs[p_id] for p_id in id_list],signature='(%d,%d),(%d)->(%d)'%(n,n,n,n))
-		#sigs = {p_id: res[0] for p_id,res in zip(id_list,sigres)}
-		#covs = {p_id: res[1] for p_id,res in zip(id_list,sigres)}
 		if mode == 'dict':
 			wins = {p_id: 0 for p_id in id_list}
 			old_skills = dcopy(new_skills)
 
 			for p_id in id_list:
-				p_count += 1
-				#print("count:",count)
-				#print("player num:",p_count)
-				#print("p_id:",p_id)
-				#print(old_data[p_id])
-				#print(new_data[p_id])
-				#print(len(winps[p_id]))
 				sigres = fitsig(new_skills,data,winps,chis,p_id,old_guess=sigs[p_id],simple_sigmoid=simple_sigmoid,mode=mode)
 				
 				sigs[p_id] = sigres[0]
 				covs[p_id] = sigres[1]
 				if type(sigs[p_id]) is type(None):
 					return None
-
 		else:
 			wins = np.zeros((int(n),int(n)))
 			old_skills = np.array(new_skills,copy=True)
@@ -493,7 +462,6 @@ def simbrack(data,winps,chis,id_list,max_iter=100,learn_rate=0.5,beta=0.9,tol=0.
 			sigs,covs = fitsig(new_skills,data,winps,chis,np.array(id_list,dtype=int),old_guess=sigs,simple_sigmoid=simple_sigmoid,mode=mode,three_pass=True)
 			if any([type(sig) == type(None) for sig in sigs]):
 				return None
-
 
 		# iterate through simulated RR bracket and tabulate wins
 		if simulate_bracket:
@@ -900,7 +868,7 @@ def integrate_sigmoid(p,n):
 	#x0,y0,c,k = p
 	#print(len(p))
 	#area = sp.integrate.quad(cfsigmoid,0.,1.,args=p)
-	vint = np.vectorize(sp.integrate.quad,excluded=['func','a','b'],signature='(k)->(),()')
+	vint = np.vectorize(sp.integrate.quad,excluded=['func','a','b'],otypes=[np.float64],signature='(k)->(),()')
 	area = vint(func=bounded_cfsigmoid,a=0.,b=1.,args=p)
 	#area = sp.integrate.quad(bounded_cfsigmoid,0.,1.,args=p)
 	#print(area)
@@ -1011,7 +979,10 @@ def fitsig(skill_ranks,data,winps,chis,id_list,old_guess=None,method='curve_fit'
 			nlist.append(len(xs))
 
 	## pad empty values to enable numpy array
-	nmax = max(nlist)
+	if len(nlist) > 0:
+		nmax = max(nlist)
+	else:
+		nmax = 0
 	#print(nmax,min(nlist))
 	for i in range(len(xlist)):
 		n_i = len(xlist[i])
@@ -1052,7 +1023,7 @@ def fitsig(skill_ranks,data,winps,chis,id_list,old_guess=None,method='curve_fit'
 	# v_b = [[-1.,1.],[-1.,1.],[0.,3.],[0.,10.]]
 
 	if mode == 'array':
-		vsf = np.vectorize(sub_fitsig,excluded=['v_b','dats','params'],signature='(),(n),(n),(n),(),(k)->(k),(k)')
+		vsf = np.vectorize(sub_fitsig,excluded=['v_b','dats','params'],otypes=[np.float64,np.float64],signature='(),(n),(n),(n),(),(k)->(k),(k)')
 
 		#return sub_fitsig(id_list,x,y,s,p_cfguess,v_b,(data,winps)):
 		return vsf(p_id=id_list,x=x,y=y,s=s,n_i=n_i,p0=p_cfguess,v_b=v_b,dats=(data,winps),params=(method,simple_sigmoid,scipy_sigmoid,three_pass,mode))

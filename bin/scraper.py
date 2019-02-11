@@ -12,19 +12,19 @@ v = 0
 # requires a game and year
 def scrape(game,year,verb=0):
 	if game not in [1,2,3,4,5,1386]:
-		print("Error: Cannot scrape majors/slugs for this game ID (%d)"%game)
+		print('Error: Cannot scrape majors/slugs for this game ID (%d)'%game)
 		return False
 	v = verb
 	url = 'https://www.ssbwiki.com/List_of_national_tournaments'
 
 	if year < 2015:
-		print("Error: The earliest smash.gg tournament data is 2015. For best results, use 2017 and on")
+		print('Error: The earliest smash.gg tournament data is 2015. For best results, use 2017 and on')
 		return False
 	if v >= 3:
 		temp = ""
 		if v >=4:
 			temp = url
-		print("Scraping...\t%s"%temp)
+		print('Scraping...\t%s'%temp)
 	page = urlopen(url).read()
 	page = page.decode('UTF-8')
 	doc = BeautifulSoup(page,features='lxml')
@@ -53,7 +53,7 @@ def scrape(game,year,verb=0):
 	if v >= 5:
 		print(res)
 
-	links = ["https://www.ssbwiki.com%s"%event[0] for event in res]
+	links = ['https://www.ssbwiki.com%s'%event[0] for event in res]
 	entrant_counts = [event[3] for event in res]
 	return scrape_slugs(links)
 
@@ -70,7 +70,7 @@ def scrape_slug(url):
 		try:
 			page = urlopen(url).read()
 		except HTTPError:
-			return ((None,url.split("Tournament")[-1][1:]))
+			return ((None,url.split('Tournament')[-1][1:]))
 
 
 		#return((None,doc.h1.text[11:]))
@@ -87,7 +87,7 @@ def scrape_slug(url):
 				return smashlink.split('/')[4]
 			elif smashlink.split('/')[2] == 'challonge.com':
 				if not challonge_found:
-					print("Tournament [%s] could not be read: Challonge support not available yet"%url.split('/')[3])
+					print('Tournament [%s] could not be read: Challonge support not available yet'%url.split('/')[3])
 					challonge_found = True
 	# return tuple of None with tournament title if smash.gg link could not be found
 	return((None,doc.h1.text[11:]))
@@ -129,7 +129,7 @@ def table_index(doc,game,year):
 			if int(c_year[0]) > year:
 				return None
 
-if __name__ == "__main__":
+if __name__ == '__main__':
 	print(scrape(1,2016))
 	#scrape_slugs(['https://www.ssbwiki.com/Tournament:Valhalla'])
 	

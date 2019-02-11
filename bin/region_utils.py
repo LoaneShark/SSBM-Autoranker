@@ -422,9 +422,10 @@ def update_regions(dicts,players,granularities=range(1,6)):
 
 # saves the given cities in additions, with the given classification (Socal, Norcal, or Misc)
 def save_city_dict(state,cities={},to_load=True,hard_cali_load=False):
-	if to_load:
 		#load_res = load_dict(state,'cities','obj')
-		load_res = load_dict('cities',None,'..\\lib')
+	load_res = load_dict('cities',None,'..\\lib')
+
+	if to_load:
 		if state in load_res:
 			city_load = load_res[state]
 		else:

@@ -95,15 +95,15 @@ def readin(tourney,t_type='slug'):
 	if out:
 		t,ps,pdata = out
 		t_id,t_name,t_slug,t_ss,t_type,t_date,t_region = t
-		es,ws,ls,rs,ns,cs = read_groups(t_id,ps,pdata)
+		es,ws,ls,rs,ns,ms = read_groups(t_id,ps,pdata)
 
 		if v >= 2 and v < 4:
 			print('{:.3f}'.format(timer()-start) + ' s')
 
 		t = (t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,len(es.keys()))
 		if print_res:
-			print_results(rs,ns,es,ls,cs,game=game,max_place=disp_num)
-		return t,es,ns,rs,ws,ls,cs
+			print_results(rs,ns,es,ls,ms,game=game,max_place=disp_num)
+		return t,es,ns,rs,ws,ls,ms
 	else:
 		return False
 
@@ -136,7 +136,7 @@ def read_groups(t_id,groups,phase_data,translate_cjk=True):
 	paths = {}
 	bracket = {}
 	names = {}
-	characters = {}
+	sets = {}
 	end_buff = False
 
 	if load_res and v >= 3:
@@ -149,7 +149,7 @@ def read_groups(t_id,groups,phase_data,translate_cjk=True):
 			try:
 				if v >= lv:
 					print('Loading %d...'%group)
-				entrants,wins,losses,paths,names,characters = load_all(t_id,group)
+				entrants,wins,losses,paths,names,sets = load_all(t_id,group)
 				load_succ = True
 			except FileNotFoundError:
 				if v >= lv:
@@ -199,19 +199,19 @@ def read_groups(t_id,groups,phase_data,translate_cjk=True):
 								print('ERROR: Could not read in group %s | %s | %d because %s'%(phasename,groupname,group,errstr))
 						else:
 							read_entrants(data,phase_data,entrants,names,paths)
-							read_sets(data,phase_data,wins,losses,paths,characters)
+							read_sets(data,phase_data,wins,losses,paths,sets)
 
 						if save_res:
 							if v >= lv:
 								print('Saving %d...'%group)
-							save_all(t_id,group,[entrants,wins,losses,paths,names,characters])
+							save_all(t_id,group,[entrants,wins,losses,paths,names,sets])
 
 					if v >= 4:
 						print('{:.0f}'.format(1000*(timer()-pstart)) + ' ms')
 		# sort paths according to proper bracket structure
 		#for e_id in paths:
 
-	return entrants,wins,losses,paths,names,characters
+	return entrants,wins,losses,paths,names,sets
 
 # reads in and returns data for all entrants in a given phase group
 def read_entrants(data,phase_data,entrants,names,xpath):
@@ -316,7 +316,7 @@ def read_names(x,translate_cjk=False):
 	return e_id,abs_ids,tags,prefixes,metainfo,None
 
 # reads the sets for a given phase group and returns match results
-def read_sets(data,phase_data,wins,losses,xpath,characters):
+def read_sets(data,phase_data,wins,losses,xpath,sets):
 	setdata = data['entities']['sets']
 	group = data['entities']['groups']['id']
 	#print(phase_data)
@@ -349,7 +349,49 @@ def read_sets(data,phase_data,wins,losses,xpath,characters):
 		if w_id == None or l_id == None or w_id == l_id:
 			is_bye = True
 
+		sets[set_id] = {}
+		sets[set_id]['is_bye'] = is_bye
+		sets[set_id]['w_id'] = w_id
+		sets[set_id]['l_id'] = l_id
+		sets[set_id]['w_dq'] = w_DQ
+		sets[set_id]['l_dq'] = l_DQ
+		#sets[set_id]['games'] = None
+
 		if not is_bye:
+			# populate character data if available
+			if 'games' in match:
+				if len(match['games']) > 0:
+					sets[set_id]['games'] = {}
+				for game in match['games']:
+					#print(game['selections'])
+					#if 'stageId' in game:
+					#	stage = game['stageId']
+					game_id = game['id']
+					sets[set_id]['games'][game_id] = {}
+					if game['stageId'] != None:
+						sets[set_id]['games'][game_id]['stage_id'] = game['stageId']
+					sets[set_id]['games'][game_id]['w_id'] = game['winnerId']
+					sets[set_id]['games'][game_id]['l_id'] = game['loserId']
+
+					if 'selections' in game and type(game['selections']) is not type(None):
+						sets[set_id]['games'][game_id]['characters'] = {}
+						for game_e_id in [e1,e2]:
+						#for selection in game['selections']:
+							#game_e_id = game['selections'][selection]['character']['entrantId']
+							if 'character' in game['selections'][str(game_e_id)]:
+								game_char_id = game['selections'][str(game_e_id)]['character'][0]['selectionValue']
+								sets[set_id]['games'][game_id]['characters'][game_e_id] = game_char_id
+								'''
+								if game_e_id not in characters:
+									characters[game_e_id] = {}
+								if game_char_id not in characters[game_e_id]:
+									characters[game_e_id][game_char_id] = [0,0]
+								# store wins and losses separately
+								if game_e_id == w_id:
+									characters[game_e_id][game_char_id][0] += 1
+								else:
+									characters[game_e_id][game_char_id][1] += 1'''
+
 			# Don't count DQs for win/loss records (still do for placings)
 			if not (w_DQ or l_DQ):
 				if v >= 7:
@@ -398,27 +440,6 @@ def read_sets(data,phase_data,wins,losses,xpath,characters):
 			if v >= 7:
 				print(set_id,match['phaseGroupId'],match['identifier'],['bye','bye'],[e1,e2])
 
-		# populate character data if available
-		if 'games' in match:
-			for game in match['games']:
-				#print(game['selections'])
-				#if 'stageId' in game:
-				#	stage = game['stageId']
-				if 'selections' in game and type(game['selections']) is not type(None):
-					for game_e_id in [e1,e2]:
-					#for selection in game['selections']:
-						#game_e_id = game['selections'][selection]['character']['entrantId']
-						if 'character' in game['selections'][str(game_e_id)]:
-							game_char_id = game['selections'][str(game_e_id)]['character'][0]['selectionValue']
-							if game_e_id not in characters:
-								characters[game_e_id] = {}
-							if game_char_id not in characters[game_e_id]:
-								characters[game_e_id][game_char_id] = [0,0]
-							# store wins and losses separately
-							if game_e_id == w_id:
-								characters[game_e_id][game_char_id][0] += 1
-							else:
-								characters[game_e_id][game_char_id][1] += 1
 
 
 	# populate overall final bracket placements if not already provided
@@ -432,7 +453,7 @@ def read_sets(data,phase_data,wins,losses,xpath,characters):
 			final_place = 1 + people_missed + spots_missed*grp_count
 			xpath[x_id][0] = final_place
 
-	return wins,losses,xpath,characters
+	return wins,losses,xpath,sets
 
 # reads the phase data for a given tournament
 def read_phases(tourney):
@@ -550,6 +571,7 @@ def read_phases(tourney):
 
 if __name__ == '__main__':
 	#print(save_character_dicts())
+	#print(save_videogame_dicts())
 
 	readin(t_slug_a)
 	#print(translate(translate("Zackray",to='ja').text,to='ja').pronunciation)

@@ -18,10 +18,10 @@ import subprocess
 ## AUXILIARY FUNCTIONS
 # returns the full slug (needed to pull tourney data) given the short slug
 def get_slug(ss):
-	url = "https://smash.gg/%s"%ss
+	url = 'https://smash.gg/%s'%ss
 	full_url = unshorten_url(url)
 
-	idx = (full_url.split('/')).index("tournament")
+	idx = (full_url.split('/')).index('tournament')
 	return full_url.split('/')[idx+1]
 
 # returns true if the description contains explicit mention of a given game (default melee/SSBM)
@@ -68,9 +68,9 @@ def is_ladder(descr):
 
 # returns the full JSON data for a phase given its ID number
 def pull_phase(num):
-	link = "https://api.smash.gg/phase_group/%d?expand[]=sets&expand[]=seeds"%num
+	link = 'https://api.smash.gg/phase_group/%d?expand[]=sets&expand[]=seeds'%num
 	tempdata = urlopen(link).read()
-	return tempdata.decode("UTF-8")
+	return tempdata.decode('UTF-8')
 
 # used to save datasets/hashtables
 def save_obj(t_id,phase,obj, name):
@@ -89,12 +89,12 @@ def load_obj(t_id,phase,name):
 
 # saves all params for the load_sets function
 def save_all(t_id,phase,params):
-	names = ['entrants','wins','losses','results','names','characters']
+	names = ['entrants','wins','losses','results','names','sets']
 	return all([save_obj(t_id,phase,param,name) for param,name in zip(params,names)])
 
 # load all params for the load_sets function
 def load_all(t_id,phase):
-	names = ['entrants','wins','losses','results','names','characters']
+	names = ['entrants','wins','losses','results','names','sets']
 	return [load_obj(t_id,phase,name) for name in names]
 
 # prints smash.gg query pulls as pretty JSON .txt files (for human readability)
@@ -129,18 +129,18 @@ def is_emoji(s,print_e=False):
 	data = regex.findall(r'\X', s)
 	flags = regex.findall(u'[\U0001F1E6-\U0001F1FF]', s)
 	if print_e:
-		print("data: ",data)
-		print("flags: ",flags)
+		print('data: ',data)
+		print('flags: ',flags)
 		print(s)
 	for word in data:
 		if any(char[0] in UNICODE_EMOJI for char in data):
 			if print_e:
-				print("data loop ",char)
+				print('data loop ',char)
 			return True
 	for word in flags:
 		if any(char in UNICODE_EMOJI for char in word):
 			if print_e:
-				print("flag loop ",char)
+				print('flag loop ',char)
 			return True
 	if len(flags) > 0:
 		return True
@@ -149,21 +149,21 @@ def is_emoji(s,print_e=False):
 # detects if a character is chinese, japanese, or korean
 def is_cjk(char):
 	ranges = [
-	  {"from": ord(u"\u3300"), "to": ord(u"\u33ff")},         # compatibility ideographs
-	  {"from": ord(u"\ufe30"), "to": ord(u"\ufe4f")},         # compatibility ideographs
-	  {"from": ord(u"\uf900"), "to": ord(u"\ufaff")},         # compatibility ideographs
-	  {"from": ord(u"\U0002F800"), "to": ord(u"\U0002fa1f")}, # compatibility ideographs
+	  {'from': ord(u'\u3300'), 'to': ord(u'\u33ff')},         # compatibility ideographs
+	  {'from': ord(u'\ufe30'), 'to': ord(u'\ufe4f')},         # compatibility ideographs
+	  {'from': ord(u'\uf900'), 'to': ord(u'\ufaff')},         # compatibility ideographs
+	  {'from': ord(u'\U0002F800'), 'to': ord(u'\U0002fa1f')}, # compatibility ideographs
 	  {'from': ord(u'\u3040'), 'to': ord(u'\u309f')},         # Japanese Hiragana
-	  {"from": ord(u"\u30a0"), "to": ord(u"\u30ff")},         # Japanese Katakana
-	  {"from": ord(u"\u2e80"), "to": ord(u"\u2eff")},         # cjk radicals supplement
-	  {"from": ord(u"\u4e00"), "to": ord(u"\u9fff")},
-	  {"from": ord(u"\u3400"), "to": ord(u"\u4dbf")},
-	  {"from": ord(u"\U00020000"), "to": ord(u"\U0002a6df")},
-	  {"from": ord(u"\U0002a700"), "to": ord(u"\U0002b73f")},
-	  {"from": ord(u"\U0002b740"), "to": ord(u"\U0002b81f")},
-	  {"from": ord(u"\U0002b820"), "to": ord(u"\U0002ceaf")}  # included as of Unicode 8.0
+	  {'from': ord(u'\u30a0'), 'to': ord(u'\u30ff')},         # Japanese Katakana
+	  {'from': ord(u'\u2e80'), 'to': ord(u'\u2eff')},         # cjk radicals supplement
+	  {'from': ord(u'\u4e00'), 'to': ord(u'\u9fff')},
+	  {'from': ord(u'\u3400'), 'to': ord(u'\u4dbf')},
+	  {'from': ord(u'\U00020000'), 'to': ord(u'\U0002a6df')},
+	  {'from': ord(u'\U0002a700'), 'to': ord(u'\U0002b73f')},
+	  {'from': ord(u'\U0002b740'), 'to': ord(u'\U0002b81f')},
+	  {'from': ord(u'\U0002b820'), 'to': ord(u'\U0002ceaf')}  # included as of Unicode 8.0
 	]
-	return any([range["from"] <= ord(char) <= range["to"] for range in ranges])
+	return any([range['from'] <= ord(char) <= range['to'] for range in ranges])
 
 # detects if a string contains cjk characters
 def has_cjk(text):
@@ -199,7 +199,7 @@ def transliterate_split_cjk(text):
 	#char_bools = [is_cjk(text_char) for text_char in text]
 	cjk_char = False
 	first_idx = 0
-	tempstr = ""
+	tempstr = ''
 	for i in range(len(text)):
 		# if character is in cjk block::
 		if is_cjk(text[i]) or text[i] in [' ','-']:
@@ -271,8 +271,9 @@ def load_dict(name,ver,loc='db'):
 			s['elo_del'] = {}
 			s['glicko'] = {}
 			s['glicko_del'] = {}
-			s['sim'] = {}
-			s['sim_del'] = {}
+			s['iago'] = {}
+			s['iago_del'] = {}
+			s['iago_sig'] = {}
 			s['perf'] = {}
 			save_dict(s,name,ver,loc)
 			return s
@@ -302,7 +303,7 @@ def delete_dict(name,ver,loc='db'):
 def save_slugs(slugs,game,year,loc='db',to_save_db=True):
 	if to_save_db:
 		#if v >= 4:
-		#	print("Saving scraped slugs...")
+		#	print('Saving scraped slugs...')
 		if not os.path.isdir('%s/%s'%(loc,game)):
 			os.mkdir(str('%s/%s'%(loc,game)))
 		if not os.path.isdir('%s/%s/slugs'%(loc,game)):
@@ -331,14 +332,8 @@ def delete_tourney_cache(t_id):
 		except OSError:
 			return False
 
+# pulls the list of characters/ids from the old API and saves them locally as a dict
 def save_character_dicts(games='smash',chars=None,to_load=True):
-	if games == 'smash':
-		games = [1,2,3,4,5,1386]
-	elif games == 'all':
-		games = range(1,1445)
-	if type(games) is int:
-		games = [games]
-
 	if to_load:
 		characters = load_dict('characters',None,'../lib')
 	else:
@@ -346,11 +341,57 @@ def save_character_dicts(games='smash',chars=None,to_load=True):
 
 	c_file = urlopen('https://api.smash.gg/characters').read()
 	c_data = json.loads(c_file.decode('UTF-8'))
+
+	if games == 'smash':
+		games = [1,2,3,4,5,1386]
+	elif games == 'all':
+		games = (load_dict('videogames',None,'../lib')).keys()
+	if type(games) is int:
+		games = [games]
+
 	for character in c_data['entities']['character']:
 		if character['videogameId'] in games:
-			characters[character['videogameId']][character['id']] = character['name']
+			if character['videogameId'] not in characters:
+				characters[character['videogameId']] = {}
+			stock_icon_url = sorted([[img['url'],img['width']] for img in character['images']],key=lambda l: l[1])[0][0]
+			characters[character['videogameId']][character['id']] = [character['name'],stock_icon_url]
 
-	return save_dict(characters,'characters',None,loc='../lib')
+	#return save_dict(characters,'characters',None,loc='../lib')
+	if save_dict(characters,'characters',None,loc='../lib'):
+		return characters
+	else:
+		return False
+
+# pulls the list of videogames/ids from the old API and saves them locally as a dict
+def save_videogame_dicts(games='all',chars=None,to_load=True):
+	if to_load:
+		videogames = load_dict('videogames',None,'../lib')
+	else:
+		videogames = {}
+
+	c_file = urlopen('https://api.smash.gg/videogames').read()
+	c_data = json.loads(c_file.decode('UTF-8'))
+
+	if games == 'smash':
+		games = [1,2,3,4,5,1386]
+	elif games == 'all':
+		games = c_data['result']
+	if type(games) is int:
+		games = [games]
+
+	for videogame in c_data['entities']['videogame']:
+		if videogame['id'] in games:
+			videogames[videogame['id']] = {}
+			videogames[videogame['id']]['name'] = videogame['name']
+			videogames[videogame['id']]['displayName'] = videogame['displayName']
+			videogames[videogame['id']]['slug'] = videogame['slug']
+
+	#return save_dict(characters,'characters',None,loc='../lib')
+	if save_dict(videogames,'videogames',None,loc='../lib'):
+		return videogames
+	else:
+		return False
+
 
 # prints tournament results by player's final placing
 def print_results(res,names,entrants,losses,characters,game=1,max_place=64,translate_cjk=True):
@@ -371,7 +412,7 @@ def print_results(res,names,entrants,losses,characters,game=1,max_place=64,trans
 	#print(team_mult,names[res_s[0][0]])
 
 	num_rounds = len(res_s[0][1][1])
-	#lsbuff = "\t"*(num_rounds-len(res_s[-1][1][1])+1)
+	#lsbuff = '\t'*(num_rounds-len(res_s[-1][1][1])+1)
 	roundnames = [names['groups'][group] for group in res_s[0][1][1]]
 	roundslen = sum([len(str(name)) for name in roundnames]) + 2*num_rounds
 	sp_slot = 13*team_mult
@@ -411,13 +452,13 @@ def print_results(res,names,entrants,losses,characters,game=1,max_place=64,trans
 						sp = sp[:8] + '... |'
 					else:
 						if sp[-2:] != ' |':
-							#sp = "/".join(str(n) for n in names[player[0]][0]) + " |"
+							#sp = '/'.join(str(n) for n in names[player[0]][0]) + ' |'
 							sp = names[player[0]][0][idx] + ' |'
 				sp_slot = 13#*team_mult
 				for ch in sp:
 					if is_emoji(ch):
 						sp_slot -= 1
-				#tag = "/".join(str(n) for n in names[player[0]][1])
+				#tag = '/'.join(str(n) for n in names[player[0]][1])
 				tag = names[player[0]][1][idx]
 				if translate_cjk:
 					if any([is_cjk(tag_char) for tag_char in tag]):
@@ -454,7 +495,7 @@ def print_results(res,names,entrants,losses,characters,game=1,max_place=64,trans
 					ls_list = ['<'+transliterate(l_tag)+'>' if any([is_cjk(l_tag_char) for l_tag_char in l_tag]) else l_tag for l_tag in ls_list]
 					#for l_tag in ls_list:
 					#	if any([is_cjk(l_tag_char) for l_tag_char in l_tag]):
-					#		print("ohno")
+					#		print('ohno')
 					#		ls_list.replace(l_tag,'<'+(translate(l_tag,to='ja')).pronunciation+'>')
 					#		print(l_tag,ls_list)
 
@@ -464,11 +505,11 @@ def print_results(res,names,entrants,losses,characters,game=1,max_place=64,trans
 
 			#if len(player[1][1]) > maxlen:
 			#	maxlen = len(player[1][1])
-			#lsbuff = "\t"*(maxlen-len(player[1][1])+1)
+			#lsbuff = '\t'*(maxlen-len(player[1][1])+1)
 			#if len(player[1][1]) > 2:
-			#	lsbuff = "\t"
+			#	lsbuff = '\t'
 			#else:
-			#	lsbuff = "\t\t\t"
+			#	lsbuff = '\t\t\t'
 			if len(playerstrings) == 1: #or len(playerstrings) >= 4:
 				print(('{:>%d.%d}'%(sp_slot,sp_slot)).format(sp),('{:<%d.%d}'%(tag_slot,tag_slot)).format(tag),('{:>%d.%d}'%(8*team_mult,8*team_mult)).format(' / '.join(str(n) for n in entrants[player[0]][1])), \
 				'  {:<5.5}'.format(str(player[1][0])),('{:<%d.%d}'%(roundslen+5,roundslen+5)).format('['+', '.join(str(i) for i in [names['groups'][group] for group in player[1][1]])+']'),'{:<16.16}'.format(main_str),ls)

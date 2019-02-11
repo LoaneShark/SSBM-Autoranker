@@ -150,12 +150,14 @@ def main():
 	#disp_all(dicts,key='elo',dispnum=10,min_activity=min_act,tier_tol=-1,plot_skills=False)
 	#if game_idx == 1386 or game_idx == 3:
 
-	opts = find_opt_hyperparams(dicts,20,9,key_ids=[1000,19554])
+	# find optimum hyperparameters (higher learnrate is better, >0.2 needed for convergence)
+	if 1 < 0:
+		opts = find_opt_hyperparams(dicts,20,9,key_ids=[1000,19554])
 
 	to_calc_simbrack = False
 	if to_calc_simbrack:
 		array_t = timer()
-		iagorank_params = calc_simbrack(dicts,None,min_req=min_act,max_iter=100,disp_size=300,print_res=True,plot_ranks=False,mode='array')
+		iagorank_params = calc_simbrack(dicts,min_req=min_act,max_iter=500,disp_size=300,print_res=True,plot_ranks=False,mode='array')
 		array_time = timer()-array_t
 		print('Array time elapsed:','{:.3f}'.format(array_time) + ' s')
 		ISR = {'params': iagorank_params}
@@ -227,7 +229,7 @@ def main():
 
 			#print([p_id for p_id in id_list if sigmoids[p_id][2] > 1.1])
 
-	if game_idx == 3 or game_idx == 1386:
+	if (game_idx == 3 or game_idx == 1386) and 1 < 0:
 		# plot void
 		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,15768,plot_tags=True)
 		plot_hist(data_hist,p_id=15768,plot_delta=True)
@@ -239,8 +241,8 @@ def main():
 			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,432879,plot_tags=True)
 			plot_hist(data_hist,p_id=432879,plot_delta=True)
 			# plot calvin
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,6546,plot_tags=True)
-			plot_hist(data_hist,p_id=6546,plot_delta=True)
+			#plot_winprobs(iagoranks,winprobs,sigmoids,id_list,6546,plot_tags=True)
+			#plot_hist(data_hist,p_id=6546,plot_delta=True)
 		# plot swedish delight (only for -ma 2)
 		if 1055 in id_list:
 			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1055,plot_tags=True)
@@ -250,7 +252,9 @@ def main():
 			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,4465,plot_tags=True)
 			plot_hist(data_hist,p_id=4465,plot_delta=True)
 
-	return True
+	#return True
+
+	generate_matchup_chart(dicts,game_idx,year,year_count,id_list=id_list)
 
 def main_read():
 	set_db_args(args)
