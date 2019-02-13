@@ -1,6 +1,7 @@
 #import numpy as np 
 #import scipy as sp 
 from six.moves.urllib.request import urlopen
+import matplotlib.image as mpimg
 #from six.moves.urllib.parse import urlencode
 import requests
 import re,os,pickle,time,json
@@ -333,11 +334,13 @@ def delete_tourney_cache(t_id):
 			return False
 
 # pulls the list of characters/ids from the old API and saves them locally as a dict
-def save_character_dicts(games='smash',chars=None,to_load=True):
+def save_character_dicts(games='smash',chars=None,to_load=True,force_new_icons=False):
 	if to_load:
 		characters = load_dict('characters',None,'../lib')
+		icons = load_dict('character_icons',None,'../lib')
 	else:
 		characters = {}
+		icons = {}
 
 	c_file = urlopen('https://api.smash.gg/characters').read()
 	c_data = json.loads(c_file.decode('UTF-8'))
@@ -350,14 +353,18 @@ def save_character_dicts(games='smash',chars=None,to_load=True):
 		games = [games]
 
 	for character in c_data['entities']['character']:
-		if character['videogameId'] in games:
-			if character['videogameId'] not in characters:
-				characters[character['videogameId']] = {}
+		game_id = character['videogameId']
+		if game_id in games:
+			if game_id not in characters:
+				characters[game_id] = {}
+			if game_id not in icons:
+				icons[game_id] = {}
 			stock_icon_url = sorted([[img['url'],img['width']] for img in character['images']],key=lambda l: l[1])[0][0]
-			characters[character['videogameId']][character['id']] = [character['name'],stock_icon_url]
+			if stock_icon_url not in icons[game_id] or force_new_icons:
+				icons[game_id][character['id']] = mpimg.imread(urlopen(stock_icon_url))
+			characters[game_id][character['id']] = character['name']
 
-	#return save_dict(characters,'characters',None,loc='../lib')
-	if save_dict(characters,'characters',None,loc='../lib'):
+	if save_dict(characters,'characters',None,loc='../lib') and save_dict(icons,'character_icons',None,loc='../lib'):
 		return characters
 	else:
 		return False
@@ -391,7 +398,6 @@ def save_videogame_dicts(games='all',chars=None,to_load=True):
 		return videogames
 	else:
 		return False
-
 
 # prints tournament results by player's final placing
 def print_results(res,names,entrants,losses,characters,game=1,max_place=64,translate_cjk=True):
@@ -522,4 +528,4 @@ def print_results(res,names,entrants,losses,characters,game=1,max_place=64,trans
 					('{:>%d.%d}'%(8*team_mult,8*team_mult)).format('/'.join(str(n) for n in entrants[player[0]][1])), \
 				'  {:<5.5}'.format(str(player[1][0])),('{:<%d.%d}'%(roundslen+5,roundslen+5)).format('['+', '.join(str(i) for i in [names['groups'][group] for group in player[1][1]])+']'),ls)
 
-	return(res_s)
+	return res_s

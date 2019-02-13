@@ -137,7 +137,7 @@ def get_best_performances(dicts,use_names=False,acc=3,scale_vals=False):
 
 	return best_perfs
 
-def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,skill_weight=False,use_icons=False):
+def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,skill_weight=False,use_icons=False,prune_sparse=True,save_figure=False):
 	tourneys,ids,p_info,records,skills = dicts
 	if id_list == None:
 		id_list = [p_id for p_id in records]
@@ -149,12 +149,16 @@ def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,skill_weigh
 
 	chars = load_dict('characters',None,'../lib')[int(game)]
 	char_n = len(chars.keys())
-	char_labels = [chars[char_id][0] for char_id in chars]
-	print(char_labels)
+	char_labels = np.array([chars[char_id] for char_id in chars],dtype='object')
+	print(len(char_labels))
 	#return True
 	char_id_map = {c_id: i for i,c_id in enumerate([char_id for char_id in chars])}
 	if use_icons:
-		char_icons = [mpimg.imread(urlopen(chars[char_id][1])) for char_id in chars]
+		icons = load_dict('character_icons',None,'../lib')[int(game)]
+		#char_icons = np.array([icons[char_id] for char_id in chars],dtype='object')
+		char_icons = np.array([mpimg.imread('../lib/todd2.jpg') for char_id in chars],dtype=object)
+		#plt.imshow(char_icons[0])
+		#plt.show()
 
 	print('Generating Matchup chart...')
 	# scan all relevant sets and import character data where available
@@ -171,45 +175,150 @@ def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,skill_weigh
 							if sets[set_id]['games'][game_id]['characters'] != {}:
 								g_w_id = sets[set_id]['games'][game_id]['w_id']
 								g_l_id = sets[set_id]['games'][game_id]['l_id']
-								char_h2h[char_id_map[sets[set_id]['games'][game_id]['characters'][g_w_id]],char_id_map[sets[set_id]['games'][game_id]['characters'][g_l_id]]] += 1
+								if g_w_id != None and g_l_id != None:
+									g_w_char_id = char_id_map[sets[set_id]['games'][game_id]['characters'][g_w_id]]
+									g_l_char_id = char_id_map[sets[set_id]['games'][game_id]['characters'][g_l_id]]
+									char_h2h[g_w_char_id,g_l_char_id] += 1
 
 	# change h2h records to win probabilities in [0,1]
 	for char_idx in range(char_n):
 		for opp_idx in range(char_idx,char_n):
-			if char_h2h[char_idx,opp_idx]+char_h2h[opp_idx,char_idx] == 0:
+			if char_h2h[char_idx,opp_idx]+char_h2h[opp_idx,char_idx] <= 0:
 				char_h2h[char_idx,opp_idx] = -1.
+				char_h2h[opp_idx,char_idx] = char_h2h[char_idx,opp_idx]
 			else:
 				char_h2h[char_idx,opp_idx] /= (char_h2h[char_idx,opp_idx]+char_h2h[opp_idx,char_idx])
-			char_h2h[opp_idx,char_idx] = 1. - char_h2h[char_idx,opp_idx]
+				char_h2h[opp_idx,char_idx] = 1. - char_h2h[char_idx,opp_idx]
 
-	# create plot
-	fig,ax = plt.subplots()
-	im = ax.imshow(char_h2h)
-	# set labels and icons
-	ax.set_xticks(np.arange(char_n))
-	ax.set_yticks(np.arange(char_n))
-	ax.set_xticklabels(char_labels)
-	ax.set_yticklabels(char_labels)
-	plt.setp(ax.get_xticklabels(), rotation=45, ha='right', rotation_mode='anchor')
-	# annotate data
+	#np.set_printoptions(threshold=np.inf)
+	#print(char_h2h)
+	# prune out unwanted characters (not enough data to rank) (toggleable)
+	if prune_sparse:
+		#remove zero rows & columns from the chart
+		#print(char_h2h.shape)
+		char_labels = char_labels[~np.all(char_h2h == -1.,axis=1)]
+		if use_icons:
+			char_icons = char_icons[~np.all(char_h2h == -1.,axis=1)]
+		char_h2h = char_h2h[~np.all(char_h2h == -1.,axis=1)]
+		#print(char_h2h.shape)
+		char_h2h = char_h2h[:, ~np.all(char_h2h == -1.,axis=0)]
+		print(char_h2h.shape)
+		char_n = char_h2h.shape[0]
+		print(char_n)
+
+	## create plot
+	fig,ax = plt.subplots(1,1)
+	ax.matshow(char_h2h)
+	## set labels and icons
+	#ax.set_xticks(np.arange(char_n))
+	#ax.set_yticks(np.arange(char_n))
+	#ax.set_xticklabels(char_labels)
+	#ax.set_yticklabels(char_labels)
+	#plt.setp(ax.get_xticklabels(), rotation=45, ha='right', rotation_mode='anchor')
+	plt.xticks(np.arange(char_n),char_labels,rotation='vertical')
+	plt.yticks(np.arange(char_n),char_labels,rotation='horizontal')
+	plt.gca().xaxis.tick_bottom()
+	## annotate data
 	for i in range(char_n):
 		for j in range(char_n):
-			text = ax.text(j, i, char_h2h[i, j], ha='center', va='center')
+			if char_h2h[i,j] >= 0.:
+				text = ax.text(j, i, int(10*char_h2h[i, j]), ha='center', va='center')
+				#continue
 	# plot stock icons instead of character names
 	if use_icons:
-		for img in char_icons:
-			xl, yl, xh, yh = np.array(ax.get_position()).ravel()
+		img_ax = []
+		xl, yl, xh, yh = np.array(ax.get_position()).ravel()
+		print(xl, yl, xh, yh)
+		for i in range(char_n):
 			w = xh-xl
 			h = yh-yl
-			xp = xl+w*0.1 #if replace '0' label, can also be calculated systematically using xlim()
+			xp = xl+w*(float(i)/float(char_n))
+			print(xp)
 			size = 0.05
 
-			ax1 = fig.add_axes([xp-size*0.5, yh, size, size])
-			ax1.axison = False
-			ax1.imshow(img,transform=ax.transAxes)
+			img_ax.append(fig.add_axes([xp-size*0.5, yh, size, size]))
+			img_ax[i].axison = False
+			im_i = plt.imshow(char_icons[i],transform=ax.transAxes)
 
-	plt.title('Matchup chart for \n%s'%load_dict('videogames',None,'../lib')[int(game)]['name'])
+			#i += 1
+
+	plt.title('Matchup chart for %s'%load_dict('videogames',None,'../lib')[int(game)]['displayName'])
+	plt.xlabel('Defender')
+	plt.ylabel('Attacker')
+	#fig.tight_layout()
+	if save_figure:
+		plt.savefig('../lib/%s_matchups.png'%str(game))
 	plt.show()
+
+def generate_tier_list(dicts,game,year,year_count,id_list=None,skill_weight=True,use_icons=True):
+	tourneys,ids,p_info,records,skills = dicts
+	if id_list == None:
+		id_list = [p_id for p_id in records]
+	yc_str = ''
+	if year_count > 0:
+		yc_str += '-'+str(year+year_count)
+	# load set results
+	sets = easy_load_db_sets(ver=str(game)+'/'+str(year)+yc_str)
+
+	# load character data
+	chars = load_dict('characters',None,'../lib')[int(game)]
+	char_n = len(chars.keys())
+	char_labels = np.array([chars[char_id] for char_id in chars],dtype='object')
+	char_id_map = {c_id: i for i,c_id in enumerate([char_id for char_id in chars])}
+	if use_icons:
+		icons = load_dict('character_icons',None,'../lib')[int(game)]
+		char_icons = np.array([icons[char_id] for char_id in chars],dtype='object')
+		#char_icons = np.array([mpimg.imread('../lib/todd2.jpg') for char_id in chars],dtype=object)
+
+	n_bins = 50
+	char_h2h = np.zeros((char_n,n_bins+1))
+	char_h2h = np.full_like(char_h2h,None,dtype='object')
+
+	# import set results, record w/l record for each character as a function of opponent skill
+	for set_id in sets:
+		if 'games' in sets[set_id]:
+			for game_id in sets[set_id]['games']:
+				if 'characters' in sets[set_id]['games'][game_id]:
+							if sets[set_id]['games'][game_id]['characters'] != {}:
+								t_id = sets[set_id]['t_id']
+								g_w_id = sets[set_id]['games'][game_id]['w_id']
+								g_l_id = sets[set_id]['games'][game_id]['l_id']
+								if g_w_id != None and g_l_id != None:
+									g_w_char_id = char_id_map[sets[set_id]['games'][game_id]['characters'][g_w_id]]
+									g_l_char_id = char_id_map[sets[set_id]['games'][game_id]['characters'][g_l_id]]
+									w_skill_bin = int(p_info[ids['t_'+str(t_id)][g_w_id]]['iagorank'] * n_bins)
+									l_skill_bin = int(p_info[ids['t_'+str(t_id)][g_l_id]]['iagorank'] * n_bins)
+									if char_h2h[g_w_char_id,l_skill_bin] == None:
+										char_h2h[g_w_char_id,l_skill_bin] = [0,0]
+									if char_h2h[g_l_char_id,w_skill_bin] == None:
+										char_h2h[g_l_char_id,w_skill_bin] = [0,0]
+									char_h2h[g_w_char_id,l_skill_bin][0] += 1
+									char_h2h[g_l_char_id,w_skill_bin][1] += 1
+
+	# change h2h records to win probabilities in [0,1], assemble values
+	char_skills = []
+	for char_idx in range(char_n):
+		xs = []
+		ys = []
+		# fit sigmoid for each character across their histogram
+		for opp_bin in range(n_bins+1):
+			if char_h2h[char_idx,opp_bin] != None:
+				ratio = float(char_h2h[char_idx,opp_bin][0])/float(char_h2h[char_idx,opp_bin][0]+char_h2h[char_idx,opp_bin][1])
+				xs.append(float(opp_bin)/50.)
+				ys.append(ratio)
+
+		if len(xs) > 0:
+			x = np.array(xs)
+			y = np.array(ys)
+
+			v_b = get_fitsig_bounds()
+			p,cov = sp.optimize.curve_fit(sigmoid,x,y,p0=(np.float64(0.0),np.float(0.1),np.float(1.0),np.float(4.0)),bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf')
+
+			char_skills.append(1.-integrate_sigmoid([p],n_bins)[0])
+		else:
+			char_skills.append('N/A')
+
+	return sorted([[char_labels[char_id],char_skills[char_id]] for char_id in range(char_n)],key=lambda t: (9999. if type(t[1]) is str else t[1],t[1]))
 
 def disp_all(dicts,dispnum=20,key='elo',trans_cjk=True,avg_perf=False,scale_vals=False,min_activity=3,tier_tol=-1,plot_skills=False):
 	tourneys,ids,p_info,records,skills = dicts

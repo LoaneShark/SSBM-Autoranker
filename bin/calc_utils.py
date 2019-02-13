@@ -300,7 +300,7 @@ def update_glicko(dicts,matches,t_info,tau=0.5,ranking_period=60):
 
 # simulates a bracket
 ## WIP
-def calc_simbrack(dicts,max_iter=1000,min_req=3,rank_size=None,disp_size=100,mode='array',print_res=False,plot_ranks=True,alpha=0.75):
+def calc_simbrack(dicts,max_iter=1000,min_req=3,verbosity=0,rank_size=None,disp_size=100,mode='array',seed='elo',print_res=False,learn_decay=True,plot_ranks=True,alpha=0.75):
 	tourneys,ids,p_info,records,skills = dicts
 	#larry_id,T_id,jtails_id = get_abs_id_from_tag(dicts,'Tweek'),get_abs_id_from_tag(dicts,'Ally'),get_abs_id_from_tag(dicts,'Jtails')
 	#print(void_id,dabuz_id,larry_id)
@@ -317,73 +317,88 @@ def calc_simbrack(dicts,max_iter=1000,min_req=3,rank_size=None,disp_size=100,mod
 	## get the win probs for the whole db
 	#winps,chis = winprobs(dicts,id_list=id_list)
 	winps,chis = winprobs(dicts,id_list=None,mode='dict')
+	N = float(len(winps.keys()))
+	n = float(len(id_list))
 
 	## initialize data with [id, tag, elo, glicko] structure
 	#data = np.array([[p_id,get_en_tag(dicts,tag=p_info[p_id]['tag']),float(p_info[p_id]['elo']),float(p_info[p_id]['glicko'][0])] for p_id in id_list],dtype='object')
 	data = np.array([[p_id,get_en_tag(dicts,tag=p_info[p_id]['tag']),float(p_info[p_id]['elo']),float(p_info[p_id]['glicko'][0])] for p_id in winps],dtype='object')
 
-	## get initial skillranks by rescaling all ranks (elo and glicko) to be between 0 and 1 (for sigmoid fitting)
-	## normalize elo/glicko by all db entrants (N)
-	N = float(len(winps.keys()))
-	n = float(len(id_list))
-	#N = float(len(id_list))
-	elo_min = np.min(data[:,2])
-	elo_max = np.max(data[:,2])
-	data[:,2] = ((data[:,2]-elo_min)/(elo_max-elo_min))*(1./N-1.)+1.
-	glicko_min = np.min(data[:,3])
-	glicko_max = np.max(data[:,3])
-	data[:,3] = ((data[:,3]-glicko_min)/(glicko_max-glicko_min))*(1./N-1.)+1.
-	## average normalized elo and glicko for initial skillranks
-	data[:,2] = (data[:,2]+data[:,3])/2.
-	data = data[:,:3]
-	## convert data to a dict and pass to simbrack
-	data_dict = {p_id: [tag,skill_rank] for p_id,tag,skill_rank in data}
+	# use previous iagoranks as skill seeds
+	if seed == 'dict':
+		data_dict = {p_id: [tag,p_info[p_id]['iagorank']] for p_id,tag,_,_ in data}
+	# use average win percentage as skill seeds
+	elif seed == 'winrate':
+		data_dict = {p_id: [tag,np.mean([winps[p_id][opp_id] for opp_id in winpd[p_id]])] for p_id,tag,_,_ in data}
+	# use average distance in bracket as skill seeds
+	elif seed == 'placing':
+		brack_score = lambda pl,N: 1. - float(int(log(N,2))-int(log(pl,2)))/float(int(log(N,2)))
+		data_dict = {p_id: [tag,np.mean([brack_score(records[p_id]['placings'][t_id],tourneys[t_id]['numEntrants']) for t_id in records[p_id]['placings']])] for p_id,tag,_,_ in data}
+	# use elo/glicko as skill seeds
+	else:
+		## get initial skillranks by rescaling all ranks (elo and glicko) to be between 0 and 1 (for sigmoid fitting)
+		## normalize elo/glicko by all db entrants (N)
+		
+		#N = float(len(id_list))
+		elo_min = np.min(data[:,2])
+		elo_max = np.max(data[:,2])
+		data[:,2] = ((data[:,2]-elo_min)/(elo_max-elo_min))*(1./N-1.)+1.
+		glicko_min = np.min(data[:,3])
+		glicko_max = np.max(data[:,3])
+		data[:,3] = ((data[:,3]-glicko_min)/(glicko_max-glicko_min))*(1./N-1.)+1.
+		## average normalized elo and glicko for initial skillranks
+		data[:,2] = (data[:,2]+data[:,3])/2.
+		data = data[:,:3]
+		## convert data to a dict and pass to simbrack
+		data_dict = {p_id: [tag,skill_rank] for p_id,tag,skill_rank in data}
 
 	print('Simulating Bracket... (%d entrants)'%n)
 	#new_data_dict,sigs = simbrack(data_dict,winps,id_list,max_iter=max_iter)
 	#new_data_dict,sigs,data_hist = simbrack(data_dict,winps,chis,id_list,max_iter=max_iter,simulate_bracket=False,score_intsigs=True,learn_rate=0.5,learn_decay=False,simple_sigmoid=False)
-	new_data,sigs,data_hist = simbrack(data_dict,winps,chis,id_list,max_iter=max_iter,simulate_bracket=False,score_intsigs=True,learn_rate=alpha,learn_decay=True,simple_sigmoid=False,mode=mode)
+	new_data,sigs,data_hist = simbrack(data_dict,winps,chis,id_list,max_iter=max_iter,v=verbosity,simulate_bracket=False,score_intsigs=True,learn_rate=alpha,learn_decay=learn_decay,simple_sigmoid=False,mode=mode)
 	if mode == 'dict':
 		new_data_dict = dcopy(new_data)
 
 	if print_res:
-		print('=======================')
 		#p_list = [sigs[p_id] for p_id in id_list]
 		if mode == 'dict':
 			p_list = [sigs[p_id] for p_id in sigs]
 		else:
 			p_list = list(sigs)
-		mins = [min(attr) for attr in [[p_val[i] for p_val in p_list] for i in range(len(p_list[0]))]]
-		maxs = [max(attr) for attr in [[p_val[i] for p_val in p_list] for i in range(len(p_list[0]))]]
-		means = [np.mean(attr) for attr in [[p_val[i] for p_val in p_list] for i in range(len(p_list[0]))]]
-		#else:
-		#	mins = [min(attr) for attr in [[p_val[i] for p_val in sigs] for i in range(len(sigs[0]))]]
-		#	maxs = [max(attr) for attr in [[p_val[i] for p_val in sigs] for i in range(len(sigs[0]))]]
-		#	means = [np.mean(attr) for attr in [[p_val[i] for p_val in sigs] for i in range(len(sigs[0]))]]
-		print(mins)
-		print(maxs)
-		print([maxp-minp for maxp,minp in zip(maxs,mins)])
-		print(means)
-		print('=======================')
-		print('Integrating sigmoids...')
-		#intsigs = {p_id: 1.-integrate_sigmoid(sigs[p_id],N) for p_id in sigs}
-		#intsig_res = [[new_data_dict[p_id][0],1.-integrate_sigmoid(sigs[p_id],N),new_data_dict[p_id][1],p_id] for p_id in sigs]
-		#intsig_res = [[new_data_dict[p_id][0],new_data_dict[p_id][1],inv_sigmoid(0.5,sigs[p_id][0],sigs[p_id][1],sigs[p_id][2],sigs[p_id][3]),p_id] for p_id in id_list]
-		if mode == 'dict':
-			intsig_res = [[new_data_dict[p_id][0],new_data_dict[p_id][1],inv_sigmoid(0.5,(sigs[p_id][0],sigs[p_id][1],sigs[p_id][2],sigs[p_id][3])),p_id] for p_id in id_list]
-		else:
-			intsig_res = [[data_dict[p_id][0],skill,inv_sigmoid(0.5,(sig[0],sig[1],sig[2],sig[3])),p_id] for skill,sig,p_id in zip(new_data,sigs,id_list)]
-		intsig_res = sorted(intsig_res,key=lambda l: l[1])
-		intsigs = {intsig[-1]: intsig[:-1] for intsig in intsig_res}
-		if disp_size <= len(intsig_res):
-			intsig_res = intsig_res[:disp_size]
-		print('---------------------------------------------')
-		print('{:<21.21}'.format('Tag'),'{:<7.7}'.format('Intsig'),'{:<7.7}'.format('Y-int'),'Player ID')
-		print('---------------------------------------------')
-		for intsig_line in intsig_res:
-			print('{:<21.21}'.format(str(intsig_line[0])),'{:<7.7}'.format(str(round(intsig_line[1],4))),'{:<7.7}'.format(str(round(intsig_line[2],4))),intsig_line[3])
-		#print(sigs[int(intsig_line[3])])
-		#print(len([opp_id for opp_id in winps[int(intsig_line[3])]]))
+		# cannot print results if no players in db
+		if len(p_list) > 0:
+			mins = [min(attr) for attr in [[p_val[i] for p_val in p_list] for i in range(len(p_list[0]))]]
+			maxs = [max(attr) for attr in [[p_val[i] for p_val in p_list] for i in range(len(p_list[0]))]]
+			means = [np.mean(attr) for attr in [[p_val[i] for p_val in p_list] for i in range(len(p_list[0]))]]
+			#else:
+			#	mins = [min(attr) for attr in [[p_val[i] for p_val in sigs] for i in range(len(sigs[0]))]]
+			#	maxs = [max(attr) for attr in [[p_val[i] for p_val in sigs] for i in range(len(sigs[0]))]]
+			#	means = [np.mean(attr) for attr in [[p_val[i] for p_val in sigs] for i in range(len(sigs[0]))]]
+			print('=======================')
+			print(mins)
+			print(maxs)
+			print([maxp-minp for maxp,minp in zip(maxs,mins)])
+			print(means)
+			print('=======================')
+			print('Integrating sigmoids...')
+			#intsigs = {p_id: 1.-integrate_sigmoid(sigs[p_id],N) for p_id in sigs}
+			#intsig_res = [[new_data_dict[p_id][0],1.-integrate_sigmoid(sigs[p_id],N),new_data_dict[p_id][1],p_id] for p_id in sigs]
+			#intsig_res = [[new_data_dict[p_id][0],new_data_dict[p_id][1],inv_sigmoid(0.5,sigs[p_id][0],sigs[p_id][1],sigs[p_id][2],sigs[p_id][3]),p_id] for p_id in id_list]
+			if mode == 'dict':
+				intsig_res = [[new_data_dict[p_id][0],new_data_dict[p_id][1],inv_sigmoid(0.5,(sigs[p_id][0],sigs[p_id][1],sigs[p_id][2],sigs[p_id][3])),p_id] for p_id in id_list]
+			else:
+				intsig_res = [[data_dict[p_id][0],skill,inv_sigmoid(0.5,(sig[0],sig[1],sig[2],sig[3])),p_id] for skill,sig,p_id in zip(new_data,sigs,id_list)]
+			intsig_res = sorted(intsig_res,key=lambda l: l[1])
+			intsigs = {intsig[-1]: intsig[:-1] for intsig in intsig_res}
+			if disp_size <= len(intsig_res):
+				intsig_res = intsig_res[:disp_size]
+			print('---------------------------------------------')
+			print('{:<21.21}'.format('Tag'),'{:<7.7}'.format('Intsig'),'{:<7.7}'.format('Y-int'),'Player ID')
+			print('---------------------------------------------')
+			for intsig_line in intsig_res:
+				print('{:<21.21}'.format(str(intsig_line[0])),'{:<7.7}'.format(str(round(intsig_line[1],4))),'{:<7.7}'.format(str(round(intsig_line[2],4))),intsig_line[3])
+			#print(sigs[int(intsig_line[3])])
+			#print(len([opp_id for opp_id in winps[int(intsig_line[3])]]))
 	#plot_skills(data_dict,id_list)
 	#plot_skills(new_data_dict,id_list)
 	#plot_skills(intsigs,id_list,plot_tags=True)
@@ -410,7 +425,7 @@ def calc_simbrack(dicts,max_iter=1000,min_req=3,rank_size=None,disp_size=100,mod
 	#plot_winprobs(dicts,new_data_dict,winps,sigs,jtails_id,plot_tags=True)
 
 # NEEDS TO BE TWEAKED: Just getting it functional for now
-def simbrack(data,winps,chis,id_list,max_iter=1000,learn_rate=0.75,beta=0.9,tol=0.0001,simulate_bracket=True,score_intsigs=True,learn_decay=True,simple_sigmoid=False,mode='array'):
+def simbrack(data,winps,chis,id_list,max_iter=1000,v=0,learn_rate=0.75,beta=0.9,tol=0.0001,simulate_bracket=True,score_intsigs=True,learn_decay=True,simple_sigmoid=False,mode='array'):
 	N = float(len(data.keys()))
 	n = float(len(id_list))
 	print("N:",N," n:",n)
@@ -442,7 +457,8 @@ def simbrack(data,winps,chis,id_list,max_iter=1000,learn_rate=0.75,beta=0.9,tol=
 
 	all_converged = False
 	while count < max_iter and not all_converged:
-		#print('iter:',count)
+		if v >= 5:
+			print('iter:',count)
 		count += 1
 		if mode == 'dict':
 			wins = {p_id: 0 for p_id in id_list}
@@ -574,6 +590,72 @@ def simbrack(data,winps,chis,id_list,max_iter=1000,learn_rate=0.75,beta=0.9,tol=
 		# data(t) -> data(t-1)
 		#old_data = dcopy(new_data)
 	return new_skills,sigs,data_history
+
+# updates all sigmoids if a new ranking period has come to pass
+# if era <= 0, updates after each tourney
+def update_sigmoids(dicts,t_info,ranking_period=2,max_iterations=1000,v=0):
+	tourneys,ids,p_info,records,skills = dicts
+	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size = t_info
+	simrank_history = skills['iago']
+	simrank_deltas = skills['iago_del']
+	sigmoid_history = skills['iago_sig']
+	date_list = sorted([tourneys[t_id]['date'] for t_id in tourneys if 'date' in tourneys[t_id]],key=lambda t: date(t[0],t[1],t[2]))
+	if len(date_list) > 0:
+		last_date = date_list[-1]
+		first_date = date_list[0]
+
+		num_months = lambda d: 12*(d[0]-2000)+d[1]
+		era = lambda d: int(num_months(d)/ranking_period)-int(num_months(first_date)/ranking_period) if ranking_period > 0 else date(d[0],d[1],d[2])
+		## if its a new ranking period
+		#if (t_date[1]-last_date[1])%12 >= ranking_period:
+		if era(t_date) > era(last_date):
+			if v >= 4:
+				print('Updating Sigmoids...')
+			simbrack_res = calc_simbrack(dicts,plot_ranks=False,max_iter=max_iterations,seed='dict',print_res=True,verbosity=v)
+			#simbrack_res = calc_simbrack(dicts,plot_ranks=False,max_iter=max_iterations,seed='elo',print_res=True)
+			for abs_id in p_info:
+				# if in id_list
+				if abs_id in simbrack_res[3]:
+					skill_rank = simbrack_res[0][abs_id][1]
+					if abs_id in simrank_history:
+						simrank_deltas[abs_id][t_id] = abs(skill_rank - simrank_history[abs_id][p_info[abs_id]['last_event']])
+					else:
+						simrank_history[abs_id] = {}
+						simrank_deltas[abs_id] = {}
+						simrank_deltas[abs_id][t_id] = 0.
+						sigmoid_history[abs_id] = {}
+					simrank_history[abs_id][t_id] = skill_rank
+					sigmoid_history[abs_id][t_id] = simbrack_res[2][abs_id]
+					p_info[abs_id]['iagorank'] = skill_rank
+					p_info[abs_id]['iagorank_sig'] = simbrack_res[2][abs_id]
+				# otherwise stay the same (unrankable player)
+				else:
+					if p_info[abs_id]['last_event'] == t_id:
+						simrank_history[abs_id][t_id] = p_info[abs_id]['iagorank']
+						sigmoid_history[abs_id][t_id] = p_info[abs_id]['iagorank_sig']
+					else:
+						simrank_history[abs_id][t_id] = simrank_history[abs_id][p_info[abs_id]['last_event']]
+						sigmoid_history[abs_id][t_id] = sigmoid_history[abs_id][p_info[abs_id]['last_event']]
+					simrank_deltas[abs_id][t_id] = 0.
+			return simbrack_res
+		# everyone stays the same / is "unrankable" if the ranking period isn't changed
+		else:
+			for abs_id in p_info:
+				if p_info[abs_id]['last_event'] == t_id:
+					simrank_history[abs_id][t_id] = p_info[abs_id]['iagorank']
+					sigmoid_history[abs_id][t_id] = p_info[abs_id]['iagorank_sig']
+				else:
+					simrank_history[abs_id][t_id] = simrank_history[abs_id][p_info[abs_id]['last_event']]
+					sigmoid_history[abs_id][t_id] = sigmoid_history[abs_id][p_info[abs_id]['last_event']]
+				simrank_deltas[abs_id][t_id] = 0.
+			return False
+	# everyone starts with starting values if it's the first tourney of the DB
+	else:
+		for abs_id in p_info:
+			simrank_history[abs_id][t_id] = p_info[abs_id]['iagorank']
+			sigmoid_history[abs_id][t_id] = p_info[abs_id]['iagorank_sig']
+			simrank_deltas[abs_id][t_id] = 0.
+		return False
 
 ## SIMBRACK HELPER UTILS
 # returns the h2h record for two given players (from p1's perspective)
@@ -822,6 +904,12 @@ def sigmoid(x,x0,y0,c,k):
 	#y = c / (1. + np.exp(-k*(x-x0))) + y0
 	y = c*expit(k*10.*(x-x0)) + y0
 	return y
+def alt_sigmoid(x,x0,g,c,k):
+	#x0,y0,c,k=p
+	#print x0,y0,c,k
+	#y = c / (1. + np.exp(-k*(x-x0))) + y0
+	y = c*expit(k*10.*(x-x0)) + g*(1.-c)
+	return y
 def inner_sigmoid(x,x0,k):
 	y = expit(k*10.*(x-x0))
 	return y
@@ -1019,7 +1107,9 @@ def fitsig(skill_ranks,data,winps,chis,id_list,old_guess=None,method='curve_fit'
 		v_b = [[-1.,1.],[0.,10.]]
 		#v_b_2 = [[-1.,1.],[0.,1.],[0.,10.]]
 	else:
-		v_b = [[-1.,1.],[-1.,1.],[0.,1.],[0.,20.]]
+		#v_b = [[-1.,1.],[-1.,1.],[0.,1.],[0.,20.]]
+		v_b = get_fitsig_bounds()
+		#v_b = get_fitsig_bounds(g=True)
 	# v_b = [[-1.,1.],[-1.,1.],[0.,3.],[0.,10.]]
 
 	if mode == 'array':
@@ -1121,6 +1211,14 @@ def sub_fitsig(p_id,x,y,s,n_i,p0,v_b,dats,params):
 # fit multiple sigmoids (DEPRECATED)
 def old_fitsigs(skill_ranks,data,winps,chis,p_ids,old_guess=None,method='curve_fit',simple_sigmoid=False,scipy_sigmoid=False,three_pass=False):
 	return np.array([fitsig(skill_ranks,data,winps,chis,p_id,p0,method,simple_sigmoid,scipy_sigmoid,three_pass) for p_id,p0 in zip(p_ids,old_guess)],dtype=np.float64)
+
+def get_fitsig_bounds(g=False):
+	if g:
+		# x0, g, c, k
+		return 
+	else:
+		# x0, y0, c, k
+		return [[-1.,1.],[-1.,1.],[0.,1.],[0.,20.]]
 
 if __name__ == "__main__":
 

@@ -355,6 +355,7 @@ def read_sets(data,phase_data,wins,losses,xpath,sets):
 		sets[set_id]['l_id'] = l_id
 		sets[set_id]['w_dq'] = w_DQ
 		sets[set_id]['l_dq'] = l_DQ
+		sets[set_id]['t_id'] = wave_data[6]
 		#sets[set_id]['games'] = None
 
 		if not is_bye:
@@ -439,8 +440,6 @@ def read_sets(data,phase_data,wins,losses,xpath,sets):
 		else:
 			if v >= 7:
 				print(set_id,match['phaseGroupId'],match['identifier'],['bye','bye'],[e1,e2])
-
-
 
 	# populate overall final bracket placements if not already provided
 	for x_id in sorted([x['entrantId'] for x in data['entities']['seeds'] if type(xpath[x['entrantId']][0]) is list],key=lambda p_id: xpath[p_id][0][0]):
@@ -553,7 +552,7 @@ def read_phases(tourney):
 
 		for w in tdata['entities']['phase']:
 			if w['id'] not in waves:
-				waves[w['id']] = [w['name'],w['groupCount'],w['phaseOrder'],w['eventId'],w['typeId'],w['isExhibition']]
+				waves[w['id']] = [w['name'],w['groupCount'],w['phaseOrder'],w['eventId'],w['typeId'],w['isExhibition'],t_id]
 		# sort groups to be read in proper bracket structure order		
 		group_ids = sorted(group_ids,key=lambda l: waves[l[1]][2])
 		group_ids = [group_id[0] for group_id in group_ids]

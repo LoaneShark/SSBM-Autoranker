@@ -266,8 +266,9 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 					skills['glicko'][abs_id] = {}
 					skills['glicko_del'][abs_id] = {}
 				if 'iagorank' not in p_info[abs_id]:
-					p_info[abs_id]['iagorank'] = 1.
-					p_info[abs_id]['iagorank_sig'] = (0.,0.,1.,4.)
+					#p_info[abs_id]['iagorank'] = 1.
+					p_info[abs_id]['iagorank'] = 0.5
+					p_info[abs_id]['iagorank_sig'] = (0.5,0.,1.,4.)
 					skills['iago'][abs_id] = {}
 					skills['iago_del'][abs_id] = {}
 					skills['iago_sig'][abs_id] = {}
@@ -288,8 +289,9 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 		#print(tourneys[t_id])
 	return True
 
-# stores win/loss records
-def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_update_sigmoids=True):
+# stores win/loss records, updates player skills/rankings if enabled
+# ranking period in months (only used by sigmoid ranking)
+def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_update_sigmoids=True,ranking_period=2):
 	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size = t_info
 	tourneys,ids,p_info,records,skills = dicts
 	old_p_info = dcopy(p_info)
@@ -396,9 +398,9 @@ def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_up
 						simrank_history[abs_id][t_id] = p_info[abs_id]['iagorank']
 						sigmoid_history[abs_id][t_id] = p_info[abs_id]['iagorank_sig']
 					else:
-						glicko_history[abs_id][t_id] = glicko_history[abs_id][p_info['last_event']]
-						simrank_history[abs_id][t_id] = simrank_history[abs_id][p_info['last_event']]
-						sigmoid_history[abs_id][t_id] = sigmoid_history[abs_id][p_info['last_event']]
+						glicko_history[abs_id][t_id] = glicko_history[abs_id][p_info[abs_id]['last_event']]
+						simrank_history[abs_id][t_id] = simrank_history[abs_id][p_info[abs_id]['last_event']]
+						sigmoid_history[abs_id][t_id] = sigmoid_history[abs_id][p_info[abs_id]['last_event']]
 					glicko_deltas[abs_id][t_id] = (0.,0.,0.)
 					simrank_deltas[abs_id][t_id] = 0.
 					performance_history[abs_id][t_id] = 0.
@@ -415,30 +417,11 @@ def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_up
 			print('Updating Glicko...')
 		update_glicko(dicts,glicko_matches,t_info,tau=glicko_tau)
 		if to_update_sigmoids:
-			if v >= 4:
-				print('Updating Sigmoids...')
-			simbrack_res = calc_simbrack(dicts,plot_ranks=False,max_iter=500)
-			for abs_id in p_info:
-				# if in id_list
-				if abs_id in simbrack_res[3]:
-					skill_rank = simbrack_res[0][abs_id][1]
-					if abs_id in simrank_history:
-						simrank_deltas[abs_id][t_id] = abs(skill_rank - simrank_history[abs_id][p_info[abs_id]['last_event']])
-					else:
-						simrank_history[abs_id] = {}
-						simrank_deltas[abs_id] = {}
-						simrank_deltas[abs_id][t_id] = 0.
-						sigmoid_history[abs_id] = {}
-					simrank_history[abs_id][t_id] = skill_rank
-					sigmoid_history[abs_id][t_id] = simbrack_res[2][abs_id]
-				else:
-					if p_info[abs_id]['last_event'] == t_id:
-						simrank_history[abs_id][t_id] = p_info[abs_id]['iagorank']
-						sigmoid_history[abs_id][t_id] = p_info[abs_id]['iagorank_sig']
-					else:
-						simrank_history[abs_id][t_id] = simrank_history[abs_id][p_info[abs_id]['last_event']]
-						sigmoid_history[abs_id][t_id] = sigmoid_history[abs_id][p_info[abs_id]['last_event']]
-					simrank_deltas[abs_id][t_id] = 0.
+			#update_sigmoids(dicts,t_info,max_iterations=500,v=v,ranking_period=ranking_period)
+			simbrack_res = update_sigmoids(dicts,t_info,max_iterations=1000,v=v,ranking_period=0)
+			if simbrack_res:
+				ISR = {'params': simbrack_res}
+				save_dict(ISR,'ISR_%d_%d_%d'%(db_game,db_year,db_year_count),None,'..\\lib')
 
 	return True
 
@@ -452,7 +435,8 @@ def store_tourney(slug,t_info,group_names,dicts):
 	tourneys[t_id]['shortSlug'] = t_ss
 	tourneys[t_id]['type'] = t_type
 	tourneys[t_id]['date'] = t_date
-	tourneys[t_id]['region'] = t_region
+	#tourneys[t_id]['region'] = t_region
+	tourneys[t_id]['region'] = calc_region(country=t_region[1],state=t_region[0])
 	tourneys[t_id]['numEntrants'] = t_size
 	if 'slugs' not in tourneys:
 		tourneys['slugs'] = {}
