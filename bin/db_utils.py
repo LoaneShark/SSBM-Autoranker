@@ -266,8 +266,8 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 					skills['glicko'][abs_id] = {}
 					skills['glicko_del'][abs_id] = {}
 				if 'iagorank' not in p_info[abs_id]:
-					#p_info[abs_id]['iagorank'] = 1.
-					p_info[abs_id]['iagorank'] = 0.5
+					p_info[abs_id]['iagorank'] = 1.
+					#p_info[abs_id]['iagorank'] = 0.5
 					p_info[abs_id]['iagorank_sig'] = (0.5,0.,1.,4.)
 					skills['iago'][abs_id] = {}
 					skills['iago_del'][abs_id] = {}
@@ -418,7 +418,7 @@ def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_up
 		update_glicko(dicts,glicko_matches,t_info,tau=glicko_tau)
 		if to_update_sigmoids:
 			#update_sigmoids(dicts,t_info,max_iterations=500,v=v,ranking_period=ranking_period)
-			simbrack_res = update_sigmoids(dicts,t_info,max_iterations=1000,v=v,ranking_period=0)
+			simbrack_res = update_sigmoids(dicts,t_info,max_iterations=1000,v=v,ranking_period=2,sig='alt')
 			if simbrack_res:
 				ISR = {'params': simbrack_res}
 				save_dict(ISR,'ISR_%d_%d_%d'%(db_game,db_year,db_year_count),None,'..\\lib')

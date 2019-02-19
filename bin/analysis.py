@@ -158,9 +158,9 @@ def main():
 	if to_calc_simbrack:
 		array_t = timer()
 		if game_idx == 1:
-			iagorank_params = calc_simbrack(dicts,min_req=min_act,max_iter=500,learn_decay=True,disp_size=300,verbosity=5,print_res=True,plot_ranks=False,mode='array',seed='placing')
+			iagorank_params = calc_simbrack(dicts,min_req=min_act,max_iter=1000,learn_decay=False,disp_size=300,verbosity=5,print_res=True,plot_ranks=False,mode='array',seed='elo',sig_mode='alt')
 		else:
-			iagorank_params = calc_simbrack(dicts,min_req=min_act,max_iter=1000,learn_decay=False,disp_size=300,verbosity=5,print_res=True,plot_ranks=False,mode='array',seed='dict')
+			iagorank_params = calc_simbrack(dicts,min_req=min_act,max_iter=500,learn_decay=False,disp_size=300,verbosity=5,print_res=True,plot_ranks=False,mode='array',seed='elo',sig_mode='alt')
 		array_time = timer()-array_t
 		print('Array time elapsed:','{:.3f}'.format(array_time) + ' s')
 		ISR = {'params': iagorank_params}
@@ -174,91 +174,106 @@ def main():
 	iter_num = len(data_hist[id_list[0]])
 	#print('Dict time elapsed:','{:.3f}'.format(dict_time) + ' s')
 
-	if game_idx == 1:
+	if game_idx == 1 and 1 > 0:
 		# plot mango
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1000,plot_tags=True)
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1000,plot_tags=True,sig_mode='alt')
 		plot_hist(data_hist,p_id=1000,plot_delta=True)
 		# plot hbox
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1004,plot_tags=True)
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1004,plot_tags=True,sig_mode='alt')
 		plot_hist(data_hist,p_id=1004,plot_delta=True)
 		# plot ibdw
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,19554,plot_tags=True)
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,19554,plot_tags=True,sig_mode='alt')
 		plot_hist(data_hist,p_id=19554,plot_delta=True)
 		# plot gahtzu
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1077,plot_tags=True)
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1077,plot_tags=True,sig_mode='alt')
 		plot_hist(data_hist,p_id=1077,plot_delta=True)
-		# plot army
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,23458,plot_tags=True)
-		plot_hist(data_hist,p_id=23458,plot_delta=True)
-		if 1 < 0:
-			'''# plot surfero
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,16054,plot_tags=True)
+		# plot jerry
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,32097,plot_tags=True,sig_mode='alt')
+		plot_hist(data_hist,p_id=32097,plot_delta=True)
+		# plot absentpage
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,37339,plot_tags=True,sig_mode='alt')
+		plot_hist(data_hist,p_id=37339,plot_delta=True)
+		# plot trif
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,22900,plot_tags=True,sig_mode='alt')
+		plot_hist(data_hist,p_id=22900,plot_delta=True)
+		if 1 > 0:
+			# plot dizz
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,3915,plot_tags=True,sig_mode='alt')
+			plot_hist(data_hist,p_id=3915,plot_delta=True)
+			# plot colbol
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1009,plot_tags=True,sig_mode='alt')
+			plot_hist(data_hist,p_id=1009,plot_delta=True)
+			# plot surfero
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,16054,plot_tags=True,sig_mode='alt')
 			plot_hist(data_hist,p_id=16054,plot_delta=True)
 			# plot ZENT
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,10905,plot_tags=True)
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,10905,plot_tags=True,sig_mode='alt')
 			plot_hist(data_hist,p_id=10905,plot_delta=True)
-			# plot Bread
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,597196,plot_tags=True)
-			plot_hist(data_hist,p_id=597196,plot_delta=True)
-			# plot kla
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,153070,plot_tags=True)
-			plot_hist(data_hist,p_id=153070,plot_delta=True)
-			# plot FriedLizard
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,262266,plot_tags=True)
-			plot_hist(data_hist,p_id=262266,plot_delta=True)
-			# plot Katsu
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,126476,plot_tags=True)
-			plot_hist(data_hist,p_id=126476,plot_delta=True)'''
+			# plot Mova
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,6176,plot_tags=True,sig_mode='alt')
+			plot_hist(data_hist,p_id=6176,plot_delta=True)
+			# plot Jagerbombsoldier
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,6653,plot_tags=True,sig_mode='alt')
+			plot_hist(data_hist,p_id=6653,plot_delta=True)
+			# plot AKO
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,19677,plot_tags=True,sig_mode='alt')
+			plot_hist(data_hist,p_id=19677,plot_delta=True)
+			# plot Neeco
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,23466,plot_tags=True,sig_mode='alt')
+			plot_hist(data_hist,p_id=23466,plot_delta=True)
+			# plot Loscar
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,44674,plot_tags=True,sig_mode='alt')
+			plot_hist(data_hist,p_id=44674,plot_delta=True)
 			'''# plot Funke Master Flex
 			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,67075,plot_tags=True)
 			plot_hist(data_hist,p_id=67075,plot_delta=True)
 			# plot ShineSpike
 			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,60617,plot_tags=True)
 			plot_hist(data_hist,p_id=60617,plot_delta=True)'''
-
+			'''
 			# plot Offendors
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,23466,plot_tags=True)
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,23466,plot_tags=True,sig_mode='alt')
 			plot_hist(data_hist,p_id=23466,plot_delta=True)
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,3939,plot_tags=True)
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,3939,plot_tags=True,sig_mode='alt')
 			plot_hist(data_hist,p_id=3939,plot_delta=True)
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,565971,plot_tags=True)
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,565971,plot_tags=True,sig_mode='alt')
 			plot_hist(data_hist,p_id=565971,plot_delta=True)
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,33499,plot_tags=True)
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,33499,plot_tags=True,sig_mode='alt')
 			plot_hist(data_hist,p_id=33499,plot_delta=True)
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,44674,plot_tags=True)
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,44674,plot_tags=True,sig_mode='alt')
 			plot_hist(data_hist,p_id=44674,plot_delta=True)
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,411867,plot_tags=True)
-			plot_hist(data_hist,p_id=411867,plot_delta=True)
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,411867,plot_tags=True,sig_mode='alt')
+			plot_hist(data_hist,p_id=411867,plot_delta=True)'''
 
 			#print([p_id for p_id in id_list if sigmoids[p_id][2] > 1.1])
 
 	if (game_idx == 3 or game_idx == 1386) and 1 > 0:
 		# plot void
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,15768,plot_tags=True)
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,15768,plot_tags=True,sig_mode='alt')
 		plot_hist(data_hist,p_id=15768,plot_delta=True)
 		# plot larry lurr
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,23277,plot_tags=True)
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,23277,plot_tags=True,sig_mode='alt')
 		plot_hist(data_hist,p_id=23277,plot_delta=True)
 		# plot samsora
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,7648,plot_tags=True)
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,7648,plot_tags=True,sig_mode='alt')
 		plot_hist(data_hist,p_id=7648,plot_delta=True)
+		# plot nairo
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,16104,plot_tags=True,sig_mode='alt')
+		plot_hist(data_hist,p_id=16104,plot_delta=True)
 		if game_idx == 1386:
 			# plot schrader the toolbag
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,432879,plot_tags=True)
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,432879,plot_tags=True,sig_mode='alt')
 			plot_hist(data_hist,p_id=432879,plot_delta=True)
 			# plot blank
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,57924,plot_tags=True)
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,57924,plot_tags=True,sig_mode='alt')
 			plot_hist(data_hist,p_id=57924,plot_delta=True)
-			# plot arikie
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,174902,plot_tags=True)
-			plot_hist(data_hist,p_id=174902,plot_delta=True)
 		# plot swedish delight (only for -ma 2)
 		if 1055 in id_list:
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1055,plot_tags=True)
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1055,plot_tags=True,sig_mode='alt')
 			plot_hist(data_hist,p_id=1055,plot_delta=True)
 		if 4465 in id_list:
 			# plot leffen
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,4465,plot_tags=True)
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,4465,plot_tags=True,sig_mode='alt')
 			plot_hist(data_hist,p_id=4465,plot_delta=True)
 
 	#return True
