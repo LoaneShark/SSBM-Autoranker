@@ -137,10 +137,12 @@ def get_best_performances(dicts,use_names=False,acc=3,scale_vals=False):
 
 	return best_perfs
 
-def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,skill_weight=False,use_icons=False,prune_sparse=True,save_figure=False):
+def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,skill_weight=False,label_mode='tens',use_icons=False,prune_sparse=True,save_figure=False):
 	tourneys,ids,p_info,records,skills = dicts
 	if id_list == None:
 		id_list = [p_id for p_id in records]
+	if label_mode not in ['ones','fives','tens','split']:
+		label_mode = 'tens'
 	yc_str = ''
 	if year_count > 0:
 		yc_str += '-'+str(year+year_count)
@@ -150,6 +152,8 @@ def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,skill_weigh
 	chars = load_dict('characters',None,'../lib')[int(game)]
 	char_n = len(chars.keys())
 	char_labels = np.array([chars[char_id] for char_id in chars],dtype='object')
+	# for skill-difference, 10-50k bins is ideal
+	n_bins = 25000
 	print(len(char_labels))
 	#return True
 	char_id_map = {c_id: i for i,c_id in enumerate([char_id for char_id in chars])}
@@ -162,7 +166,7 @@ def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,skill_weigh
 
 	print('Generating Matchup chart...')
 	# scan all relevant sets and import character data where available
-	char_h2h = np.zeros((char_n,char_n),dtype='object')
+	char_h2h = np.full((char_n,char_n,n_bins+1),None,dtype='object')
 	for p_id in id_list:
 		p_skill = p_info[p_id]['iagorank']
 		p_sets = records[p_id]['set_history']
@@ -179,86 +183,112 @@ def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,skill_weigh
 								if g_w_id != None and g_l_id != None:
 									g_w_char_id = char_id_map[sets[set_id]['games'][game_id]['characters'][g_w_id]]
 									g_l_char_id = char_id_map[sets[set_id]['games'][game_id]['characters'][g_l_id]]
-									w_skill_bin = int(p_info[ids['t_'+str(t_id)][g_w_id]]['iagorank'] * n_bins)
-									l_skill_bin = int(p_info[ids['t_'+str(t_id)][g_l_id]]['iagorank'] * n_bins)
-									char_h2h[g_w_char_id,g_l_char_id] += 1
+									w_skill = 1.-p_info[ids['t_'+str(t_id)][g_w_id]]['iagorank']
+									l_skill = 1.-p_info[ids['t_'+str(t_id)][g_l_id]]['iagorank']
+									# scale skill ratio so that even skilled players ~ 0.5, still in [0,1]
+									w_skill_bin = int(((w_skill-l_skill)/2. + 0.5)*n_bins)
+									l_skill_bin = int(((l_skill-w_skill)/2. + 0.5)*n_bins)
+									'''if l_skill-w_skill < -0.75:
+										print(w_skill)
+										print(l_skill)
+										print('UPSET: %s (%s) over %s (%s) at %s'%(p_info[ids['t_'+str(t_id)][g_w_id]]['tag'],char_labels[g_w_char_id],p_info[ids['t_'+str(t_id)][g_l_id]]['tag'],char_labels[g_l_char_id],tourneys[t_id]['name']))
+									'''
+									#w_skill_bin = int(w_skill * n_bins)
+									#l_skill_bin = int(l_skill * n_bins)
+									#skill_ratio_bin = int(skill_diff * n_bins)
+									if char_h2h[g_w_char_id,g_l_char_id,w_skill_bin] == None:
+										char_h2h[g_w_char_id,g_l_char_id,w_skill_bin] = [0,0]
+									if char_h2h[g_l_char_id,g_w_char_id,l_skill_bin] == None:
+										char_h2h[g_l_char_id,g_w_char_id,l_skill_bin] = [0,0]
+									char_h2h[g_w_char_id,g_l_char_id,w_skill_bin][0] += 1
+									char_h2h[g_l_char_id,g_w_char_id,l_skill_bin][1] += 1
 
 	# change h2h records to win probabilities in [0,1]
 	for char_idx in range(char_n):
-		for opp_idx in range(char_idx,char_n):
-			n_games = char_h2h[char_idx,opp_idx]+char_h2h[opp_idx,char_idx]
-			if n_games <= 0:
-				char_h2h[char_idx,opp_idx] = -1.
-				char_h2h[opp_idx,char_idx] = char_h2h[char_idx,opp_idx]
-			else:
-				char_h2h[char_idx,opp_idx] /= n_games
-				char_h2h[opp_idx,char_idx] = 1. - char_h2h[char_idx,opp_idx]
-			# store ratio as tuple with uncertainty
-			char_h2h[char_idx,opp_idx] = [char_h2h[char_idx,opp_idx],1./log(float(n_games),2)]
-			
-
-	# copy into dict format (for plotting winprobs/sigmoids)
-	char_h2h_dict = {char_idx: {opp_idx: char_h2h[char_idx,opp_idx][0] for opp_idx in range(char_n) if char_h2h[char_idx,opp_idx] != None} for char_idx in range(char_n)}
-
-	char_matchups = []
-	for char_idx in range(char_n):
-		xs = []
-		ys = []
-		ss = []
 		for opp_idx in range(char_n):
-			ratio = char_h2h[char_idx,opp_idx][0]
-			if ratio >= 0.:
-				xs.append(float(opp_idx)/float(n_bins))
-				ys.append(ratio)
-				ss.append(char_h2h[char_idx,opp_bin][1])
-			# remove sigmas from winprobs array so that it can be passed to plot_winprobs
-			char_h2h[char_idx,opp_bin] = float(opp_bin)/float(n_bins)
+			for bin_id in range(n_bins+1):
+				#n_games = char_h2h[char_idx,opp_idx]+char_h2h[opp_idx,char_idx]
+				if char_h2h[char_idx,opp_idx,bin_id] == None:
+					n_games = 0
+				else:
+					n_games = sum(char_h2h[char_idx,opp_idx,bin_id])
+				if n_games <= 0:
+					char_h2h[char_idx,opp_idx,bin_id] = -1.
+					#char_h2h[opp_idx,char_idx,bin_id] = char_h2h[char_idx,opp_idx,bin_id]
+					m_sigma = 0.
+				else:
+					char_h2h[char_idx,opp_idx,bin_id] = char_h2h[char_idx,opp_idx,bin_id][0] / n_games
+					#char_h2h[opp_idx,char_idx,bin_id] = 1. - char_h2h[char_idx,opp_idx,bin_id]
+					if n_games <= 2:
+						m_sigma = 0.8
+					else:
+						m_sigma = 1./log(float(n_games),2)
+				# store ratio as 2-long list with uncertainty
+				char_h2h[char_idx,opp_idx,bin_id] = [char_h2h[char_idx,opp_idx,bin_id],m_sigma]
+			
+	# copy into dict format (for plotting winprobs/sigmoids)
+	char_h2h_dict = {char_idx: {opp_idx: {bin_id: char_h2h[char_idx,opp_idx,bin_id][0] for bin_id in range(n_bins+1) if char_h2h[char_idx,opp_idx,bin_id] != None} \
+								for opp_idx in range(char_n)} \
+								for char_idx in range(char_n)}
 
-		# fit sigmoid for each character across their histogram
-		# must have more than 3 bins
-		if len(xs) > 3:
-			x = np.array(xs)
-			y = np.array(ys)
-			s = np.array(ss)
+	char_matchups = np.zeros((char_n,char_n))
+	char_sigs = np.full((char_n,char_n),None,dtype='object')
+	for char_idx in range(char_n):
+		for opp_idx in range(char_n):
+			xs = [0.,1.]
+			ys = [0.,1.]
+			ss = [0.75,0.75]
+			for bin_id in range(n_bins+1):
+				ratio = char_h2h[char_idx,opp_idx,bin_id][0]
+				if ratio >= 0.:
+					xs.append(float(bin_id+0.5)/float(n_bins))
+					ys.append(ratio)
+					ss.append(char_h2h[char_idx,opp_idx,bin_id][1])
+				# remove sigmas from winprobs array so that it can be passed to plot_winprobs
+				char_h2h[char_idx,opp_idx,bin_id] = float(bin_id)/float(n_bins)
 
-			#print(char_idx,char_labels[char_idx])
-			#print(len(x),len(y),len(s))
-			#print(x)
-			#print(y)
-			#print(s)
+			# fit sigmoid for each character matchup across their histogram
+			# must have more than 3 bins
+			if len(xs) > 5:
+				x = np.array(xs)
+				y = np.array(ys)
+				s = np.array(ss)
 
-			v_b = get_fitsig_bounds(g=True)
-			p0 = get_fitsig_guesses(g=True)
-			try:
-				p,cov = sp.optimize.curve_fit(alt_sigmoid,x,y,p0=p0,sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf',tr_solver='lsmr')
+				v_b = get_fitsig_bounds(g=True)
+				p0 = get_fitsig_guesses(g=True)
+				try:
+					p,cov = sp.optimize.curve_fit(alt_sigmoid,x,y,p0=p0,sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf',tr_solver='lsmr')
 
-				char_skills.append(1.-integrate_alt_sigmoid([p],n_bins)[0])
-			except RuntimeError:
-				plot_winprobs(char_h2h[char_idx],char_h2h_dict,None,range(n_bins+1),char_idx,plot_rank=False,plot_sigmoid=False,mode='array',sig_mode='alt')
-				char_skills.append('N/A')
-		else:
-			#print(char_idx,char_labels[char_idx])
-			#print(len(xs))
-			char_skills.append('N/A')
-	#np.set_printoptions(threshold=np.inf)
-	#print(char_h2h)
+					char_matchups[char_idx,opp_idx] = integrate_alt_sigmoid([p],n_bins)[0]
+					char_sigs[char_idx,opp_idx] = p
+				except RuntimeError:
+					#plot_winprobs(char_h2h[char_idx][opp_idx],char_h2h_dict[char_idx],None,range(n_bins+1),opp_idx,plot_rank=False,plot_sigmoid=False,char_data=(char_idx,char_labels),mode='array',sig_mode='alt')
+					##plot_winprobs(char_h2h[char_idx],char_h2h_dict[char_idx],None,range(n_bins+1),char_idx,plot_rank=False,plot_sigmoid=False,mode='array',sig_mode='alt')
+					char_matchups[char_idx,opp_idx] = -1.
+			else:
+				char_matchups[char_idx,opp_idx] = -1.
+	
+							#  peach/fox     falco/fox    fox/puff   fox dittos
+	'''for char_idx,opp_idx in [(5,17),(17,5), (4,5),(5,4), (5,8),(8,5), (5,5)]:
+		plot_matchup_sig = True
+		if char_sigs[char_idx,opp_idx] is None:
+			plot_matchup_sig = False
+		plot_winprobs(char_h2h[char_idx][opp_idx],char_h2h_dict[char_idx],char_sigs[char_idx],range(n_bins+1),opp_idx,plot_rank=False,plot_sigmoid=plot_matchup_sig,char_data=(char_idx,char_labels),mode='array',sig_mode='alt')
+	'''
+
 	# prune out unwanted characters (not enough data to rank) (toggleable)
 	if prune_sparse:
 		#remove zero rows & columns from the chart
-		#print(char_h2h.shape)
-		char_labels = char_labels[~np.all(char_h2h == -1.,axis=1)]
+		char_labels = char_labels[~np.all(char_matchups == -1.,axis=1)]
 		if use_icons:
-			char_icons = char_icons[~np.all(char_h2h == -1.,axis=1)]
-		char_h2h = char_h2h[~np.all(char_h2h == -1.,axis=1)]
-		#print(char_h2h.shape)
-		char_h2h = char_h2h[:, ~np.all(char_h2h == -1.,axis=0)]
-		#print(char_h2h.shape)
-		char_n = char_h2h.shape[0]
-		#print(char_n)
+			char_icons = char_icons[~np.all(char_matchups == -1.,axis=1)]
+		char_matchups = char_matchups[~np.all(char_matchups == -1.,axis=1)]
+		char_matchups = char_matchups[:, ~np.all(char_matchups == -1.,axis=0)]
+		char_n = char_matchups.shape[0]
 
 	## create plot
 	fig,ax = plt.subplots(1,1)
-	ax.matshow(char_h2h)
+	ax.matshow(char_matchups)
 	## set labels and icons
 	#ax.set_xticks(np.arange(char_n))
 	#ax.set_yticks(np.arange(char_n))
@@ -271,9 +301,27 @@ def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,skill_weigh
 	## annotate data
 	for i in range(char_n):
 		for j in range(char_n):
-			if char_h2h[i,j] >= 0.:
-				text = ax.text(j, i, int(10*char_h2h[i, j]), ha='center', va='center')
-				#continue
+			if char_matchups[i,j] >= 0.:
+				mu = round(100.*char_matchups[i, j])
+				if label_mode == 'tens':
+					# round to nearest multiple of 10 (display tens digit only)
+					mu = round(mu/10.)
+				if label_mode == 'fives':
+					# round to nearest multiple of 5
+					mu_t = floor(mu/10.)
+					mu_o = mu-10.*mu_t
+					if mu_o <= 2.5:
+						mu_o = 0
+					elif mu_o <= 7.5:
+						mu_o = 5
+					else:
+						mu_o = 0
+						mu_t += 1
+					mu = mu_t*10 + mu_o
+				if label_mode == 'split':
+					# round to MU splits (0 is even, +1/-1 ~ 60/40, +2/-2 ~ 70/30, etc.)
+					mu = round(mu/10.) - 5
+				text = ax.text(j, i, int(mu), ha='center', va='center')
 	# plot stock icons instead of character names
 	if use_icons:
 		img_ax = []

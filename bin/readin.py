@@ -374,24 +374,26 @@ def read_sets(data,phase_data,wins,losses,xpath,sets):
 					sets[set_id]['games'][game_id]['w_id'] = game['winnerId']
 					sets[set_id]['games'][game_id]['l_id'] = game['loserId']
 
+					# if there are selections made
 					if 'selections' in game and type(game['selections']) is not type(None):
-						sets[set_id]['games'][game_id]['characters'] = {}
-						for game_e_id in [e1,e2]:
-						#for selection in game['selections']:
-							#game_e_id = game['selections'][selection]['character']['entrantId']
-							if 'character' in game['selections'][str(game_e_id)]:
-								game_char_id = game['selections'][str(game_e_id)]['character'][0]['selectionValue']
-								sets[set_id]['games'][game_id]['characters'][game_e_id] = game_char_id
-								'''
-								if game_e_id not in characters:
-									characters[game_e_id] = {}
-								if game_char_id not in characters[game_e_id]:
-									characters[game_e_id][game_char_id] = [0,0]
-								# store wins and losses separately
-								if game_e_id == w_id:
-									characters[game_e_id][game_char_id][0] += 1
-								else:
-									characters[game_e_id][game_char_id][1] += 1'''
+						# and both entrants have selections
+						if all([str(game_e_id) in game['selections'] for game_e_id in [e1,e2]]):
+							sets[set_id]['games'][game_id]['characters'] = {}
+							# store character selection for each entrant
+							for game_e_id in [e1,e2]:
+								if 'character' in game['selections'][str(game_e_id)]:
+									game_char_id = game['selections'][str(game_e_id)]['character'][0]['selectionValue']
+									sets[set_id]['games'][game_id]['characters'][game_e_id] = game_char_id
+									'''
+									if game_e_id not in characters:
+										characters[game_e_id] = {}
+									if game_char_id not in characters[game_e_id]:
+										characters[game_e_id][game_char_id] = [0,0]
+									# store wins and losses separately
+									if game_e_id == w_id:
+										characters[game_e_id][game_char_id][0] += 1
+									else:
+										characters[game_e_id][game_char_id][1] += 1'''
 
 			# Don't count DQs for win/loss records (still do for placings)
 			if not (w_DQ or l_DQ):

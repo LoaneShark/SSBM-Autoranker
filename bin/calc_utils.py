@@ -618,9 +618,11 @@ def simbrack(data,winps,chis,id_list,max_iter=1000,v=0,learn_rate=0.5,beta=0.9,t
 					update_diff = abs(s_new-s_old)
 					if update_diff > tol:
 						all_converged = False
-					# cut the learnrate in half every 20 iterations
+					# cut the learnrate in half every 100 iterations
 					if learn_decay:
-						learn_rate *= 1./float(2**(int(count)/int(20)))
+						if count > 0 and count % 100 == 0:
+							learn_rate /= 2.
+						#learn_rate *= 1./float(2**(int(count)/int(100)))
 
 					#new_skills[abs_id][1] = beta*s_old + (1.-beta)*learn_rate*(s_new-s_old)
 					new_skills[abs_id][1] = s_old + learn_rate*(s_new-s_old)
@@ -780,15 +782,18 @@ def winprobs(dicts,id_list=None,mode='array'):
 ## SIMBRACK PRINTING UTILS
 # plots the win probabilities for a player given their rank, and 
 # calculates and plots the logistic function regression
-def plot_winprobs(data,winps,sigs,id_list,p_id,plot_sigmoid=True,plot_tags=False,plot_rank=True,scale_skills=False,mode='dict',sig_mode='sigmoid'):
+def plot_winprobs(data,winps,sigs,id_list,p_id,plot_sigmoid=True,plot_tags=False,plot_rank=True,scale_skills=False,char_data=None,mode='dict',sig_mode='sigmoid'):
 	#tourneys,ids,p_info,records,skills = dicts
 	#dats = winps[p_id]
 	if sig_mode not in ['sigmoid','alt','simple','scipy']:
 		sig_mode = 'sigmoid'
+	if char_data is not None:
+		char_idx,char_labels = char_data
 	if mode == 'dict':
 		if plot_rank:
 			skill_rank = data[p_id][1]
 	else:
+		mode = 'array'
 		id_list = np.array(id_list,dtype=int)
 		p_idx = np.where(id_list == p_id)[0][0]
 		if plot_rank:
@@ -854,25 +859,49 @@ def plot_winprobs(data,winps,sigs,id_list,p_id,plot_sigmoid=True,plot_tags=False
 	fig = plt.figure()
 	ax = fig.add_subplot(111)
 	if plot_sigmoid:
-		plt.plot(x,y,'b.',scale_n*xp,pxp,'g-')
+		ax.plot(x,y,'b.',scale_n*xp,pxp,'g-')
 		#plt.plot(N*x,y,'b.',N*xp,pxp,'g-')
 	else:
-		plt.plot(x,y,'b.')
+		ax.plot(x,y,'b.')
 		#plt.plot(N*x,y,'b.')
 	if mode == 'dict':
 		name = data[p_id][0]
 	else:
-		name = str(p_id)
+		if char_data is not None:
+			name = char_labels[char_idx]
+		else:
+			name = str(p_id)
 	if plot_tags:
 		for x,y,t in zip(xs,ys,ts):
 			ax.annotate(t,xy=(x,y),textcoords='data',fontsize='small',rotation=-45)
 	if plot_rank:
 		plt.title('%s\'s chance of winning vs the field\nN=%d n=%d (skill-rank %.3f)'%(name, N, n, skill_rank*scale_n))
+		# plot a line at the player's rank
+		rank_y = np.linspace(-0.1,1.1,1000)
+		plt.plot(np.full_like(rank_y,skill_rank*scale_n),rank_y,color='0.5',linestyle='--')
+		# add a tick mark & label at their rank
+		plt.draw()
+		locs = list(np.linspace(0,1,11))
+		labels = ['' for loc in locs]
+		labels[0] = str(0)
+		labels[-1] = str(1)
+		locs += [skill_rank]
+		labels += [str(round(skill_rank,3))]
+		ax.set_xticklabels(labels)
+		ax.set_xticks(locs)
 	else:
-		plt.title('%s\'s chance of winning vs the field\nN=%d n=%d'%(name, N, n))
+		if char_data is not None:
+			plt.title('%s\'s chance of winning vs %s\nN=%d n=%d'%(name, char_labels[p_id], N, n))
+		else:
+			plt.title('%s\'s chance of winning vs the field\nN=%d n=%d'%(name, N, n))
 	plt.ylabel('Probability of winning a set')
-	plt.xlabel('Opponent skill-rank')
+	if char_data is not None:
+		plt.xlabel('Adjusted skill difference')
+	else:
+		plt.xlabel('Opponent skill-rank')
 	plt.ylim(-0.1,1.1)
+	plt.xlim(-0.1,1.1)
+	ax.grid(which='both')
 	plt.show()
 
 # plots the skills of players against their ordered rank

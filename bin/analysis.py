@@ -54,6 +54,7 @@ from analysis_utils import *
 ## 		 - allow analysis_utils to write to file for some queries, etc. (csv?)
 ## 		 - GUI/standalone executable tool/webapp
 ## 		 - Intelligent clustering of players by region
+## 		 - try and use actual sigmoid curves for expected win probs (like in matchup charts etc) instead of just skillranks
 ##
 
 ## ELO BALANCING:
@@ -154,7 +155,7 @@ def main():
 	if 1 < 0:
 		opts = find_opt_hyperparams(dicts,20,9,key_ids=[1000,19554])
 
-	to_calc_simbrack = True
+	to_calc_simbrack = False
 	if to_calc_simbrack:
 		array_t = timer()
 		if game_idx == 1:
@@ -171,10 +172,13 @@ def main():
 
 	iagoranks,winprobs,sigmoids,data_hist,id_list = iagorank_params
 	print('N: %d'%len(id_list))
+	if not to_calc_simbrack:
+		for line in sorted([iagoranks[rank] for rank in iagoranks],key=lambda l: l[1])[:100]:
+			print(line)
 	iter_num = len(data_hist[id_list[0]])
 	#print('Dict time elapsed:','{:.3f}'.format(dict_time) + ' s')
 
-	if game_idx == 1 and 1 > 0:
+	if game_idx == 1 and 1 < 0:
 		# plot mango
 		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1000,plot_tags=True,sig_mode='alt')
 		plot_hist(data_hist,p_id=1000,plot_delta=True)
@@ -196,7 +200,7 @@ def main():
 		# plot trif
 		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,22900,plot_tags=True,sig_mode='alt')
 		plot_hist(data_hist,p_id=22900,plot_delta=True)
-		if 1 > 0:
+		if 1 < 0:
 			# plot dizz
 			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,3915,plot_tags=True,sig_mode='alt')
 			plot_hist(data_hist,p_id=3915,plot_delta=True)
@@ -247,7 +251,7 @@ def main():
 
 			#print([p_id for p_id in id_list if sigmoids[p_id][2] > 1.1])
 
-	if (game_idx == 3 or game_idx == 1386) and 1 > 0:
+	if (game_idx == 3 or game_idx == 1386) and 1 < 0:
 		# plot void
 		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,15768,plot_tags=True,sig_mode='alt')
 		plot_hist(data_hist,p_id=15768,plot_delta=True)
@@ -278,10 +282,11 @@ def main():
 
 	#return True
 
-	generate_matchup_chart(dicts,game_idx,year,year_count,id_list=id_list)
+	generate_matchup_chart(dicts,game_idx,year,year_count,id_list=id_list,label_mode='ones')
+	'''
 	tl = generate_tier_list(dicts,game_idx,year,year_count,id_list=id_list)
 	for line in tl:
-		print(line)
+		print(line)'''
 
 def main_read():
 	set_db_args(args)
