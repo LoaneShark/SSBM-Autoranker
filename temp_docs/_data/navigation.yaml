@@ -1,0 +1,10 @@
+- name: Home
+  link: /
+- name: Ranks
+  link: /ranks/
+- name: Games
+  link: /games/
+- name: Blog
+  link: /blog.html
+- name: About
+  link: /about/
