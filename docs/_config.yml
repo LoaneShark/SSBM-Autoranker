@@ -30,7 +30,7 @@ plugins:
   - jekyll-feed
 defaults:
   - scope:
-    path: "_assets/images"
+      path: "assets/img"
     values:
       image: true
 
