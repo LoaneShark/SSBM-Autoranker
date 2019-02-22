@@ -137,7 +137,7 @@ def get_best_performances(dicts,use_names=False,acc=3,scale_vals=False):
 
 	return best_perfs
 
-def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,skill_weight=False,label_mode='tens',use_icons=False,prune_sparse=True,save_figure=False):
+def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,skill_weight=False,v=0,label_mode='tens',use_icons=False,prune_sparse=True,save_figure=False):
 	tourneys,ids,p_info,records,skills = dicts
 	if id_list == None:
 		id_list = [p_id for p_id in records]
@@ -164,9 +164,12 @@ def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,skill_weigh
 		#plt.imshow(char_icons[0])
 		#plt.show()
 
-	print('Generating Matchup chart...')
+	if v >= 1:
+		print('Generating Matchup chart (N: %d)...'%char_n)
 	# scan all relevant sets and import character data where available
 	char_h2h = np.full((char_n,char_n,n_bins+1),None,dtype='object')
+	if v >= 4:
+		print('Importing game results (%d bins)...'%n_bins)
 	for p_id in id_list:
 		p_skill = p_info[p_id]['iagorank']
 		p_sets = records[p_id]['set_history']
@@ -188,11 +191,12 @@ def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,skill_weigh
 									# scale skill ratio so that even skilled players ~ 0.5, still in [0,1]
 									w_skill_bin = int(((w_skill-l_skill)/2. + 0.5)*n_bins)
 									l_skill_bin = int(((l_skill-w_skill)/2. + 0.5)*n_bins)
-									'''if l_skill-w_skill < -0.75:
-										print(w_skill)
-										print(l_skill)
-										print('UPSET: %s (%s) over %s (%s) at %s'%(p_info[ids['t_'+str(t_id)][g_w_id]]['tag'],char_labels[g_w_char_id],p_info[ids['t_'+str(t_id)][g_l_id]]['tag'],char_labels[g_l_char_id],tourneys[t_id]['name']))
-									'''
+									if verbosity >= 6:
+										if l_skill-w_skill < -0.75:
+											print(w_skill)
+											print(l_skill)
+											print('UPSET: %s (%s) over %s (%s) at %s'%(p_info[ids['t_'+str(t_id)][g_w_id]]['tag'],char_labels[g_w_char_id],p_info[ids['t_'+str(t_id)][g_l_id]]['tag'],char_labels[g_l_char_id],tourneys[t_id]['name']))
+									
 									#w_skill_bin = int(w_skill * n_bins)
 									#l_skill_bin = int(l_skill * n_bins)
 									#skill_ratio_bin = int(skill_diff * n_bins)
@@ -203,6 +207,8 @@ def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,skill_weigh
 									char_h2h[g_w_char_id,g_l_char_id,w_skill_bin][0] += 1
 									char_h2h[g_l_char_id,g_w_char_id,l_skill_bin][1] += 1
 
+	if v >= 4:
+		print('Calculating win probabilities...')
 	# change h2h records to win probabilities in [0,1]
 	for char_idx in range(char_n):
 		for opp_idx in range(char_n):
@@ -231,6 +237,8 @@ def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,skill_weigh
 								for opp_idx in range(char_n)} \
 								for char_idx in range(char_n)}
 
+	if v >= 4:
+		print('Fitting sigmoids...')
 	char_matchups = np.zeros((char_n,char_n))
 	char_sigs = np.full((char_n,char_n),None,dtype='object')
 	for char_idx in range(char_n):

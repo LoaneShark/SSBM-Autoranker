@@ -282,7 +282,7 @@ def main():
 
 	#return True
 
-	generate_matchup_chart(dicts,game_idx,year,year_count,id_list=id_list,label_mode='ones')
+	generate_matchup_chart(dicts,game_idx,year,year_count,id_list=id_list,label_mode='ones',v=int(args.verbosity))
 	'''
 	tl = generate_tier_list(dicts,game_idx,year,year_count,id_list=id_list)
 	for line in tl:

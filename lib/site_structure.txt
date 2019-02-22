@@ -1,0 +1,123 @@
+HOME
+	RANKS
+		MELEE
+			ssbmrank
+			elo
+			glicko
+			intsig
+		ULTIMATE
+			pgr
+			elo
+			glicko
+			intsig
+		SSB4
+			pgr
+			elo
+			glicko
+			intsig
+		64
+			pgr
+			elo
+			glicko
+			intsig
+		BRAWL
+			pgr
+			elo
+			glicko
+			intsig
+		PM
+			pgr
+			elo
+			glicko
+			intsig
+	GAME
+		MELEE (melee.smashranks.com)
+			RANKS
+				ssbmrank
+				elo
+				glicko
+				intsig
+			PLAYER DATA
+				ranks
+				players
+				teams
+				regions
+			CHARACTER DATA
+				matchups
+				tier list
+		ULTIMATE (ultimate.smashranks.com)
+			RANKS
+				pgr
+				elo
+				glicko
+				intsig
+			PLAYER DATA
+				ranks
+				players
+				teams
+				regions
+			CHARACTER DATA
+				matchups
+				tier list
+		SSB4 (smash4.smashranks.com)
+			RANKS
+				pgr
+				elo
+				glicko
+				intsig
+			PLAYER DATA
+				ranks
+				players
+				teams
+				regions
+			CHARACTER DATA
+				matchups
+				tier list
+		64 (64.smashranks.com)
+			RANKS
+				64rank
+				elo
+				glicko
+				intsig
+			PLAYER DATA
+				ranks
+				players
+				teams
+				regions
+			CHARACTER DATA
+				matchups
+				tier list
+		BRAWL (brawl.smashranks.com)
+			RANKS
+				???
+				elo
+				glicko
+				intsig
+			PLAYER DATA
+				ranks
+				players
+				teams
+				regions
+			CHARACTER DATA
+				matchups
+				tier list
+		PM (pm.smashranks.com)
+			RANKS
+				pmrank
+				elo
+				glicko
+				intsig
+			PLAYER DATA
+				ranks
+				players
+				teams
+				regions
+			CHARACTER DATA
+				matchups
+				tier list
+	INFO/ABOUT
+		THE SITE / MISSION STATEMENT
+		ALGORITHMS USED / METHODOLOGY
+		DISCUSSION?
+	CONTACT
+	BLOG
