@@ -137,7 +137,8 @@ def get_best_performances(dicts,use_names=False,acc=3,scale_vals=False):
 
 	return best_perfs
 
-def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,skill_weight=False,v=0,label_mode='tens',use_icons=False,prune_sparse=True,save_figure=False):
+def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,winprobs=None,skill_weight=False,v=0,n_bins=20000,\
+							infer_characters=False,label_mode='tens',use_icons=False,prune_sparse=True,save_figure=False,plot_fails=False):
 	tourneys,ids,p_info,records,skills = dicts
 	if id_list == None:
 		id_list = [p_id for p_id in records]
@@ -153,7 +154,7 @@ def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,skill_weigh
 	char_n = len(chars.keys())
 	char_labels = np.array([chars[char_id] for char_id in chars],dtype='object')
 	# for skill-difference, 10-50k bins is ideal
-	n_bins = 25000
+	##n_bins = 50000
 	print(len(char_labels))
 	#return True
 	char_id_map = {c_id: i for i,c_id in enumerate([char_id for char_id in chars])}
@@ -171,7 +172,7 @@ def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,skill_weigh
 	if v >= 4:
 		print('Importing game results (%d bins)...'%n_bins)
 	for p_id in id_list:
-		p_skill = p_info[p_id]['iagorank']
+		p_skill = p_info[p_id]['srank']
 		p_sets = records[p_id]['set_history']
 		for set_id in p_sets:
 			if set_id not in checked_sets:
@@ -179,33 +180,64 @@ def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,skill_weigh
 				t_id = sets[set_id]['t_id']
 				if 'games' in sets[set_id]:
 					for game_id in sets[set_id]['games']:
-						if 'characters' in sets[set_id]['games'][game_id]:
-							if sets[set_id]['games'][game_id]['characters'] != {}:
-								g_w_id = sets[set_id]['games'][game_id]['w_id']
-								g_l_id = sets[set_id]['games'][game_id]['l_id']
-								if g_w_id != None and g_l_id != None:
-									g_w_char_id = char_id_map[sets[set_id]['games'][game_id]['characters'][g_w_id]]
-									g_l_char_id = char_id_map[sets[set_id]['games'][game_id]['characters'][g_l_id]]
-									w_skill = 1.-p_info[ids['t_'+str(t_id)][g_w_id]]['iagorank']
-									l_skill = 1.-p_info[ids['t_'+str(t_id)][g_l_id]]['iagorank']
-									# scale skill ratio so that even skilled players ~ 0.5, still in [0,1]
-									w_skill_bin = int(((w_skill-l_skill)/2. + 0.5)*n_bins)
-									l_skill_bin = int(((l_skill-w_skill)/2. + 0.5)*n_bins)
-									if verbosity >= 6:
-										if l_skill-w_skill < -0.75:
-											print(w_skill)
-											print(l_skill)
-											print('UPSET: %s (%s) over %s (%s) at %s'%(p_info[ids['t_'+str(t_id)][g_w_id]]['tag'],char_labels[g_w_char_id],p_info[ids['t_'+str(t_id)][g_l_id]]['tag'],char_labels[g_l_char_id],tourneys[t_id]['name']))
-									
-									#w_skill_bin = int(w_skill * n_bins)
-									#l_skill_bin = int(l_skill * n_bins)
-									#skill_ratio_bin = int(skill_diff * n_bins)
-									if char_h2h[g_w_char_id,g_l_char_id,w_skill_bin] == None:
-										char_h2h[g_w_char_id,g_l_char_id,w_skill_bin] = [0,0]
-									if char_h2h[g_l_char_id,g_w_char_id,l_skill_bin] == None:
-										char_h2h[g_l_char_id,g_w_char_id,l_skill_bin] = [0,0]
-									char_h2h[g_w_char_id,g_l_char_id,w_skill_bin][0] += 1
-									char_h2h[g_l_char_id,g_w_char_id,l_skill_bin][1] += 1
+						g_w_id = sets[set_id]['games'][game_id]['w_id']
+						g_l_id = sets[set_id]['games'][game_id]['l_id']
+						if g_w_id is not None and g_l_id is not None:
+							w_skill = 1.-p_info[ids['t_'+str(t_id)][g_w_id]]['srank']
+							l_skill = 1.-p_info[ids['t_'+str(t_id)][g_l_id]]['srank']
+							# scale skill ratio so that even skilled players ~ 0.5, still in [0,1]
+							w_skill_bin = int(((w_skill-l_skill)/2. + 0.5)*n_bins)
+							l_skill_bin = int(((l_skill-w_skill)/2. + 0.5)*n_bins)
+							if 'characters' in sets[set_id]['games'][game_id]:
+								if sets[set_id]['games'][game_id]['characters'] != {}:
+									if g_w_id != None and g_l_id != None:
+										g_w_char_id = char_id_map[sets[set_id]['games'][game_id]['characters'][g_w_id]]
+										g_l_char_id = char_id_map[sets[set_id]['games'][game_id]['characters'][g_l_id]]
+							elif infer_characters:
+								g_w_main = get_main(ids['t_'+str(t_id)][g_w_id],p_info)
+								g_l_main = get_main(ids['t_'+str(t_id)][g_l_id],p_info)
+								if not (g_w_main == '' or g_l_main == ''):
+									g_w_char_id = char_id_map[get_main(ids['t_'+str(t_id)][g_w_id],p_info)]
+									g_l_char_id = char_id_map[get_main(ids['t_'+str(t_id)][g_l_id],p_info)]
+							else:
+								g_w_char_id = None; g_l_char_id = None
+							if g_w_char_id is not None and g_l_char_id is not None:
+								if char_h2h[g_w_char_id,g_l_char_id,w_skill_bin] == None:
+									char_h2h[g_w_char_id,g_l_char_id,w_skill_bin] = [0,0]
+								if char_h2h[g_l_char_id,g_w_char_id,l_skill_bin] == None:
+									char_h2h[g_l_char_id,g_w_char_id,l_skill_bin] = [0,0]
+								char_h2h[g_w_char_id,g_l_char_id,w_skill_bin][0] += 1
+								char_h2h[g_l_char_id,g_w_char_id,l_skill_bin][1] += 1
+							if v >= 7:
+								if l_skill-w_skill < -0.75:
+									print(w_skill)
+									print(l_skill)
+									print('UPSET: %s (%s) over %s (%s) at %s'%(p_info[ids['t_'+str(t_id)][g_w_id]]['tag'],char_labels[g_w_char_id],p_info[ids['t_'+str(t_id)][g_l_id]]['tag'],char_labels[g_l_char_id],tourneys[t_id]['name']))
+				# if no game data is reported
+				else:
+					if not (sets[set_id]['w_dq'] or sets[set_id]['l_dq'] or sets[set_id]['is_bye']):
+						s_w_id = sets[set_id]['w_id']
+						s_l_id = sets[set_id]['l_id']
+						w_skill = 1.-p_info[ids['t_'+str(t_id)][s_w_id]]['srank']
+						l_skill = 1.-p_info[ids['t_'+str(t_id)][s_l_id]]['srank']
+						# scale skill ratio so that even skilled players ~ 0.5, still in [0,1]
+						w_skill_bin = int(((w_skill-l_skill)/2. + 0.5)*n_bins)
+						l_skill_bin = int(((l_skill-w_skill)/2. + 0.5)*n_bins)
+
+						s_w_main = get_main(ids['t_'+str(t_id)][s_w_id],p_info)
+						s_l_main = get_main(ids['t_'+str(t_id)][s_l_id],p_info)
+						if not (s_w_main == '' or s_l_main == ''):
+							s_w_char_id = char_id_map[get_main(ids['t_'+str(t_id)][s_w_id],p_info)]
+							s_l_char_id = char_id_map[get_main(ids['t_'+str(t_id)][s_l_id],p_info)]
+						else:
+							s_w_char_id = None; s_l_char_id = None
+						if s_w_char_id is not None and s_l_char_id is not None:
+							if char_h2h[s_w_char_id,s_l_char_id,w_skill_bin] == None:
+								char_h2h[s_w_char_id,s_l_char_id,w_skill_bin] = [0,0]
+							if char_h2h[s_l_char_id,s_w_char_id,l_skill_bin] == None:
+								char_h2h[s_l_char_id,s_w_char_id,l_skill_bin] = [0,0]
+							char_h2h[s_w_char_id,s_l_char_id,w_skill_bin][0] += 1
+							char_h2h[s_l_char_id,s_w_char_id,l_skill_bin][1] += 1
 
 	if v >= 4:
 		print('Calculating win probabilities...')
@@ -231,12 +263,13 @@ def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,skill_weigh
 						m_sigma = 1./log(float(n_games),2)
 				# store ratio as 2-long list with uncertainty
 				char_h2h[char_idx,opp_idx,bin_id] = [char_h2h[char_idx,opp_idx,bin_id],m_sigma]
-			
-	# copy into dict format (for plotting winprobs/sigmoids)
-	char_h2h_dict = {char_idx: {opp_idx: {bin_id: char_h2h[char_idx,opp_idx,bin_id][0] for bin_id in range(n_bins+1) if char_h2h[char_idx,opp_idx,bin_id] != None} \
-								for opp_idx in range(char_n)} \
-								for char_idx in range(char_n)}
-
+	if plot_fails:
+		if v >= 6:
+			print('Creating dict...')
+		# copy into dict format (for plotting winprobs/sigmoids)
+		char_h2h_dict = {char_idx: {opp_idx: {bin_id: char_h2h[char_idx,opp_idx,bin_id][0] for bin_id in range(n_bins+1) if char_h2h[char_idx,opp_idx,bin_id] != None} \
+									for opp_idx in range(char_n)} \
+									for char_idx in range(char_n)}
 	if v >= 4:
 		print('Fitting sigmoids...')
 	char_matchups = np.zeros((char_n,char_n))
@@ -270,11 +303,17 @@ def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,skill_weigh
 					char_matchups[char_idx,opp_idx] = integrate_alt_sigmoid([p],n_bins)[0]
 					char_sigs[char_idx,opp_idx] = p
 				except RuntimeError:
-					#plot_winprobs(char_h2h[char_idx][opp_idx],char_h2h_dict[char_idx],None,range(n_bins+1),opp_idx,plot_rank=False,plot_sigmoid=False,char_data=(char_idx,char_labels),mode='array',sig_mode='alt')
+					if plot_fails:
+						plot_winprobs(char_h2h[char_idx][opp_idx],char_h2h_dict[char_idx],None,range(n_bins+1),opp_idx,plot_rank=False,plot_sigmoid=False,char_data=(char_idx,char_labels),mode='array',sig_mode='alt')
 					##plot_winprobs(char_h2h[char_idx],char_h2h_dict[char_idx],None,range(n_bins+1),char_idx,plot_rank=False,plot_sigmoid=False,mode='array',sig_mode='alt')
 					char_matchups[char_idx,opp_idx] = -1.
+					if v >= 6:
+						print('Ejecting: [%s v %s] due to inability to fit sigmoid (N = %d)'%(char_labels[char_idx],char_labels[opp_idx],len(xs)))
 			else:
 				char_matchups[char_idx,opp_idx] = -1.
+				if v >= 8:
+					print('Ejecting: [%s v %s] due to insufficient data points (N = %d)'%(char_labels[char_idx],char_labels[opp_idx],len(xs)))
+
 	
 							#  peach/fox     falco/fox    fox/puff   fox dittos
 	'''for char_idx,opp_idx in [(5,17),(17,5), (4,5),(5,4), (5,8),(8,5), (5,5)]:
@@ -295,6 +334,8 @@ def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,skill_weigh
 		char_n = char_matchups.shape[0]
 
 	## create plot
+	if v >= 3:
+		print(char_matchups.shape)
 	fig,ax = plt.subplots(1,1)
 	ax.matshow(char_matchups)
 	## set labels and icons
@@ -459,6 +500,17 @@ def generate_tier_list(dicts,game,year,year_count,id_list=None,skill_weight=True
 			char_skills.append('N/A')
 
 	return sorted([[char_labels[char_id],char_skills[char_id]] for char_id in range(char_n)],key=lambda t: (9999. if type(t[1]) is str else t[1],t[1]))
+
+def char_count(p,c,p_info):
+	return abs(p_info[p]['characters'][c][0])+abs(p_info[p]['characters'][c][1])
+
+def get_main(p,p_info): 
+	if 'characters' in p_info[p]:
+		return sorted([[c_id, char_count(p,c_id,p_info)] if char_count(p,c_id,p_info) > 0 else ['',0] for c_id in p_info[p]['characters']], \
+									key=lambda c_l: c_l[1], \
+									reverse=True)[0][0]
+	else:
+		return ''
 
 def disp_all(dicts,dispnum=20,key='elo',trans_cjk=True,avg_perf=False,scale_vals=False,min_activity=3,tier_tol=-1,plot_skills=False):
 	tourneys,ids,p_info,records,skills = dicts

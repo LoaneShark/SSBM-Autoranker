@@ -4,7 +4,7 @@ from statistics import mean
 from math import *
 import numpy as np 
 #import scipy as sp 
-import os,sys,pickle,time
+import os,sys,pickle,time,csv
 #import json
 import argparse
 #import shutil
@@ -159,9 +159,9 @@ def main():
 	if to_calc_simbrack:
 		array_t = timer()
 		if game_idx == 1:
-			iagorank_params = calc_simbrack(dicts,min_req=min_act,max_iter=1000,learn_decay=False,disp_size=300,verbosity=5,print_res=True,plot_ranks=False,mode='array',seed='elo',sig_mode='alt')
+			iagorank_params = calc_simbrack(dicts,min_req=min_act,max_iter=1000,learn_decay=True,disp_size=300,verbosity=5,print_res=True,plot_ranks=False,mode='array',seed='elo',sig_mode='alt')
 		else:
-			iagorank_params = calc_simbrack(dicts,min_req=min_act,max_iter=500,learn_decay=False,disp_size=300,verbosity=5,print_res=True,plot_ranks=False,mode='array',seed='elo',sig_mode='alt')
+			iagorank_params = calc_simbrack(dicts,min_req=min_act,max_iter=1000,learn_decay=True,disp_size=300,verbosity=5,print_res=True,plot_ranks=False,mode='array',seed='elo',sig_mode='alt')
 		array_time = timer()-array_t
 		print('Array time elapsed:','{:.3f}'.format(array_time) + ' s')
 		ISR = {'params': iagorank_params}
@@ -172,84 +172,93 @@ def main():
 
 	iagoranks,winprobs,sigmoids,data_hist,id_list = iagorank_params
 	print('N: %d'%len(id_list))
-	if not to_calc_simbrack:
-		for line in sorted([iagoranks[rank] for rank in iagoranks],key=lambda l: l[1])[:100]:
-			print(line)
+	if not to_calc_simbrack or to_calc_simbrack:
+		charmap = load_dict('characters',None,'../lib')[game_idx]
+		charmap[''] = ''
+		for line in sorted([[iagoranks[rank][0],round(iagoranks[rank][1],3),p_id,charmap[get_main(p_id,p_info)]] for rank,p_id in zip([ir for ir in iagoranks],id_list)],key=lambda l: l[1])[:100]:
+			print(','.join([str(item) for item in line]))
+			#print(line.join(' '))
 	iter_num = len(data_hist[id_list[0]])
 	#print('Dict time elapsed:','{:.3f}'.format(dict_time) + ' s')
-
-	if game_idx == 1 and 1 < 0:
-		# plot mango
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1000,plot_tags=True,sig_mode='alt')
-		plot_hist(data_hist,p_id=1000,plot_delta=True)
-		# plot hbox
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1004,plot_tags=True,sig_mode='alt')
-		plot_hist(data_hist,p_id=1004,plot_delta=True)
-		# plot ibdw
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,19554,plot_tags=True,sig_mode='alt')
-		plot_hist(data_hist,p_id=19554,plot_delta=True)
-		# plot gahtzu
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1077,plot_tags=True,sig_mode='alt')
-		plot_hist(data_hist,p_id=1077,plot_delta=True)
-		# plot jerry
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,32097,plot_tags=True,sig_mode='alt')
-		plot_hist(data_hist,p_id=32097,plot_delta=True)
-		# plot absentpage
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,37339,plot_tags=True,sig_mode='alt')
-		plot_hist(data_hist,p_id=37339,plot_delta=True)
-		# plot trif
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,22900,plot_tags=True,sig_mode='alt')
-		plot_hist(data_hist,p_id=22900,plot_delta=True)
+	if game_idx == 1:
+		'''plot_winprobs(iagoranks,winprobs,sigmoids,id_list,38255,plot_tags=True,sig_mode='alt')
+		plot_hist(data_hist,p_id=38255,plot_delta=True)
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,3713,plot_tags=True,sig_mode='alt')
+		plot_hist(data_hist,p_id=3713,plot_delta=True)
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,46827,plot_tags=True,sig_mode='alt')
+		plot_hist(data_hist,p_id=46827,plot_delta=True)'''
 		if 1 < 0:
-			# plot dizz
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,3915,plot_tags=True,sig_mode='alt')
-			plot_hist(data_hist,p_id=3915,plot_delta=True)
-			# plot colbol
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1009,plot_tags=True,sig_mode='alt')
-			plot_hist(data_hist,p_id=1009,plot_delta=True)
-			# plot surfero
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,16054,plot_tags=True,sig_mode='alt')
-			plot_hist(data_hist,p_id=16054,plot_delta=True)
-			# plot ZENT
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,10905,plot_tags=True,sig_mode='alt')
-			plot_hist(data_hist,p_id=10905,plot_delta=True)
-			# plot Mova
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,6176,plot_tags=True,sig_mode='alt')
-			plot_hist(data_hist,p_id=6176,plot_delta=True)
-			# plot Jagerbombsoldier
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,6653,plot_tags=True,sig_mode='alt')
-			plot_hist(data_hist,p_id=6653,plot_delta=True)
-			# plot AKO
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,19677,plot_tags=True,sig_mode='alt')
-			plot_hist(data_hist,p_id=19677,plot_delta=True)
-			# plot Neeco
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,23466,plot_tags=True,sig_mode='alt')
-			plot_hist(data_hist,p_id=23466,plot_delta=True)
-			# plot Loscar
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,44674,plot_tags=True,sig_mode='alt')
-			plot_hist(data_hist,p_id=44674,plot_delta=True)
-			'''# plot Funke Master Flex
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,67075,plot_tags=True)
-			plot_hist(data_hist,p_id=67075,plot_delta=True)
-			# plot ShineSpike
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,60617,plot_tags=True)
-			plot_hist(data_hist,p_id=60617,plot_delta=True)'''
-			'''
-			# plot Offendors
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,23466,plot_tags=True,sig_mode='alt')
-			plot_hist(data_hist,p_id=23466,plot_delta=True)
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,3939,plot_tags=True,sig_mode='alt')
-			plot_hist(data_hist,p_id=3939,plot_delta=True)
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,565971,plot_tags=True,sig_mode='alt')
-			plot_hist(data_hist,p_id=565971,plot_delta=True)
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,33499,plot_tags=True,sig_mode='alt')
-			plot_hist(data_hist,p_id=33499,plot_delta=True)
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,44674,plot_tags=True,sig_mode='alt')
-			plot_hist(data_hist,p_id=44674,plot_delta=True)
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,411867,plot_tags=True,sig_mode='alt')
-			plot_hist(data_hist,p_id=411867,plot_delta=True)'''
+			# plot mango
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1000,plot_tags=True,sig_mode='alt')
+			plot_hist(data_hist,p_id=1000,plot_delta=True)
+			# plot hbox
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1004,plot_tags=True,sig_mode='alt')
+			plot_hist(data_hist,p_id=1004,plot_delta=True)
+			# plot ibdw
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,19554,plot_tags=True,sig_mode='alt')
+			plot_hist(data_hist,p_id=19554,plot_delta=True)
+			# plot gahtzu
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1077,plot_tags=True,sig_mode='alt')
+			plot_hist(data_hist,p_id=1077,plot_delta=True)
+			# plot jerry
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,32097,plot_tags=True,sig_mode='alt')
+			plot_hist(data_hist,p_id=32097,plot_delta=True)
+			# plot absentpage
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,37339,plot_tags=True,sig_mode='alt')
+			plot_hist(data_hist,p_id=37339,plot_delta=True)
+			# plot trif
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,22900,plot_tags=True,sig_mode='alt')
+			plot_hist(data_hist,p_id=22900,plot_delta=True)
+			if 1 < 0:
+				# plot dizz
+				plot_winprobs(iagoranks,winprobs,sigmoids,id_list,3915,plot_tags=True,sig_mode='alt')
+				plot_hist(data_hist,p_id=3915,plot_delta=True)
+				# plot colbol
+				plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1009,plot_tags=True,sig_mode='alt')
+				plot_hist(data_hist,p_id=1009,plot_delta=True)
+				# plot surfero
+				plot_winprobs(iagoranks,winprobs,sigmoids,id_list,16054,plot_tags=True,sig_mode='alt')
+				plot_hist(data_hist,p_id=16054,plot_delta=True)
+				# plot ZENT
+				plot_winprobs(iagoranks,winprobs,sigmoids,id_list,10905,plot_tags=True,sig_mode='alt')
+				plot_hist(data_hist,p_id=10905,plot_delta=True)
+				# plot Mova
+				plot_winprobs(iagoranks,winprobs,sigmoids,id_list,6176,plot_tags=True,sig_mode='alt')
+				plot_hist(data_hist,p_id=6176,plot_delta=True)
+				# plot Jagerbombsoldier
+				plot_winprobs(iagoranks,winprobs,sigmoids,id_list,6653,plot_tags=True,sig_mode='alt')
+				plot_hist(data_hist,p_id=6653,plot_delta=True)
+				# plot AKO
+				plot_winprobs(iagoranks,winprobs,sigmoids,id_list,19677,plot_tags=True,sig_mode='alt')
+				plot_hist(data_hist,p_id=19677,plot_delta=True)
+				# plot Neeco
+				plot_winprobs(iagoranks,winprobs,sigmoids,id_list,23466,plot_tags=True,sig_mode='alt')
+				plot_hist(data_hist,p_id=23466,plot_delta=True)
+				# plot Loscar
+				plot_winprobs(iagoranks,winprobs,sigmoids,id_list,44674,plot_tags=True,sig_mode='alt')
+				plot_hist(data_hist,p_id=44674,plot_delta=True)
+				'''# plot Funke Master Flex
+				plot_winprobs(iagoranks,winprobs,sigmoids,id_list,67075,plot_tags=True)
+				plot_hist(data_hist,p_id=67075,plot_delta=True)
+				# plot ShineSpike
+				plot_winprobs(iagoranks,winprobs,sigmoids,id_list,60617,plot_tags=True)
+				plot_hist(data_hist,p_id=60617,plot_delta=True)'''
+				'''
+				# plot Offendors
+				plot_winprobs(iagoranks,winprobs,sigmoids,id_list,23466,plot_tags=True,sig_mode='alt')
+				plot_hist(data_hist,p_id=23466,plot_delta=True)
+				plot_winprobs(iagoranks,winprobs,sigmoids,id_list,3939,plot_tags=True,sig_mode='alt')
+				plot_hist(data_hist,p_id=3939,plot_delta=True)
+				plot_winprobs(iagoranks,winprobs,sigmoids,id_list,565971,plot_tags=True,sig_mode='alt')
+				plot_hist(data_hist,p_id=565971,plot_delta=True)
+				plot_winprobs(iagoranks,winprobs,sigmoids,id_list,33499,plot_tags=True,sig_mode='alt')
+				plot_hist(data_hist,p_id=33499,plot_delta=True)
+				plot_winprobs(iagoranks,winprobs,sigmoids,id_list,44674,plot_tags=True,sig_mode='alt')
+				plot_hist(data_hist,p_id=44674,plot_delta=True)
+				plot_winprobs(iagoranks,winprobs,sigmoids,id_list,411867,plot_tags=True,sig_mode='alt')
+				plot_hist(data_hist,p_id=411867,plot_delta=True)'''
 
-			#print([p_id for p_id in id_list if sigmoids[p_id][2] > 1.1])
+				#print([p_id for p_id in id_list if sigmoids[p_id][2] > 1.1])
 
 	if (game_idx == 3 or game_idx == 1386) and 1 < 0:
 		# plot void
@@ -282,7 +291,7 @@ def main():
 
 	#return True
 
-	generate_matchup_chart(dicts,game_idx,year,year_count,id_list=id_list,label_mode='ones',v=int(args.verbosity))
+	generate_matchup_chart(dicts,game_idx,year,year_count,id_list=id_list,label_mode='ones',v=int(args.verbosity),infer_characters=True,n_bins=10000)
 	'''
 	tl = generate_tier_list(dicts,game_idx,year,year_count,id_list=id_list)
 	for line in tl:
@@ -299,6 +308,29 @@ def main_read():
 	for i in range(1,year_count+1):
 		tourneys,ids,p_info,records,skills = read_majors(game_idx,year+i,base=(tourneys,ids,p_info,records,skills))
 
+	if game_idx == 1386:
+		filename = 'ultimate_mains.csv'
+	elif game_idx == 1:
+		filename = 'melee_mains.csv'
+	if game_idx in [1386,1]:
+		print('Importing %s mains~'%filename.split('_')[0])
+		chardata = load_dict('characters',None,'../lib')[game_idx]
+		reverse_charmap = {chardata[key]: key for key in chardata}
+		with open('../lib/%s'%filename) as filedata:
+			main_reader = csv.reader(filedata)
+			for line in main_reader:
+				if len(line) > 3:
+					if line[3] not in ['',' ',',',None,'None']:
+						charname = line[3]
+						char_id = reverse_charmap[charname]
+						p_id = int(line[2])
+						if p_id in p_info:
+							if 'characters' in p_info[p_id]:
+								if sum(p_info[p_id]['characters'][char_id]) <= 0 or p_info[p_id]['characters'][char_id] is None:
+									p_info[p_id]['characters'][char_id][0] += 1
+									p_info[p_id]['characters'][char_id][1] += 1
+						else:
+							print(p_id,'-',p_id in p_info.keys())
 	return tourneys,ids,p_info,records,skills
 
 def find_opt_hyperparams(dicts,a_rng=20,ma_rng=9,plot_res=True,key_ids=[1000]):

@@ -254,7 +254,7 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 
 				# store ranking data, with initial values if needed
 				if 'elo' not in skills:
-					for key in ['elo','elo_del','glicko','glicko_del','sim','sim_del','perf']:
+					for key in ['elo','elo_del','glicko','glicko_del','srank','srank_del','srank_sig','perf']:
 						skills[key] = {}
 				if 'elo' not in p_info[abs_id]:
 					p_info[abs_id]['elo'] = 1500.
@@ -265,13 +265,13 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 					p_info[abs_id]['glicko'] = (1500.,350.,0.06)
 					skills['glicko'][abs_id] = {}
 					skills['glicko_del'][abs_id] = {}
-				if 'iagorank' not in p_info[abs_id]:
-					p_info[abs_id]['iagorank'] = 1.
-					#p_info[abs_id]['iagorank'] = 0.5
-					p_info[abs_id]['iagorank_sig'] = (0.5,0.,1.,4.)
-					skills['iago'][abs_id] = {}
-					skills['iago_del'][abs_id] = {}
-					skills['iago_sig'][abs_id] = {}
+				if 'srank' not in p_info[abs_id]:
+					p_info[abs_id]['srank'] = int(1)
+					#p_info[abs_id]['srank'] = 0.5
+					p_info[abs_id]['srank_sig'] = (0.5,0.,1.,4.)
+					skills['srank'][abs_id] = {}
+					skills['srank_del'][abs_id] = {}
+					skills['srank_sig'][abs_id] = {}
 				if 'sets_played' not in p_info[abs_id]:
 					p_info[abs_id]['sets_played'] = 0
 				if 'events_entered' not in p_info[abs_id]:
@@ -302,9 +302,9 @@ def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_up
 	elo_deltas = skills['elo_del']
 	#glicko_history = skills['glicko']
 	#glicko_deltas = skills['glicko_del']
-	simrank_history = skills['iago']
-	simrank_deltas = skills['iago_del']
-	sigmoid_history = skills['iago_sig']
+	simrank_history = skills['srank']
+	simrank_deltas = skills['srank_del']
+	sigmoid_history = skills['srank_sig']
 	#performance_history = skills['perf']
 
 	#print(t_id)
@@ -395,8 +395,8 @@ def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_up
 					# store new values & changes
 					if p_info[abs_id]['last_event'] == t_id:
 						glicko_history[abs_id][t_id] = p_info[abs_id]['glicko']
-						simrank_history[abs_id][t_id] = p_info[abs_id]['iagorank']
-						sigmoid_history[abs_id][t_id] = p_info[abs_id]['iagorank_sig']
+						simrank_history[abs_id][t_id] = p_info[abs_id]['srank']
+						sigmoid_history[abs_id][t_id] = p_info[abs_id]['srank_sig']
 					else:
 						glicko_history[abs_id][t_id] = glicko_history[abs_id][p_info[abs_id]['last_event']]
 						simrank_history[abs_id][t_id] = simrank_history[abs_id][p_info[abs_id]['last_event']]
@@ -418,9 +418,9 @@ def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_up
 		update_glicko(dicts,glicko_matches,t_info,tau=glicko_tau)
 		if to_update_sigmoids:
 			#update_sigmoids(dicts,t_info,max_iterations=500,v=v,ranking_period=ranking_period)
-			simbrack_res = update_sigmoids(dicts,t_info,max_iterations=1000,v=v,ranking_period=2,sig='alt')
-			if simbrack_res:
-				ISR = {'params': simbrack_res}
+			sigrank_res = update_sigmoids(dicts,t_info,max_iterations=1000,v=v,ranking_period=2,sig='alt')
+			if sigrank_res:
+				ISR = {'params': sigrank_res}
 				save_dict(ISR,'ISR_%d_%d_%d'%(db_game,db_year,db_year_count),None,'..\\lib')
 
 	return True

@@ -272,9 +272,9 @@ def load_dict(name,ver,loc='db'):
 			s['elo_del'] = {}
 			s['glicko'] = {}
 			s['glicko_del'] = {}
-			s['iago'] = {}
-			s['iago_del'] = {}
-			s['iago_sig'] = {}
+			s['srank'] = {}
+			s['srank_del'] = {}
+			s['srank_sig'] = {}
 			s['perf'] = {}
 			save_dict(s,name,ver,loc)
 			return s

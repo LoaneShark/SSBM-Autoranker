@@ -26,7 +26,7 @@ def get_result(dicts,t_id,res_filt=None):
 	player_places = [records[p_id]['placings'][t_id] for p_id in player_ids]
 	player_losses = []
 	player_wins = []
-	player_skills = [[round(skills['elo'][p_id][t_id],3),round(skills['glicko'][p_id][t_id][0],3)] for p_id in player_ids]
+	player_skills = [[round(skills['elo'][p_id][t_id],3),round(skills['glicko'][p_id][t_id][0],3),round(skills['srank'][p_id][t_id][0],3)] for p_id in player_ids]
 	#player_skills = [[skills[key][p_id][t_id] for key in ['elo','glicko','sim']] for p_id in player_ids]
 	player_chars = [p_char for p_char in p_info[p_id]['characters']]
 	for p_id in player_ids:
@@ -101,8 +101,8 @@ def get_result(dicts,t_id,res_filt=None):
 				if not res_filt['glicko'] < p_skills[1][0]:
 					players.remove(player)
 					continue
-			if 'simbrack' in res_filt:
-				if not res_filt['simbrack'] < p_skills[2]:
+			if 'simrank' in res_filt:
+				if not res_filt['simrank'] < p_skills[2]:
 					players.remove(player)
 					continue
 			if 'character' in res_filt:
@@ -150,7 +150,7 @@ def get_player(dicts,p_id,tag=None,t_ids=None,slugs=None):
 					del idcopy[t_id]
 			return p_id,p_info[p_id],reccopy,idcopy
 		else:
-			print("Error: Invalid form for t_ids in call to get_player(): %s"%type(t_ids))
+			print('Error: Invalid form for t_ids in call to get_player(): %s'%type(t_ids))
 			return False
 	else:
 		return p_id,p_info[p_id],records[p_id],ids[p_id],skills[p_id]
@@ -158,10 +158,10 @@ def get_player(dicts,p_id,tag=None,t_ids=None,slugs=None):
 # return (filtered) results for a series of tourneys
 def get_results(dicts,t_ids,res_filt=None):
 	if type(t_ids) is str:
-		if t_ids == "all":
+		if t_ids == 'all':
 			t_ids = [t_id for t_id in tourneys if not t_id == 'slugs']
 		else:
-			print("Error:: Invalid tournament id: %s"%t_ids)
+			print('Error:: Invalid tournament id: %s'%t_ids)
 	if type(t_ids) is list:
 		return [[t_id,get_result(dicts,t_id,res_filt)] for t_id in t_ids]
 	elif t_ids == None:
@@ -293,40 +293,40 @@ def print_result(dicts,t_id,res_filt=None,max_place=64):
 	roundnames = [t_labels[group] for group in players[0][3]]
 	roundslen = sum([len(str(name)) for name in roundnames]) + 2*num_rounds
 
-	print("%s Results | ID: %d"%(tourneys[t_id]['name'],t_id))
-	print("\n{:>13.13}".format("Sponsor |"),"{:<24.24}".format("Tag"),"ID #\t","Place\t",("{:<%d.%d}"%(roundslen+5,roundslen+5)).format("Bracket"),"Losses\n")
+	print('%s Results | ID: %d'%(tourneys[t_id]['name'],t_id))
+	print('\n{:>13.13}'.format('Sponsor |'),'{:<24.24}'.format('Tag'),'ID #\t','Place\t',('{:<%d.%d}'%(roundslen+5,roundslen+5)).format('Bracket'),'Losses\n')
 
 	for player in players:
 		p_id,sp,tag,path,placement,losses,wins = player
 		
 		# format sponsor
-		if sp == None or sp == "":
-			sp = "  "
+		if sp == None or sp == '':
+			sp = '  '
 		else:
 			if len(sp) > 12:
-					sp = sp[:8] + "... |"
+					sp = sp[:8] + '... |'
 			else:
-				if sp[-2:] != " |":
-					sp = sp + " |"
+				if sp[-2:] != ' |':
+					sp = sp + ' |'
 		# format player tag
 		if len(tag) > 24:
-			tag = tag[:21]+"..."
+			tag = tag[:21]+'...'
 		# format losses
 		if losses == None or losses == []:
 			loss_string = None
 		else:
-			loss_string = "["+", ".join(str(l) for l in [p_info[loss_id]['tag'] for loss_id in losses])+"]"
+			loss_string = '['+', '.join(str(l) for l in [p_info[loss_id]['tag'] for loss_id in losses])+']'
 
-		print("{:>13.13}".format(sp),"{:<24.24}".format(tag),"{:>7.7}".format(str(p_id)), \
-			"  {:<5.5}".format(str(placement)),"\t",("{:<%d.%d}"%(roundslen+5,roundslen+5)).format("["+", ".join(str(label) for label in [t_labels[group] for group in path])+"]"),loss_string)
+		print('{:>13.13}'.format(sp),'{:<24.24}'.format(tag),'{:>7.7}'.format(str(p_id)), \
+			'  {:<5.5}'.format(str(placement)),'\t',('{:<%d.%d}'%(roundslen+5,roundslen+5)).format('['+', '.join(str(label) for label in [t_labels[group] for group in path])+']'),loss_string)
 
 # print (filtered) results for multiple tourneys
 def print_results(dicts,t_ids,res_filt=None,max_place=64):
 	if type(t_ids) is str:
-		if t_ids == "all":
+		if t_ids == 'all':
 			t_ids = [t_id for t_id in tourneys if not t_id == 'slugs']
 		else:
-			print("Error:: Invalid tournament id: %s"%t_ids)
+			print('Error:: Invalid tournament id: %s'%t_ids)
 	if type(t_ids) is list:
 		for t_id in t_ids:
 			print_result(dicts,t_id,res_filt,max_place)
@@ -422,7 +422,7 @@ def print_resume(dicts,res,g_key='player',s_key=None,disp_raw=False,disp_wins=Tr
 		if res[0][2] != None and res[0][2] != ' ' and res[0][2] != '':
 			tagstr += '%s | '%res[0][2]
 		tagstr += res[0][3]
-		print('%s (id: %d) || %s (Elo: %d, Glicko: %d)'%(tagstr,res[0][1],res[0][4],round(p_info[res[0][1]]['elo'],3),round(p_info[res[0][1]]['glicko'][0],3)))
+		print('%s (id: %d) || %s (Elo: %d, Glicko: %d, Simrank: %d)'%(tagstr,res[0][1],res[0][4],round(p_info[res[0][1]]['elo'],3),round(p_info[res[0][1]]['glicko'][0],3),round(p_info[res[0][1]]['srank'][0],3)))
 	else:
 		print(str(oldval)+': ')
 	s_tagstr = ''
@@ -443,7 +443,7 @@ def print_resume(dicts,res,g_key='player',s_key=None,disp_raw=False,disp_wins=Tr
 				if line[2] != None:
 					tagstr += '%s | '%line[2]
 				tagstr += line[3]
-				print('%s (id: %d) || %s (Elo: %d, Glicko: %d)'%(tagstr,line[1],line[4],round(p_info[line[1]]['elo'],3),round(p_info[line[1]]['glicko'][0],3)))
+				print('%s (id: %d) || %s (Elo: %d, Glicko: %d, Simrank: %d)'%(tagstr,line[1],line[4],round(p_info[line[1]]['elo'],3),round(p_info[line[1]]['glicko'][0],3),round(p_info[res[0][1]]['srank'][0],3)))
 			else:
 				print(str(line[h_idx])+': ')
 		# print secondary header if on new subsection
@@ -548,7 +548,7 @@ def old_print_event(dicts,t_id,max_place=64,translate_cjk=True):
 			if translate_cjk and has_cjk(tag):
 				tag = '<'+transliterate(tag)+'>'
 			if len(tag) > tag_len:
-				tag = tag[:tag_len-3]+"..."
+				tag = tag[:tag_len-3]+'...'
 			for ch in tag:
 				if is_emoji(ch):
 					tag_len -= 1

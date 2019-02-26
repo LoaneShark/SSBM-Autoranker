@@ -55,14 +55,14 @@ def scrape(game,year,verb=0):
 
 	links = ['https://www.ssbwiki.com%s'%event[0] for event in res]
 	entrant_counts = [event[3] for event in res]
-	return scrape_slugs(links)
+	return scrape_slugs(links,v=verb)
 
 # given a set of tourney wiki page urls, returns all of their smash.gg slugs
-def scrape_slugs(urls):
-	return [scrape_slug(url) for url in urls]
+def scrape_slugs(urls,v=0):
+	return [scrape_slug(url,v=v) for url in urls]
 
 # given a url for a tournament's ssbwiki page, returns the smash.gg bracket slug
-def scrape_slug(url):
+def scrape_slug(url,v=0):
 	#print(url)
 	if 'redlink' in url:
 		url = url.split('&')[0]
@@ -70,6 +70,8 @@ def scrape_slug(url):
 		try:
 			page = urlopen(url).read()
 		except HTTPError:
+			if v >= 5:
+				print('HTTPError: Could not open %s'%url)
 			return ((None,url.split('Tournament')[-1][1:]))
 
 
@@ -84,10 +86,14 @@ def scrape_slug(url):
 		if not smashlink == None and len(smashlink.split('/'))>2:
 			if smashlink.split('/')[2] == 'smash.gg':
 				#print(smashlink)
-				return smashlink.split('/')[4]
+				slug = smashlink.split('/')[4]
+				if v >= 5:
+					print('scraping...',slug)
+				return slug
 			elif smashlink.split('/')[2] == 'challonge.com':
 				if not challonge_found:
-					print('Tournament [%s] could not be read: Challonge support not available yet'%url.split('/')[3])
+					if v >= 1:
+						print('Tournament [%s] could not be read: Challonge support not available yet'%url.split('/')[3])
 					challonge_found = True
 	# return tuple of None with tournament title if smash.gg link could not be found
 	return((None,doc.h1.text[11:]))
@@ -130,7 +136,7 @@ def table_index(doc,game,year):
 				return None
 
 if __name__ == '__main__':
-	print(scrape(1,2016))
+	print(scrape(1386,2019,verb=9))
 	#scrape_slugs(['https://www.ssbwiki.com/Tournament:Valhalla'])
 	
 	#url = 'https://www.ssbwiki.com/List_of_national_tournaments'
