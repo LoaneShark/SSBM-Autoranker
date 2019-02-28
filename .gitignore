@@ -5,4 +5,5 @@ bin/obj/**
 bin/db/**
 bin/old
 lib/San Token.txt
+lib/Firebase_API_Key.json
 root/_site

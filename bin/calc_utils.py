@@ -329,12 +329,14 @@ def calc_sigrank(dicts,max_iter=1000,min_req=3,verbosity=0,rank_size=None,disp_s
 	if seed == 'dict':
 		if verbosity >= 3:
 			print('[seeding by previous/initial skill values]')
-		data_dict = {p_id: ([tag,p_info[p_id]['srank']] if type(p_info[p_id]['srank']) is float else [tag,0.5]) for p_id,tag,_,_ in data}
+		#data_dict = {p_id: ([tag,p_info[p_id]['srank']] if type(p_info[p_id]['srank']) is float else [tag,0.5]) for p_id,tag,_,_ in data}
+		data_dict = {p_id: ([tag,p_info[p_id]['srank']] if type(p_info[p_id]['srank']) is float else [tag,1.0]) for p_id,tag,_,_ in data}
 	# use average win percentage as skill seeds
+	# scale by 1-winrate to fit expected shape of sigmoid skill distribution (lower value == higher skill)
 	elif seed == 'winrate':
 		if verbosity >= 3:
 			print('[seeding by avg winrate]')
-		data_dict = {p_id: [tag,np.mean([winps[p_id][opp_id] for opp_id in winpd[p_id]])] for p_id,tag,_,_ in data}
+		data_dict = {p_id: [tag,1.-np.mean([winps[p_id][opp_id] for opp_id in winps[p_id]])] for p_id,tag,_,_ in data}
 	# use average distance in bracket as skill seeds
 	elif seed == 'placing':
 		if verbosity >= 3:
@@ -346,6 +348,11 @@ def calc_sigrank(dicts,max_iter=1000,min_req=3,verbosity=0,rank_size=None,disp_s
 			print('[seeding by rng]')
 		# give everyone a random initial skillrank in [0.25,0.75]
 		data_dict = {p_id: [tag,np.random.random_sample()/2.+0.25] for p_id,tag,_,_ in data}
+	elif seed == 'blank':
+		if verbosity >= 3:
+			print('[blanked seeding]')
+		data_dict = {p_id: ([tag,0.5] if type(p_info[p_id]['srank']) is float else [tag,1.0]) for p_id,tag,_,_ in data}
+
 	# use elo/glicko as skill seeds
 	else:
 		if verbosity >= 3:
@@ -366,16 +373,31 @@ def calc_sigrank(dicts,max_iter=1000,min_req=3,verbosity=0,rank_size=None,disp_s
 		data = data[:,:3]
 		## convert data to a dict and pass to sigrank
 		data_dict = {p_id: [tag,skill_rank] for p_id,tag,skill_rank in data}
-
-	print('Simulating Bracket... (%d entrants)'%n)
+	if verbosity >= 5:
+		print('Generating Sigmoids... (%d entrants)'%n)
 	#new_data_dict,sigs = sigrank(data_dict,winps,id_list,max_iter=max_iter)
 	#new_data_dict,sigs,data_hist = sigrank(data_dict,winps,chis,id_list,max_iter=max_iter,simulate_bracket=False,score_intsigs=True,learn_rate=0.5,learn_decay=False,simple_sigmoid=False)
-	new_data,sigs,data_hist = sigrank(data_dict,winps,chis,id_list,max_iter=max_iter,v=verbosity,simulate_bracket=False,score_intsigs=True,learn_rate=alpha,learn_decay=learn_decay,mode=mode,sig_mode=sig_mode)
+	new_data,sigs,data_hist = sigrank(data_dict,winps,chis,id_list,max_iter=max_iter,v=verbosity,score_by='average',learn_rate=alpha,learn_decay=learn_decay,mode=mode,sig_mode=sig_mode)
 	if mode == 'dict':
 		new_data_dict = dcopy(new_data)
 
+	# accumulate the results and the inverted sigmoids
+	if mode == 'dict':
+		if sig_mode == 'alt':
+			intsig_res = [[new_data_dict[p_id][0],new_data_dict[p_id][1],inv_alt_sigmoid(0.5,(sigs[p_id][0],sigs[p_id][1],sigs[p_id][2],sigs[p_id][3])),p_id] for p_id in id_list]
+		else:
+			intsig_res = [[new_data_dict[p_id][0],new_data_dict[p_id][1],inv_sigmoid(0.5,(sigs[p_id][0],sigs[p_id][1],sigs[p_id][2],sigs[p_id][3])),p_id] for p_id in id_list]
+	else:
+		if sig_mode == 'alt':
+			intsig_res = [[data_dict[p_id][0],skill,inv_alt_sigmoid(0.5,(sig[0],sig[1],sig[2],sig[3])),p_id] for p_id,skill,sig in zip(id_list,new_data,sigs)]
+		else:
+			intsig_res = [[data_dict[p_id][0],skill,inv_sigmoid(0.5,(sig[0],sig[1],sig[2],sig[3])),p_id] for p_id,skill,sig in zip(id_list,new_data,sigs)]
+	intsig_res = sorted(intsig_res,key=lambda l: l[1])
+	# restructure to be p_id: tag,skill,y-int
+	intsigs = {intsig[-1]: intsig[:-1] for intsig in intsig_res}
+
+	# print info like attribute distributions and results/rankings
 	if print_res:
-		#p_list = [sigs[p_id] for p_id in id_list]
 		if mode == 'dict':
 			p_list = [sigs[p_id] for p_id in sigs]
 		else:
@@ -396,37 +418,19 @@ def calc_sigrank(dicts,max_iter=1000,min_req=3,verbosity=0,rank_size=None,disp_s
 			print(means)
 			print('=======================')
 			print('Iverting sigmoids...')
-			#intsigs = {p_id: 1.-integrate_sigmoid(sigs[p_id],N) for p_id in sigs}
-			#intsig_res = [[new_data_dict[p_id][0],1.-integrate_sigmoid(sigs[p_id],N),new_data_dict[p_id][1],p_id] for p_id in sigs]
-			#intsig_res = [[new_data_dict[p_id][0],new_data_dict[p_id][1],inv_sigmoid(0.5,sigs[p_id][0],sigs[p_id][1],sigs[p_id][2],sigs[p_id][3]),p_id] for p_id in id_list]
-			if mode == 'dict':
-				if sig_mode == 'alt':
-					intsig_res = [[new_data_dict[p_id][0],new_data_dict[p_id][1],inv_alt_sigmoid(0.5,(sigs[p_id][0],sigs[p_id][1],sigs[p_id][2],sigs[p_id][3])),p_id] for p_id in id_list]
-				else:
-					intsig_res = [[new_data_dict[p_id][0],new_data_dict[p_id][1],inv_sigmoid(0.5,(sigs[p_id][0],sigs[p_id][1],sigs[p_id][2],sigs[p_id][3])),p_id] for p_id in id_list]
-			else:
-				if sig_mode == 'alt':
-					intsig_res = [[data_dict[p_id][0],skill,inv_alt_sigmoid(0.5,(sig[0],sig[1],sig[2],sig[3])),p_id] for skill,sig,p_id in zip(new_data,sigs,id_list)]
-				else:
-					intsig_res = [[data_dict[p_id][0],skill,inv_sigmoid(0.5,(sig[0],sig[1],sig[2],sig[3])),p_id] for skill,sig,p_id in zip(new_data,sigs,id_list)]
-			intsig_res = sorted(intsig_res,key=lambda l: l[1])
-			intsigs = {intsig[-1]: intsig[:-1] for intsig in intsig_res}
-			if disp_size <= len(intsig_res):
-				intsig_res = intsig_res[:disp_size]
-			print('---------------------------------------------')
-			print('{:<21.21}'.format('Tag'),'{:<7.7}'.format('Intsig'),'{:<7.7}'.format('Y-int'),'Player ID')
-			print('---------------------------------------------')
-			for intsig_line in intsig_res:
-				print('{:<21.21}'.format(str(intsig_line[0])),'{:<7.7}'.format(str(round(intsig_line[1],4))),'{:<7.7}'.format(str(round(intsig_line[2],4))),intsig_line[3])
-			#print(sigs[int(intsig_line[3])])
-			#print(len([opp_id for opp_id in winps[int(intsig_line[3])]]))
-	#plot_skills(data_dict,id_list)
-	#plot_skills(new_data_dict,id_list)
-	#plot_skills(intsigs,id_list,plot_tags=True)
 
+			if disp_size <= len(intsig_res):
+				intsig_print_res = intsig_res[:disp_size]
+			print('------------------------------------------------')
+			print('{:<21.21}'.format('Tag'),'{:<7.7}'.format('Intsig'),'{:<7.7}'.format('Y-int'),'Player ID')
+			print('------------------------------------------------')
+			for intsig_line in intsig_print_res:
+				print('{:<21.21}'.format(str(intsig_line[0])),'{:<7.7}'.format(str(round(intsig_line[1],4))),'{:<7.7}'.format(str(round(intsig_line[2],4))),intsig_line[3])
+
+	# convert everything to dicts for returns
 	if mode == 'array':
-		# convert everything to dicts for returns
-		new_data_dict = {p_id: [data_dict[p_id][0],skill_rank] for p_id,skill_rank in zip(id_list,new_data)}
+		#new_data_dict = {p_id: [tag,skill_rank,y_int] for tag,skill_rank,y_int,p_id in intsig_res}
+		new_data_dict = dcopy(intsigs)
 		# add non-adjusted skill-ranks for plotting purposes (players that didn't meet activity reqs)
 		for p_id in data_dict:
 			if p_id not in new_data_dict:
@@ -436,17 +440,14 @@ def calc_sigrank(dicts,max_iter=1000,min_req=3,verbosity=0,rank_size=None,disp_s
 	else:
 		data_hist_dict = data_hist
 		sigdict = sigs
+	# plot skills as a function of rank (skill distribution)
 	if plot_ranks:
 		plot_skills(new_data_dict,id_list,mode='dict')
-	return new_data_dict,winps,sigdict,data_hist_dict,id_list
-	#return new_data,winps,sigs,data_hist,id_list
 
-	#plot_winprobs(dicts,new_data_dict,winps,sigs,larry_id,plot_tags=True)
-	#plot_winprobs(dicts,new_data_dict,winps,sigs,T_id,plot_tags=True)
-	#plot_winprobs(dicts,new_data_dict,winps,sigs,jtails_id,plot_tags=True)
+	return new_data_dict,winps,sigdict,data_hist_dict,id_list
 
 # main loop of calc_sigrank
-def sigrank(data,winps,chis,id_list,max_iter=1000,v=0,learn_rate=0.5,beta=0.9,tol=0.0001,simulate_bracket=True,score_intsigs=True,learn_decay=True,mode='array',sig_mode='sigmoid'):
+def sigrank(data,winps,chis,id_list,max_iter=1000,v=0,learn_rate=0.5,beta=0.9,tol=0.0001,simulate_bracket=False,score_by='intsig',learn_decay=True,mode='array',sig_mode='sigmoid'):
 	N = float(len(data.keys()))
 	n = float(len(id_list))
 	print("N:",N," n:",n)
@@ -455,6 +456,17 @@ def sigrank(data,winps,chis,id_list,max_iter=1000,v=0,learn_rate=0.5,beta=0.9,to
 	elif learn_rate < 0:
 		learn_rate = 0
 		learn_decay = False
+
+	if score_by not in ['intsig','intercept','average']:
+		if v >= 3:
+			print('[invalid score_by valeu. scoring by area under sigmoid]')
+		score_by = 'intsig'
+	elif score_by == 'intsig' and v >= 3:
+		print('[scoring by area under sigmoid]')
+	elif score_by == 'intercept' and v >= 3:
+		print('[scoring by 0.5 intercept]')
+	elif score_by == 'average' and v >= 3:
+		print('[scoring by average of integral and intercept]')
 
 	count = 0
 	if mode == 'dict':
@@ -507,6 +519,7 @@ def sigrank(data,winps,chis,id_list,max_iter=1000,v=0,learn_rate=0.5,beta=0.9,to
 				return None
 
 		# iterate through simulated RR bracket and tabulate wins
+		## DEPRECATED
 		if simulate_bracket:
 			if mode == 'array':
 				wins = np.zeroes((n,n))
@@ -560,30 +573,35 @@ def sigrank(data,winps,chis,id_list,max_iter=1000,v=0,learn_rate=0.5,beta=0.9,to
 		else:
 			# update step for array mode
 			if mode == 'array':
-				# update step for all ids [empirical]
+				# update step for all ids
 				all_converged = True
 
-				if score_intsigs:
+				if score_by == 'intsig':
 					if sig_mode == 'alt':
 						s_new = 1.-integrate_alt_sigmoid(sigs,n)
 					else:
 						s_new = 1.-integrate_sigmoid(sigs,n)
-				else:
+				elif score_by == 'intercept':
 					if sig_mode == 'alt':
-						s_new = inv_sigmoid(0.5,sigs)
-					else:
 						s_new = inv_alt_sigmoid(0.5,sigs)
+					else:
+						s_new = inv_sigmoid(0.5,sigs)
+				elif score_by == 'average':
+					if sig_mode == 'alt':
+						s_new = (inv_alt_sigmoid(0.5,sigs) + 1. - integrate_alt_sigmoid(sigs,n))/2.
+					else:
+						s_new = (inv_sigmoid(0.5,sigs) + 1. - integrate_sigmoid(sigs,n))/2.
 				
 				update_diff = abs(s_new-old_skills)
 				if any([diff > tol for diff in update_diff]):
 					all_converged = False
 
 				if learn_decay:
-					new_skills = old_skills + (learn_rate/sqrt(float(count)))*(s_new-old_skills)
-					#new_data[abs_id][1] = s_old + (learn_rate/sqrt(float(count)))*(s_new-s_old)
-				else:
-					new_skills = old_skills + learn_rate*(s_new-old_skills)
-					#new_data[abs_id][1] = s_old + learn_rate*(s_new-s_old)
+					# cut the learnrate in half every 100 iterations
+					if count > 0 and count % 100 == 0:
+						learn_rate /= 2.
+				#new_skills = old_skills + (learn_rate/sqrt(float(count)))*(s_new-old_skills)
+				new_skills = old_skills + learn_rate*(s_new-old_skills)
 
 				data_history = np.append(data_history,[new_skills],axis=0)
 			# update step for dict mode
@@ -656,10 +674,10 @@ def update_sigmoids(dicts,t_info,sig='sigmoid',ranking_period=2,max_iterations=1
 			if v >= 4:
 				print('Updating Sigmoids...')
 			sigrank_res = calc_sigrank(dicts,plot_ranks=False,max_iter=max_iterations,seed='dict',print_res=False,verbosity=v,sig_mode=sig)
-			#sigrank_res = calc_sigrank(dicts,plot_ranks=False,max_iter=max_iterations,seed='elo',print_res=True)
+			# new_data_dict, winps, sigdict, data_hist_dict, id_list = sigrank_res
 			for abs_id in p_info:
 				# if in id_list
-				if abs_id in sigrank_res[3]:
+				if abs_id in sigrank_res[4]:
 					skill_rank = sigrank_res[0][abs_id][1]
 					if abs_id in sigrank_history:
 						sigrank_deltas[abs_id][t_id] = abs(skill_rank - sigrank_history[abs_id][p_info[abs_id]['last_event']])
@@ -668,10 +686,11 @@ def update_sigmoids(dicts,t_info,sig='sigmoid',ranking_period=2,max_iterations=1
 						sigrank_deltas[abs_id] = {}
 						sigrank_deltas[abs_id][t_id] = 0.
 						sigmoid_history[abs_id] = {}
-					sigrank_history[abs_id][t_id] = skill_rank
-					sigmoid_history[abs_id][t_id] = sigrank_res[2][abs_id]
-					p_info[abs_id]['srank'] = skill_rank
-					p_info[abs_id]['srank_sig'] = sigrank_res[2][abs_id]
+					sigrank_history[abs_id][t_id] = float(skill_rank)
+					sigmoid_history[abs_id][t_id] = list(sigrank_res[2][abs_id])
+					# remove numpy data typings for JSON db compatability
+					p_info[abs_id]['srank'] = float(skill_rank)
+					p_info[abs_id]['srank_sig'] = list(sigrank_res[2][abs_id])
 				# otherwise stay the same (unrankable player)
 				else:
 					if p_info[abs_id]['last_event'] == t_id:
@@ -1260,7 +1279,7 @@ def sub_fitsig(p_id,x,y,s,n_i,p0,v_b,dats,params):
 				return p,cov
 
 		except RuntimeError:
-			print('x_0, k: %s'%data[p_id][0])
+			print('x_0, k: %s | N:%d'%(data[p_id][0],len(x)))
 			#plot_winprobs(data,winps,None,None,p_id,plot_sigmoid=False,plot_tags=True)
 			x0_guess,k_guess = (p_cfguess[0],p_cfguess[3])
 			cov_guess = np.full_like((1,2),-1.)
@@ -1276,9 +1295,9 @@ def sub_fitsig(p_id,x,y,s,n_i,p0,v_b,dats,params):
 		except RuntimeError:
 			#print(x0_guess,k_guess)
 			if sig_mode == 'alt':
-				print('g, c: %s'%data[p_id][0])
+				print('g, c: %s | N:%d'%(data[p_id][0],len(x)))
 			else:
-				print('y_0, c: %s'%data[p_id][0])
+				print('y_0, c: %s | N:%d'%(data[p_id][0],len(x)))
 			#plot_winprobs(data,winps,None,None,p_id,plot_sigmoid=False,plot_tags=True)
 			y0_guess,c_guess = (p_cfguess[1],p_cfguess[2])
 			second_cov_guess = np.full_like((1,2),-1.)
@@ -1322,7 +1341,7 @@ def sub_fitsig(p_id,x,y,s,n_i,p0,v_b,dats,params):
 					final_guess,final_cov_guess = sp.optimize.curve_fit(sigmoid,x,y,p0=p_cfguess,sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf')
 				final_cov = np.diag(final_cov_guess)
 			except RuntimeError:
-				print('final pass: %s | %d'%(data[p_id][0],p_id))
+				print('final pass: %s | %d | N:%d'%(data[p_id][0],p_id,len(x)))
 				#plot_winprobs(data,winps,None,None,p_id,plot_sigmoid=False,plot_tags=True)
 				#final_guess = np.array([x0_guess,y0_guess,c_guess,k_guess])
 				final_guess = p_cfguess

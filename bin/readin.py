@@ -512,8 +512,14 @@ def read_phases(tourney):
 		if v >= 6:
 			print('only looking for brackets of game type: %s %s [%s]'%(gamemap[game][0], team_string, pro_string))
 			print('event_ids pre filtering: ' + str([(event_id[0],event_id[1][0]) for event_id in event_ids]))
+
+		# returns true if an event is all exhibiton phases (not partially, to allow for brackets that feed into amateur/redemption brackets etc)
+		is_exhibition = lambda ev_id: all([phase['isExhibition'] for phase in tdata['entities']['phase'] if phase['eventId'] == ev_id])
 		# filters out events that don't list the given game in description, to filter out stuff like low tiers/ironmans/crews etc
 		game_events = [event_id[0] for event_id in event_ids if has_game(event_id[1][0],game) or has_game(event_id[1][1],game)]
+		exhibition_events = [event_id[0] for event_id in event_ids if is_exhibition(event_id)]
+		'''for event_id in event_ids:
+			print(event_id[0],event_id[1][0],is_exhibition(event_id[0]))'''
 		if teamsize > 1:
 			team_events = [event_id[0] for event_id in event_ids if is_teams(event_id[1][0],teamsize) or is_teams(event_id[1][1],teamsize)]
 		if teamsize <= 1:
@@ -522,12 +528,13 @@ def read_phases(tourney):
 		ladder_events = [event_id[0] for event_id in event_ids if is_ladder(event_id[1][0]) or is_ladder(event_id[1][1])]
 		if only_arcadians or not count_arcadians:
 			arcadian_events = [event_id[0] for event_id in event_ids if is_arcadian(event_id[1][0]) or is_arcadian(event_id[1][1])]
-		#if len(game_events) >= 1:
-		#	event_ids = game_events
-		#else:
-		#	event_ids = [event_id[0] for event_id in event_ids]
+		if len(game_events) >= 1:
+			event_ids = game_events
+		else:
+			event_ids = [event_id[0] for event_id in event_ids]
 		# filters out events that have 'amateur', 'ladder' or 'arcadian' in the description
-		event_ids = game_events
+		#event_ids = game_events
+		#event_ids = [event_id for event_id in event_ids if not event_id in exhibition_events]
 		event_ids = [event_id for event_id in event_ids if not event_id in amateur_events]
 		event_ids = [event_id for event_id in event_ids if not event_id in ladder_events]
 		if teamsize > 1:
@@ -545,6 +552,9 @@ def read_phases(tourney):
 			print('** No suitable events found of form: %s %s [%s] at this tournament'%(gamemap[game][0], team_string, pro_string))
 
 		if force_first_event:
+			#event_ids = sorted(event_ids,key=lambda i: tdata['entities']['event'][i]['numEntrants'])
+			event_ids = sorted(event_ids)
+			print(event_ids[0])
 			event_ids = event_ids[:1]
 
 		# get all phases (waves) for each event (ideally filtered down to 1 by now)
@@ -582,7 +592,7 @@ if __name__ == '__main__':
 	#read_sets("sets.txt")
 	#pull_phase(764818)
 
-	#clean_data("./old/umeburaphasesraw.txt","./old/umeburaphasesclean.txt")
+	clean_data("./old/glitch6phasesraw.txt","./old/glitch6phasesclean.txt")
 	#clean_data("./old/genesis6top64setsraw.txt","./old/genesis6top64setsclean.txt")
 	#clean_data("./old/paxarenaraw.txt","./old/paxarenaclean.txt")
 	#clean_data("./old/crewsraw.txt","./old/crewsclean.txt")

@@ -452,6 +452,7 @@ def store_tourney(slug,t_info,group_names,dicts):
 # delete all data imported from a tourney
 # (keeps absolute player data such as ID, meta info)
 # **does NOT save db automatically**
+## POSSIBLY deprecated
 def delete_tourney(dicts,t_id,slug=None):
 	tourneys,ids,p_info,records,skills = dicts
 	if not slug == None:

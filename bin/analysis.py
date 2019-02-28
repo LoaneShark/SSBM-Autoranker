@@ -14,6 +14,7 @@ from db_utils import *
 from dict_utils import *
 from calc_utils import *
 from analysis_utils import *
+from webdb import *
 
 ## TODO: 
 ##	Shortterm
@@ -67,15 +68,14 @@ from analysis_utils import *
 ## 	- fit Glicko-2 (?)
 
 ## SIMBRACK TODO:
-##  - do I need to simbrack? Can I just use sigmoid integral / y-intercept?
-##	- track deltas to ensure convergence
-##	- how do I calculate uncertainty in original winprobs
+##  - skill-bin option/support?
 ##	
 ##	- Fourier analysis lmao
 
 ## TOURNEY SHITLIST:
 ## 	- We Tech Those 3: PM Pool PMA2
 ##	- DPOTG 2018: Redemption ladder (kinda)
+##  - Glitch 6: Event filtering misses Ultimate Singles (but reads in side events instead)
 
 
 ## ARGUMENT PARSING
@@ -155,13 +155,13 @@ def main():
 	if 1 < 0:
 		opts = find_opt_hyperparams(dicts,20,9,key_ids=[1000,19554])
 
-	to_calc_simbrack = False
-	if to_calc_simbrack:
+	to_calc_sigrank = True
+	if to_calc_sigrank:
 		array_t = timer()
 		if game_idx == 1:
-			iagorank_params = calc_simbrack(dicts,min_req=min_act,max_iter=1000,learn_decay=True,disp_size=300,verbosity=5,print_res=True,plot_ranks=False,mode='array',seed='elo',sig_mode='alt')
+			iagorank_params = calc_sigrank(dicts,min_req=min_act,max_iter=1000,learn_decay=True,disp_size=300,verbosity=5,print_res=True,plot_ranks=False,mode='array',seed='blank',sig_mode='alt')
 		else:
-			iagorank_params = calc_simbrack(dicts,min_req=min_act,max_iter=1000,learn_decay=True,disp_size=300,verbosity=5,print_res=True,plot_ranks=False,mode='array',seed='elo',sig_mode='alt')
+			iagorank_params = calc_sigrank(dicts,min_req=min_act,max_iter=1000,learn_decay=True,disp_size=300,verbosity=5,print_res=True,plot_ranks=False,mode='array',seed='placing',sig_mode='alt')
 		array_time = timer()-array_t
 		print('Array time elapsed:','{:.3f}'.format(array_time) + ' s')
 		ISR = {'params': iagorank_params}
@@ -172,12 +172,17 @@ def main():
 
 	iagoranks,winprobs,sigmoids,data_hist,id_list = iagorank_params
 	print('N: %d'%len(id_list))
-	if not to_calc_simbrack or to_calc_simbrack:
-		charmap = load_dict('characters',None,'../lib')[game_idx]
-		charmap[''] = ''
-		for line in sorted([[iagoranks[rank][0],round(iagoranks[rank][1],3),p_id,charmap[get_main(p_id,p_info)]] for rank,p_id in zip([ir for ir in iagoranks],id_list)],key=lambda l: l[1])[:100]:
-			print(','.join([str(item) for item in line]))
-			#print(line.join(' '))
+	if v >= 4:
+		if not to_calc_sigrank or to_calc_sigrank:
+			charmap = load_dict('characters',None,'../lib')[game_idx]
+			charmap[''] = ''
+			i = 1
+			print('Rank | Tag        Avg  Int  Y-0  Split   p_id   N    Main')
+			data_res = [[iagoranks[p_id][0],round((iagoranks[p_id][2]+iagoranks[p_id][1])/2.,3),round(iagoranks[p_id][1],3),round(iagoranks[p_id][2],3),round(iagoranks[p_id][2]-iagoranks[p_id][1],3),p_id,len([opp_id for opp_id in winprobs[p_id]]),charmap[get_main(p_id,p_info)]] for p_id in id_list]
+			for line in sorted(data_res,key=lambda l: l[1])[:100]:
+				print('{:>3.3}'.format(str(i)),'|','  '.join([str(item) for item in line]))
+				i += 1
+				#print(line.join(' '))
 	iter_num = len(data_hist[id_list[0]])
 	#print('Dict time elapsed:','{:.3f}'.format(dict_time) + ' s')
 	if game_idx == 1:
@@ -291,7 +296,10 @@ def main():
 
 	#return True
 
-	generate_matchup_chart(dicts,game_idx,year,year_count,id_list=id_list,label_mode='ones',v=int(args.verbosity),infer_characters=True,n_bins=10000)
+	db_str_key = str(game_idx)+'_'+str(year)+'_'+str(year_count)
+	#update_db(dicts,db_str_key,force_update=True)
+
+	#generate_matchup_chart(dicts,game_idx,year,year_count,id_list=id_list,label_mode='ones',v=int(args.verbosity),infer_characters=True,n_bins=10000)
 	'''
 	tl = generate_tier_list(dicts,game_idx,year,year_count,id_list=id_list)
 	for line in tl:
@@ -327,8 +335,8 @@ def main_read():
 						if p_id in p_info:
 							if 'characters' in p_info[p_id]:
 								if sum(p_info[p_id]['characters'][char_id]) <= 0 or p_info[p_id]['characters'][char_id] is None:
-									p_info[p_id]['characters'][char_id][0] += 1
-									p_info[p_id]['characters'][char_id][1] += 1
+									p_info[p_id]['characters'][char_id][0] += 10
+									p_info[p_id]['characters'][char_id][1] += 10
 						else:
 							print(p_id,'-',p_id in p_info.keys())
 	return tourneys,ids,p_info,records,skills
