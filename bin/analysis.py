@@ -155,7 +155,7 @@ def main():
 	if 1 < 0:
 		opts = find_opt_hyperparams(dicts,20,9,key_ids=[1000,19554])
 
-	to_calc_sigrank = True
+	to_calc_sigrank = False
 	if to_calc_sigrank:
 		array_t = timer()
 		if game_idx == 1:
@@ -174,24 +174,32 @@ def main():
 	print('N: %d'%len(id_list))
 	if v >= 4:
 		if not to_calc_sigrank or to_calc_sigrank:
-			charmap = load_dict('characters',None,'../lib')[game_idx]
+			charmap = load_dict('characters',None,'../lib')
+			if game_idx in charmap:
+				charmap = charmap[game_idx]
+			else:
+				charmap = {}
 			charmap[''] = ''
 			i = 1
 			print('Rank | Tag        Avg  Int  Y-0  Split   p_id   N    Main')
 			data_res = [[iagoranks[p_id][0],round((iagoranks[p_id][2]+iagoranks[p_id][1])/2.,3),round(iagoranks[p_id][1],3),round(iagoranks[p_id][2],3),round(iagoranks[p_id][2]-iagoranks[p_id][1],3),p_id,len([opp_id for opp_id in winprobs[p_id]]),charmap[get_main(p_id,p_info)]] for p_id in id_list]
-			for line in sorted(data_res,key=lambda l: l[1])[:100]:
+			for line in sorted(data_res,key=lambda l: l[3])[:100]:
 				print('{:>3.3}'.format(str(i)),'|','  '.join([str(item) for item in line]))
 				i += 1
 				#print(line.join(' '))
 	iter_num = len(data_hist[id_list[0]])
 	#print('Dict time elapsed:','{:.3f}'.format(dict_time) + ' s')
 	if game_idx == 1:
-		'''plot_winprobs(iagoranks,winprobs,sigmoids,id_list,38255,plot_tags=True,sig_mode='alt')
-		plot_hist(data_hist,p_id=38255,plot_delta=True)
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,3713,plot_tags=True,sig_mode='alt')
-		plot_hist(data_hist,p_id=3713,plot_delta=True)
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,46827,plot_tags=True,sig_mode='alt')
-		plot_hist(data_hist,p_id=46827,plot_delta=True)'''
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1004,plot_tags=True,sig_mode='alt')
+		plot_hist(data_hist,p_id=1004,plot_delta=True)
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,4692,plot_tags=True,sig_mode='alt')
+		plot_hist(data_hist,p_id=4692,plot_delta=True)
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1037,plot_tags=True,sig_mode='alt')
+		plot_hist(data_hist,p_id=1037,plot_delta=True)
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,16393,plot_tags=True,sig_mode='alt')
+		plot_hist(data_hist,p_id=16393,plot_delta=True)
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,4127,plot_tags=True,sig_mode='alt')
+		plot_hist(data_hist,p_id=4127,plot_delta=True)
 		if 1 < 0:
 			# plot mango
 			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1000,plot_tags=True,sig_mode='alt')
@@ -297,7 +305,7 @@ def main():
 	#return True
 
 	db_str_key = str(game_idx)+'_'+str(year)+'_'+str(year_count)
-	#update_db(dicts,db_str_key,force_update=True)
+	update_db(dicts,db_str_key,force_update=True)
 
 	#generate_matchup_chart(dicts,game_idx,year,year_count,id_list=id_list,label_mode='ones',v=int(args.verbosity),infer_characters=True,n_bins=10000)
 	'''

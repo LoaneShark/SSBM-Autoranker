@@ -1,51 +1,177 @@
-<table class='display'>
-	<!-- table header -->
-	<colgroup>
-		<col width='15%' /> <!-- team     -->
-		<col width='30%' /> <!-- player   -->
-		<col width='10%' /> <!-- ssbmrank -->
-		<col width='10%' /> <!-- s-rank   -->
-		<col width='10%' /> <!-- elo      -->
-		<col width='10%' /> <!-- glicko   -->
-	</colgroup>
-	<thead>
-		<tr class='header'>
-			<th>Team</th>
-			<th>Player</th>
-			<th>{% if {{page.title}} == 'Ultimate'%}
-					PGR
-				{% elsif {{page.title}} == 'Melee' %}
-					SSBMRank
-				{% elsif {{page.title}} == 'PM' %}
-					PMRank
-				{% elsif {{page.title}} == 'Smash4' %}
-					PGR
-				{% else %}
-					Rank
-				{% endif %}
-			</th>
-			<th>S-Rank</th>
-			<th>ELO</th>
-			<th>Glicko-2</th>
-		</tr>
-	</thead>
-	<!-- table content -->
-	<tbody>
-		{% for i in (0..10) %}
-			<tr>
-				<td markdown='span' id={{'team_' | append: i}}></td>
-				<td markdown='span' id={{'tag_' | append: i}}></td>
-				<td markdown='span' id={{'rank_' | append: i}}></td>
-				<td markdown='span' id={{'srank_' | append: i}}></td>
-				<td markdown='span' id={{'elo_' | append: i}}></td>
-				<td markdown='span' id={{'glicko_' | append: i}}></td>
-			</tr>
-		{% endfor %}
-	</tbody>
-</table>
+<!-- Bootstrap, DataTables CSS -->
+<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.13/css/dataTables.bootstrap.min.css"> 
+<!--<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.1.1/css/responsive.bootstrap.min.css">-->
+<div>
+	<!-- nav tabs -->
+	<ul class="nav nav-tabs nav-justified center-block" role="tablist">
+		<li role="presentation" class="active"><a class="nav-link active" id="current-tab" href="#current" aria-controls="current" role="tab" data-toggle="tab">Current</a></li>
+		<li role="presentation"><a id="past-tab" class="nav-link" href="#past" aria-controls="past" role="tab" data-toggle="tab"></a></li>
+		<li role="presentation"><a id="alltime-tab" class="nav-link" href="#alltime" aria-controls="alltime" role="tab" data-toggle="tab">All-Time</a></li>
+	</ul>
+
+	<!-- tab contents -->
+	<div class="tab-content">
+		<div role="tabpanel" class="tab-pane fade in active" id="current">
+			<table id="current-table" class="table table-striped table-bordered hover" cellspacing="0" width="100%">
+				<!-- table header -->
+				<colgroup>
+					<col width='15%' /> <!-- team     -->
+					<col width='30%' /> <!-- player   -->
+					<col width='10%' /> <!-- ssbmrank -->
+					<col width='10%' /> <!-- s-rank   -->
+					<col width='10%' /> <!-- elo      -->
+					<col width='10%' /> <!-- glicko   -->
+				</colgroup>
+				<thead>
+					<tr class='header'>
+						<th>Team</th>
+						<th>Player</th>
+						<th>{% if {{page.title}} == 'Ultimate'%}
+								PGR
+							{% elsif {{page.title}} == 'Melee' %}
+								MPGR
+							{% elsif {{page.title}} == 'PM' %}
+								PMRank
+							{% elsif {{page.title}} == 'Smash4' %}
+								PGR
+							{% else %}
+								Rank
+							{% endif %}
+						</th>
+						<th>S-Rank</th>
+						<th>ELO</th>
+						<th>Glicko-2</th>
+					</tr>
+				</thead>
+				<!-- table body -->
+				<tbody>
+					{% for i in (0..9) %}
+						<tr>
+							<td markdown='span' align='right' id={{'team_' | append: i}}></td>
+							<td markdown='span' id={{'tag_' | append: i}}></td>
+							<td markdown='span' id={{'rank_' | append: i}}></td>
+							<td markdown='span' id={{'srank_' | append: i}}></td>
+							<td markdown='span' id={{'elo_' | append: i}}></td>
+							<td markdown='span' id={{'glicko_' | append: i}}></td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table> <!-- current year -->
+		</div> <!-- current year tab -->
+		<div role="tabpanel" class="tab-pane fade" id="past">
+			<table id="past-table" class="table table-striped table-bordered hover" cellspacing="0" width="100%">
+				<!-- table header -->
+				<colgroup>
+					<col width='15%' /> <!-- team     -->
+					<col width='30%' /> <!-- player   -->
+					<col width='10%' /> <!-- ssbmrank -->
+					<col width='10%' /> <!-- s-rank   -->
+					<col width='10%' /> <!-- elo      -->
+					<col width='10%' /> <!-- glicko   -->
+				</colgroup>
+				<thead>
+					<tr class='header'>
+						<th>Team</th>
+						<th>Player</th>
+						<th>{% if {{page.title}} == 'Ultimate'%}
+								PGR
+							{% elsif {{page.title}} == 'Melee' %}
+								MPGR
+							{% elsif {{page.title}} == 'PM' %}
+								PMRank
+							{% elsif {{page.title}} == 'Smash4' %}
+								PGR
+							{% else %}
+								Rank
+							{% endif %}
+						</th>
+						<th>S-Rank</th>
+						<th>ELO</th>
+						<th>Glicko-2</th>
+					</tr>
+				</thead>
+				<!-- table body -->
+				<tbody>
+					{% for i in (0..9) %}
+						<tr>
+							<td markdown='span' align='right' id={{'team_' | append: i}}></td>
+							<td markdown='span' id={{'tag_' | append: i}}></td>
+							<td markdown='span' id={{'rank_' | append: i}}></td>
+							<td markdown='span' id={{'srank_' | append: i}}></td>
+							<td markdown='span' id={{'elo_' | append: i}}></td>
+							<td markdown='span' id={{'glicko_' | append: i}}></td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table> <!-- past year -->
+		</div> <!-- past year tab -->
+		<div role="tabpanel" class="tab-pane fade" id="alltime">
+			<table id="alltime-table" class="table table-striped table-bordered hover" cellspacing="0" width="100%">
+				<!-- table header -->
+				<colgroup>
+					<col width='15%' /> <!-- team     -->
+					<col width='30%' /> <!-- player   -->
+					<col width='10%' /> <!-- ssbmrank -->
+					<col width='10%' /> <!-- s-rank   -->
+					<col width='10%' /> <!-- elo      -->
+					<col width='10%' /> <!-- glicko   -->
+				</colgroup>
+				<thead>
+					<tr class='header'>
+						<th>Team</th>
+						<th>Player</th>
+						<th>{% if {{page.title}} == 'Ultimate'%}
+								PGR
+							{% elsif {{page.title}} == 'Melee' %}
+								MPGR
+							{% elsif {{page.title}} == 'PM' %}
+								PMRank
+							{% elsif {{page.title}} == 'Smash4' %}
+								PGR
+							{% else %}
+								Rank
+							{% endif %}
+						</th>
+						<th>S-Rank</th>
+						<th>ELO</th>
+						<th>Glicko-2</th>
+					</tr>
+				</thead>
+				<!-- table body -->
+				<tbody>
+					{% for i in (0..9) %}
+						<tr>
+							<td markdown='span' align='right' id={{'team_' | append: i}}></td>
+							<td markdown='span' id={{'tag_' | append: i}}></td>
+							<td markdown='span' id={{'rank_' | append: i}}></td>
+							<td markdown='span' id={{'srank_' | append: i}}></td>
+							<td markdown='span' id={{'elo_' | append: i}}></td>
+							<td markdown='span' id={{'glicko_' | append: i}}></td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table> <!-- past year -->
+		</div> <!-- past year tab -->
+	</div> <!-- tab content -->
+</div> <!-- tables -->
 
 <!-- DB import/connection -->
-<script src="https://www.gstatic.com/firebasejs/5.8.4/firebase.js"></script>
+<script src="https://www.gstatic.com/firebasejs/5.8.4/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/5.8.4/firebase-database.js"></script>
+<!-- jQuery, Bootstrap, DataTables imports -->
+<!--<script src="https://code.jquery.com/jquery-3.3.1.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap.min.js"></script>-->
+<script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.js"></script>
+<script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<script type="text/javascript" language="javascript" src="https://cdn.datatables.net/1.10.13/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" language="javascript" src="https://cdn.datatables.net/1.10.13/js/dataTables.bootstrap.min.js"></script>
+
+<script type="text/javascript" language="javascript" src="https://cdn.datatables.net/responsive/2.1.1/js/dataTables.responsive.min.js"></script>
+<script type="text/javascript" language="javascript" src="https://cdn.datatables.net/responsive/2.1.1/js/responsive.bootstrap.min.js"></script>
+
 <script>
   // Initialize Firebase
   var config = {
@@ -61,32 +187,129 @@
 <!-- populating page's table -->
 <script src="/assets/js/table_utils.js"></script>
 <script>
-	var page_title = "{{page.title}}"
-	var title_ids = {"Melee":1,"PM":2,"Smash4":3,"64":4,"Brawl":5,"Ultimate":1386}
-	var game_id = title_ids[page_title]
-	var db_ref_str = "/" + game_id + "_2018_1/p_info";
-	var db_ref = firebase.database().ref(db_ref_str);
+	$().ready(function() {
+		var page_title = "{{page.title}}"
+		var title_ids = {"Melee":1,"PM":2,"Smash4":3,"64":4,"Brawl":5,"Ultimate":1386}
+		var game_id = title_ids[page_title]
+		// get current year for db lookups
+		var curr_year = new Date().getFullYear();
+		// label the past year's tab
+		$('#past-tab').html(curr_year-1)
 
-	var db_query = db_ref.orderByChild('srank').limitToFirst(10)
-	db_query.once('value').then(function(PlayerSnapshot) {
-		var players = snapshotToTable(PlayerSnapshot);
+		// populate "current" table
+		var curr_ref_str = "/" + game_id + "_" + (curr_year-1) + "_1/p_info";
+		var curr_ref = firebase.database().ref(curr_ref_str);
+		var curr_query = curr_ref.orderByChild('srank').limitToFirst(10)
+		curr_query.once('value').then(function(PlayerSnapshot) {
+			if (PlayerSnapshot.exists()) {
+				var players = snapshotToTable(PlayerSnapshot);
 
-		for (i = 0; i < 10; i++) {
-			var player = players[i];
+				$('#current-table').DataTable( {
+					data: players,
+					ordering: true,
+					paging: false,        	
+					"order": [[ 3, "asc" ]],
+					"dom": '<"top"iflp<"clear">>rt<"bottom"iflp<"clear">>',
+					//scrollY: 200,
+					//scrollCollapse: true,
+					columnDefs: [{targets: 0, className:'dt-body-right'}]
+				});
+			} else {
+				console.log('whoops! db directory not found: '+ curr_ref_str)
+				//$('#current-tab').addClass("disabled")
+			};
+		});
+		// populate "past" table
+		var past_ref_str = "/" + game_id + "_" + (curr_year-1) + "_0/p_info";
+		var past_ref = firebase.database().ref(past_ref_str);
+		var past_query = past_ref.orderByChild('srank').limitToFirst(10)
+		past_query.once('value').then(function(PlayerSnapshot) {
+			if (PlayerSnapshot.exists()) {
+				var players = snapshotToTable(PlayerSnapshot);
 
-			document.getElementById('team_'+i).innerHTML=player[0];
-			document.getElementById('tag_'+i).innerHTML=player[1];
-			//document.getElementById('rank').innerHTML=player[2];
-			document.getElementById('rank_'+i).innerHTML="N/A";
-			document.getElementById('srank_'+i).innerHTML=player[3];
-			document.getElementById('elo_'+i).innerHTML=player[4];
-			document.getElementById('glicko_'+i).innerHTML=player[5];
-		};
+				$('#past-table').DataTable( {
+					data: players,
+					ordering: true,
+					paging: false,        	
+					"order": [[ 3, "asc" ]],
+					"dom": '<"top"iflp<"clear">>rt<"bottom"iflp<"clear">>',
+					//scrollY: 200,
+					//scrollCollapse: true,
+					columnDefs: [{targets: 0, className:'dt-body-right'}]
+				});
+			} else {
+				console.log('whoops! db directory not found: '+ past_ref_str)
+				//$('#past-tab').addClass("disabled")
+			};
+		});
+		// populate "all-time" table
+		var db_ref_str = "/" + game_id + "_2016_" + (curr_year-2016) + "/p_info";
+		var db_ref = firebase.database().ref(db_ref_str);
+		var db_query = db_ref.orderByChild('srank').limitToFirst(10)
+		db_query.once('value').then(function(PlayerSnapshot) {
+			if (PlayerSnapshot.exists()) {
+				var players = snapshotToTable(PlayerSnapshot);
 
+				$('#alltime-table').DataTable( {
+					data: players,
+					ordering: true,
+					paging: false,        	
+					"order": [[ 3, "asc" ]],
+					"dom": '<"top"iflp<"clear">>rt<"bottom"iflp<"clear">>',
+					//scrollY: 200,
+					//scrollCollapse: true,
+					columnDefs: [{targets: 0, className:'dt-body-right'}]
+				});
+			} else {
+				console.log('whoops! db directory not found: '+ db_ref_str)
+				//$('#alltime-tab').addClass("disabled")
+			};
+		});
+
+		$('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+			$.fn.dataTable.tables({visible: true, api: true}).columns.adjust();
+	        var currentTab = $(e.target).text(); // gets current tab
+	        switch(currentTab) {
+	        	case 'current':
+	        		var table = $('#current-table').DataTable();
+	        		$('#container').css('display','block');
+	        		table.columns.adjust().draw();
+	        		break;
+	        	case 'past':
+	        		var table = $('#past-table').DataTable();
+	        		$('#container').css('display','block');
+	        		table.columns.adjust().draw();
+	        		break;
+	        	case 'alltime':
+	        		var table = $('#alltime-table').DataTable();
+	        		$('#container').css('display','block');
+	        		table.columns.adjust().draw();
+	        		break;
+	        	};
+		});
+	});
+</script>
+<!-- convert to interactive DataTable -->
+<!--<script>
+	$(document).ready(function() {
+		//$('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+		//	$.fn.dataTable.tables({visible: true, api: true}).columns.adjust();
+		//});
+
+		$('#top10').DataTable( {
+			//scrollY: 200,
+			//scrollCollapse: true,
+        	"order": [[ 3, "desc" ]],
+        	"dom": '<"top"iflp<"clear">>rt<"bottom"iflp<"clear">>',
+			paging: false
+		});
+
+		//$('#top50').DataTable( {
+		//	paging: false
+		//});
 	});
 
-
-</script>
+</script>-->
 <script>
 	// fill the empty table with db values
 	window.onload = function() {

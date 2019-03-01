@@ -506,9 +506,13 @@ def char_count(p,c,p_info):
 
 def get_main(p,p_info): 
 	if 'characters' in p_info[p]:
-		return sorted([[c_id, char_count(p,c_id,p_info)] if char_count(p,c_id,p_info) > 0 else ['',0] for c_id in p_info[p]['characters']], \
+		charlist = sorted([[c_id, char_count(p,c_id,p_info)] if char_count(p,c_id,p_info) > 0 else ['',0] for c_id in p_info[p]['characters']], \
 									key=lambda c_l: c_l[1], \
-									reverse=True)[0][0]
+									reverse=True)
+		if len(charlist) > 0:
+			return charlist[0][0]
+		else:
+			return ''
 	else:
 		return ''
 

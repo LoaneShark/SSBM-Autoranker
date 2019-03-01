@@ -248,7 +248,12 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 
 				# store W/L record per character
 				if 'characters' not in p_info[abs_id]:
-					p_info[abs_id]['characters'] = {char_id: [0,0] for char_id in load_dict('characters',None,loc='../lib')[db_game]}
+					chardict = load_dict('characters',None,loc='../lib')
+					if db_game in chardict:
+						chardict = chardict[db_game]
+						p_info[abs_id]['characters'] = {char_id: [0,0] for char_id in chardict}
+					else:
+						p_info[abs_id]['characters'] = {}
 				'''for character in characters[e_id]:
 					p_info[abs_id]['characters'] = characters[e_id]'''
 

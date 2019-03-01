@@ -554,7 +554,7 @@ def read_phases(tourney):
 		if force_first_event:
 			#event_ids = sorted(event_ids,key=lambda i: tdata['entities']['event'][i]['numEntrants'])
 			event_ids = sorted(event_ids)
-			print(event_ids[0])
+			#print(event_ids[0])
 			event_ids = event_ids[:1]
 
 		# get all phases (waves) for each event (ideally filtered down to 1 by now)
@@ -581,7 +581,7 @@ def read_phases(tourney):
 	
 
 if __name__ == '__main__':
-	#print(save_character_dicts())
+	#print(save_character_dicts(to_load=False))
 	#print(save_videogame_dicts())
 
 	readin(t_slug_a)
@@ -592,7 +592,7 @@ if __name__ == '__main__':
 	#read_sets("sets.txt")
 	#pull_phase(764818)
 
-	clean_data("./old/glitch6phasesraw.txt","./old/glitch6phasesclean.txt")
+	#clean_data("./old/glitch6phasesraw.txt","./old/glitch6phasesclean.txt")
 	#clean_data("./old/genesis6top64setsraw.txt","./old/genesis6top64setsclean.txt")
 	#clean_data("./old/paxarenaraw.txt","./old/paxarenaclean.txt")
 	#clean_data("./old/crewsraw.txt","./old/crewsclean.txt")

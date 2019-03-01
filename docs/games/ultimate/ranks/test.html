@@ -1,0 +1,89 @@
+<!--<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap.min.css">-->
+
+<!--<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs4-4.1.1/jq-3.3.1/dt-1.10.18/datatables.min.css"/>-->
+
+<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.13/css/dataTables.bootstrap.min.css"> 
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.1.1/css/responsive.bootstrap.min.css"> 
+
+<div class="test">
+	<ul class="nav nav-tabs">
+		<li class="active"><a data-toggle="tab" href="#top10"><h2>Top 10</h2></a></li>
+		<li><a data-toggle="tab" href="#top10-2"><h2>Top 10-2</h2></a></li>
+	</ul>
+	<div class="tab-content">
+		<div id="top10" class="tab-pane fade in active">
+			<table id="myTable1" class="table table-striped table-bordered" cellspacing="0" width="100%">
+			    <thead>
+			        <tr>
+			            <th>Name</th>
+			            <th>Position</th>
+			            <th>Office</th>
+			            <th>Extn.</th>
+			            <th>Start date</th>
+			            <th>Salary</th>
+			        </tr>
+			    </thead>
+			</table>
+		</div> <!-- First tab -->
+		<div id="top10-2" class="tab-pane fade in active">
+			<table id="myTable2" class="table table-striped table-bordered" cellspacing="0" width="100%">
+			    <thead>
+			        <tr>
+			            <th>Name</th>
+			            <th>Position</th>
+			            <th>Office</th>
+			            <th>Extn.</th>
+			            <th>Start date</th>
+			            <th>Salary</th>
+			        </tr>
+			    </thead>
+			</table>
+		</div> <!-- Second tab -->
+	</div> <!-- Tab area -->
+</div> <!-- Table set -->
+
+<!--
+<script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap.min.js"></script>-->
+
+<!--<script type="text/javascript" src="https://cdn.datatables.net/v/bs4-4.1.1/jq-3.3.1/dt-1.10.18/datatables.min.js"></script>-->
+<script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.js"></script>
+<script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<script type="text/javascript" language="javascript" src="https://cdn.datatables.net/1.10.13/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" language="javascript" src="https://cdn.datatables.net/1.10.13/js/dataTables.bootstrap.min.js"></script>
+
+<script type="text/javascript" language="javascript" src="https://cdn.datatables.net/responsive/2.1.1/js/dataTables.responsive.min.js"></script>
+<script type="text/javascript" language="javascript" src="https://cdn.datatables.net/responsive/2.1.1/js/responsive.bootstrap.min.js"></script>
+
+<script>
+	$(document).ready(function() {
+	    $('a[data-toggle="tab"]').on( 'shown.bs.tab', function (e) {
+	        //$.fn.dataTable.tables( {visible: true, api: true} ).columns.adjust();
+	        var currentTab = $(e.target).text(); // gets current tab
+	        switch(currentTab) {
+	        	case 'top10':
+	        		var table = $('#myTable1').DataTable();
+	        		$('#container').css('display','block');
+	        		table.columns.adjust().draw();
+	        		break;
+	        	case 'top10-2':
+	        		var table = $('#myTable2').DataTable();
+	        		$('#container').css('display','block');
+	        		table.columns.adjust().draw();
+	        		break;
+
+	        };
+	    } );
+	     
+	    /*$('table.table').DataTable( {
+	        scrollY:        200,
+	        scrollCollapse: true,
+	        paging:         false
+	    } );
+	 
+	    // Apply a search to the second table for the demo
+	    $('#myTable2').DataTable().search( 'New York' ).draw();*/
+	} );
+</script>

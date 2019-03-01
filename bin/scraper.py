@@ -135,6 +135,28 @@ def table_index(doc,game,year):
 			if int(c_year[0]) > year:
 				return None
 
+# scrapes PGR/SSBMRank/etc. from ssbwiki for given game/year
+# ABANDONED
+def scrape_ranks(game,year):
+	if game == 1:
+		if year >= 2018:
+			rank_name = 'MPGR'
+		else:
+			rank_name = 'SSBMRank'
+	elif game == 2:
+		rank_name = 'PMRank'
+	elif game == 3 or game == 1386:
+		rank_name = 'PGR'
+	elif game == 4:
+		rank_name = '64_League_Rankings'
+	elif game == 5:
+		rank_name = 'SSBBRank'
+	else:
+		return False
+
+	rank_url = 'https://www.ssbwiki.com/' + rank_name
+
+
 if __name__ == '__main__':
 	print(scrape(1386,2019,verb=9))
 	#scrape_slugs(['https://www.ssbwiki.com/Tournament:Valhalla'])
