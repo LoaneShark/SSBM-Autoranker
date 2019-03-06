@@ -25,7 +25,7 @@ def update_db(dicts,db_key,force_update=False):
 	if game_db.get() is None or (type(game_db.get()) is str and game_db.get() == '') or force_update:
 		#game_db.set('')
 		# add directories for all the major information dicts
-		for dictname,dictdata in zip(['tourneys','ids','p_info','records','skills'],dicts):
+		for dictname,dictdata in zip(['tourneys','ids','p_info','records','skills','sets'],dicts):
 			#print(dictname)
 			#print(is_clean_dict(dictdata))
 			sub_db = game_db.child(dictname)

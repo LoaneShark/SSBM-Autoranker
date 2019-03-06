@@ -43,14 +43,14 @@ if not args.short_slug == None:
 	args.slug = get_slug(args.short_slug)
 to_save_db = args.save
 to_load_db = args.load
-if args.load == "False":
+if args.load == 'False':
 	args.load == False
 	to_load_db = False
-if args.save == "False":
+if args.save == 'False':
 	args.save == False
 	to_save_db = False
 to_load_slugs = args.load_slugs
-if args.load_slugs == "False":
+if args.load_slugs == 'False':
 	to_load_slugs = False
 db_slug = args.slug
 db_game = int(args.game)
@@ -61,7 +61,7 @@ db_year_count = int(args.year_count)
 if db_year_count == 0:
 	db_yearstr = str(db_year)
 else:
-	db_yearstr = str(db_year)+"-"+str(db_year+db_year_count)
+	db_yearstr = str(db_year)+'-'+str(db_year+db_year_count)
 count_arcadians = args.use_arcadians
 if count_arcadians == -1:
 	only_arcadians = True
@@ -73,7 +73,7 @@ glicko_tau = float(args.glicko_tau)
 # main loop. calls scraper to get slugs for every major that happened
 # in the specified year for the specified game (per smash.gg numeric id value)
 # returns in the form of 4 dicts: tourneys,ids,p_info,records
-def read_majors(game_id=int(db_game),year=int(db_year),base=None):
+def read_majors(game_id=int(db_game),year=int(db_year),base=None,current=False):
 	set_readin_args(args)
 	#slugs = ["genesis-5","summit6","shine2018","tbh8","summit7"]
 	fails = []
@@ -83,11 +83,11 @@ def read_majors(game_id=int(db_game),year=int(db_year),base=None):
 		if to_load_slugs:
 			scrape_load = True
 			if v >= 3 and year == int(db_year):
-				print("Loading saved slugs...")
+				print('Loading saved slugs...')
 			slugs = load_slugs(game_id,year)
 			if slugs == False or slugs == []:
 				if v >= 3:
-					print("Saved slugs not found.")
+					print('Saved slugs not found.')
 				slugs = scraper.scrape(game_id,year,v)
 				scrape_load = False
 		else:
@@ -103,16 +103,16 @@ def read_majors(game_id=int(db_game),year=int(db_year),base=None):
 		slug_given = True
 	if v >= 3 and not scrape_load and not slug_given:
 		if len(slugs) <= 0:
-			print("No slugs found for game %d in year %d:"%(game_id,year))
+			print('No slugs found for game %d in year %d:'%(game_id,year))
 		else:
-			print("Scraped the following slugs for game %d in year %d:"%(game_id,year))
+			print('Scraped the following slugs for game %d in year %d:'%(game_id,year))
 			print(slugs)
 	if not fails == [] and v > 0:
-		print("The following majors could not be read (no smash.gg bracket found)")
+		print('The following majors could not be read (no smash.gg bracket found)')
 		print(fails)
 	if to_save_db and not scrape_load and not slug_given:
 		save_slugs(slugs,game_id,year,to_save_db=to_save_db)
-	return(read_tourneys(slugs,ver=game_id,year=year,base=base))
+	return(read_tourneys(slugs,ver=game_id,year=year,base=base,current=current))
 
 def set_db_args(args):
 	collect = args.collect_garbage
@@ -121,10 +121,10 @@ def set_db_args(args):
 		args.slug = get_slug(args.short_slug)
 	to_save_db = args.save
 	to_load_db = args.load
-	if args.load == "False":
+	if args.load == 'False':
 		args.load == False
 		to_load_db = False
-	if args.save == "False":
+	if args.save == 'False':
 		args.save == False
 		to_save_db = False
 	db_slug = args.slug
@@ -133,7 +133,7 @@ def set_db_args(args):
 
 ## AUXILIARY FUNCTIONS
 # loads database and stores any tournament data not already present given the url slug
-def read_tourneys(slugs,ver='default',year=None,base=None):
+def read_tourneys(slugs,ver='default',year=None,base=None,current=False):
 	if year != None:
 		verstr = '%s/%s'%(ver,db_yearstr)
 	else:
@@ -145,24 +145,37 @@ def read_tourneys(slugs,ver='default',year=None,base=None):
 		tourneys,ids,p_info,records,skills = base
 
 	if v >= 4 and len(tourneys.keys())>1 and year == db_year:
-		print("Loaded Tourneys: " + str([tourneys[t_id]['name'] for t_id in tourneys if not t_id == 'slugs']))
+		print('Loaded Tourneys: ' + str([tourneys[t_id]['name'] for t_id in tourneys if not t_id == 'slugs' if tourneys[t_id]['active']]))
 	#print(tourneys)
 	#dicts = (tourneys,ids,p_info,records)
 	#print(tourneys,ids,p_info,records)
 
 	for slug in slugs:
-		if slug not in tourneys['slugs']:
-			readins = readin(slug)
-			if readins:
+		slug_date = get_tournament_date(slug)
+		if slug_date is None:
+			if v >= 4:
+				print('Could not import %s: no date available'%slug)
+		else:
+			last_date = sorted([tourneys[old_id]['date'] for old_id in tourneys if old_id != 'slugs'])[0]
+			# ensure it's not before the last imported event
+			if slug_date[0] >= last_date[0] and slug_date[1] >= last_date[1]:
+				if slug not in tourneys['slugs']:
+					readins = readin(slug)
+					if current:
+						clean_old_tourneys((tourneys,ids,p_info,records,skills),readins[0])
+					if readins:
+						if v >= 4:
+							print('Importing to DB...')
+						if store_data(readins,(tourneys,ids,p_info,records,skills),slug):
+							if to_save_db:
+								save_db((tourneys,ids,p_info,records,skills),verstr)
+								save_db_sets(readins[6],verstr)
+							t_id = tourneys['slugs'][readins[0][2]]
+							if collect:
+								delete_tourney_cache(t_id)
+			else:
 				if v >= 4:
-					print("Importing to DB...")
-				if store_data(readins,(tourneys,ids,p_info,records,skills),slug):
-					if to_save_db:
-						save_db((tourneys,ids,p_info,records,skills),verstr)
-						save_db_sets(readins[6],verstr)
-					t_id = tourneys['slugs'][readins[0][2]]
-					if collect:
-						delete_tourney_cache(t_id)
+					print('Skipping %s: more recent events already present'%slug)
 	return tourneys,ids,p_info,records,skills
 
 # helper function to store all data from a call to readin
@@ -207,6 +220,7 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 				# team, tag, firstname, lastname, state, country
 				if abs_id not in p_info:
 					p_info[abs_id] = {}
+				p_info[abs_id]['active'] = True
 				if names[e_id][0][idx] == None:
 					if 'team' not in p_info[abs_id]:
 						p_info[abs_id]['team'] = names[e_id][0][idx]
@@ -254,8 +268,8 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 						p_info[abs_id]['characters'] = {char_id: [0,0] for char_id in chardict}
 					else:
 						p_info[abs_id]['characters'] = {}
-				'''for character in characters[e_id]:
-					p_info[abs_id]['characters'] = characters[e_id]'''
+				if 'main' not in p_info[abs_id]:
+					p_info[abs_id]['main'] == {}
 
 				# store ranking data, with initial values if needed
 				if 'elo' not in skills:
@@ -281,8 +295,6 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 					p_info[abs_id]['sets_played'] = 0
 				if 'events_entered' not in p_info[abs_id]:
 					p_info[abs_id]['events_entered'] = 0
-				#if 'last_event' not in p_info[abs_id]:
-				#	p_info[abs_id]['last_event'] = t_id
 				p_info[abs_id]['last_event'] = t_id
 				if abs_id not in skills['perf']:
 					skills['perf'][abs_id] = {}
@@ -409,10 +421,14 @@ def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_up
 					glicko_deltas[abs_id][t_id] = (0.,0.,0.)
 					simrank_deltas[abs_id][t_id] = 0.
 					performance_history[abs_id][t_id] = 0.
+			# if not an entrant in this event
 			else:
 				elo_history[abs_id][t_id] = p_info[abs_id]['elo']
 				elo_deltas[abs_id][t_id] = 0.
 				#performance_history[abs_id][t_id] = 0
+
+	# update character usage // main statistics
+	p_info[abs_id]['main'][t_id] = get_main(abs_id,p_info)
 
 	if to_update_ranks:
 		if v >= 5:
@@ -443,6 +459,7 @@ def store_tourney(slug,t_info,group_names,dicts):
 	#tourneys[t_id]['region'] = t_region
 	tourneys[t_id]['region'] = calc_region(country=t_region[1],state=t_region[0])
 	tourneys[t_id]['numEntrants'] = t_size
+	tourneys[t_id]['active'] = True
 	if 'slugs' not in tourneys:
 		tourneys['slugs'] = {}
 	tourneys['slugs'][t_slug] = t_id
@@ -457,8 +474,8 @@ def store_tourney(slug,t_info,group_names,dicts):
 # delete all data imported from a tourney
 # (keeps absolute player data such as ID, meta info)
 # **does NOT save db automatically**
-## POSSIBLY deprecated
-def delete_tourney(dicts,t_id,slug=None):
+# does NOT delete players (in case they become active again, saves info/skills) or skill histories
+def delete_tourney(dicts,t_id,slug=None,clean_slugs=False,clean_tourneys=True):
 	tourneys,ids,p_info,records,skills = dicts
 	if not slug == None:
 		t_id = tourneys['slugs'][slug]
@@ -466,34 +483,102 @@ def delete_tourney(dicts,t_id,slug=None):
 	if t_id in tourneys:
 		for abs_id in dcopy(ids):
 			if abs_id in ids:
-				if t_id in ids[abs_id] and t_id in ids:
-					# remove entrant ids/data
-					del ids[abs_id][t_id]
-					del ids['t_'+str(t_id)]
-
+				# remove data from records & p_info
 				if abs_id in records and t_id in records[abs_id]['placings']:
 					# remove player records for this tourney
 					del records[abs_id]['placings'][t_id]
 					del records[abs_id]['paths'][t_id]
 
+					# remove event count
+					p_info[abs_id]['events_entered'] = max(p_info[abs_id]['events_entered']-1,0)
+
+					# remove h2h losses
 					for loss in records[abs_id]['losses']:
 						if t_id in records[abs_id]['losses'][loss]:
+							records[abs_id]['sets_played'] -= records[abs_id]['losses'][loss].count(t_id)
 							records[abs_id]['losses'][loss] = [tempid for tempid in records[abs_id]['losses'][loss] if not tempid == t_id]
+
+					# remove h2h wins
 					for win in records[abs_id]['wins']:
 						if t_id in records[abs_id]['wins'][win]:
+							records[abs_id]['sets_played'] -= records[abs_id]['wins'][win].count(t_id)
 							records[abs_id]['wins'][win] = [tempid for tempid in records[abs_id]['wins'][win] if not tempid == t_id]
 
-		# remove tournament records for this tourney'
-		for t_s in dcopy(tourneys['slugs']):
-			if tourneys['slugs'][t_s] == t_id:
-				#slug = t_s
-				del tourneys['slugs'][t_s]
-		if t_id in tourneys:
-			del tourneys[t_id]
+					# remove main character tracking
+					del records[abs_id]['main'][t_id]
+
+					
+					yc_str = ''
+					if year_count > 0:
+						yc_str += '-'+str(year+year_count)
+					sets = easy_load_db_sets(ver=str(db_game)+'/'+str(db_year)+yc_str)
+					deleted_sets = [set_id for set_id in records[abs_id]['set_history'] if not set_id in sets]
+					tourney_sets = [set_id for set_id in records[abs_id]['set_history'] if not set_id in deleted_sets if sets[set_id]['t_id'] == t_id]
+
+					# remove character usage data for player and opponent
+					for set_id in tourney_sets:
+						if 'games' in sets[set_id]:
+							for game_id in sets[set_id]['games']:
+								g_w_e_id = sets[set_id]['games'][game_id]['w_id']
+								g_l_e_id = sets[set_id]['games'][game_id]['l_id']
+								if g_w_id is not None and g_l_id is not None:
+									g_w_id = ids['t_'+str(t_id)][g_w_e_id]
+									g_l_id = ids['t_'+str(t_id)][g_l_e_id]
+									if 'characters' in sets[set_id]['games'][game_id]:
+										if sets[set_id]['games'][game_id]['characters'] != {}:
+											g_w_char_id = sets[set_id]['games'][game_id]['characters'][g_w_e_id]
+											g_l_char_id = sets[set_id]['games'][game_id]['characters'][g_l_e_id]
+
+											records[t_id][g_w_id]['characters'][g_w_char_id][0] = max(0,records[t_id][g_w_id]['characters'][g_w_char_id][0]-1)
+											records[t_id][g_l_id]['characters'][g_l_char_id][1] = max(0,records[t_id][g_l_id]['characters'][g_l_char_id][1]-1)
+
+					# remove sets from gameplay history
+					records[abs_id]['set_history'] = [set_id for set_id in records[abs_id]['set_history'] if not set_id in deleted_sets if not set_id in tourney_sets]
+
+					# mark players inactive if they are no longer in the db's ranking/anaylsis period
+					if p_info[abs_id]['last_event'] == t_id:
+						p_info[abs_id]['active'] = False
+
+				# remove data from ids
+				if t_id in ids[abs_id] and 't_'+str(t_id) in ids:
+					# remove entrant ids/data
+					del ids[abs_id][t_id]
+					del ids['t_'+str(t_id)]
 
 		# remove tournament from imported slugs
+		# (off by default)
+		if clean_slugs:
+			l_slugs = load_slugs(game_id,year)
+			l_slugs = [l_slug for l_slug in l_slugs if tourneys['slugs'][slug] != t_id]
+			save_slugs(l_slugs,game_id,year,to_save_db=to_save_db)
+
+		# remove tournament (or mark inactive)
+		if clean_tourneys:
+			for t_s in dcopy(tourneys['slugs']):
+				if tourneys['slugs'][t_s] == t_id:
+					#slug = t_s
+					del tourneys['slugs'][t_s]
+		if t_id in tourneys:
+			tourneys[t_id]['active'] = False
+			if clean_tourneys:
+				del tourneys[t_id]
 
 	return tourneys,ids,p_info,records,skills
+
+# cleans out tourneys over a year out from the currently importing one
+def clean_old_tourneys(dicts,t_info,rank_period=12,delete_data=False):
+	tourneys,ids,p_info,records,skills = dicts
+	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size = t_info
+
+
+	for old_id in tourneys:
+		if old_id != 'slugs':
+			old_date = tourneys[old_id]['date']
+			if (((t_date[0]-2016)*12 + t_date[1]) - ((old_date[0]-2016)*12 + old_date[1])) > rank_period:
+				# if (curr_month - temp_month) > 12: delete tourney
+				return delete_tourney(dicts,t_id,clean_tourneys=delete_data)
+
+	return False
 
 # delete all data associated with a given player
 # (player id, meta info, tourney results/records are deleted!!!)

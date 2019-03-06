@@ -157,9 +157,11 @@ def get_player(dicts,p_id,tag=None,t_ids=None,slugs=None):
 
 # return (filtered) results for a series of tourneys
 def get_results(dicts,t_ids,res_filt=None):
-	if type(t_ids) is str:
-		if t_ids == 'all':
+	if type(t_ids) is str or type(t_ids) is None:
+		if t_ids == 'all' or t_ids == None:
 			t_ids = [t_id for t_id in tourneys if not t_id == 'slugs']
+		elif t_ids == 'active':
+			t_ids = [t_id for t_id in tourneys if not t_id == 'slugs' if tourneys[t_id]['active']]
 		else:
 			print('Error:: Invalid tournament id: %s'%t_ids)
 	if type(t_ids) is list:
@@ -273,12 +275,37 @@ def get_players_by_character(dicts,character):
 	reps = [abs_id for abs_id in p_info if character in p_info['characters']]
 	return reps
 
-def list_tourneys(dicts,year=None):
+# lists all the tourneys in a given year/the entire dataset
+def list_tourneys(dicts,year=None,list_ids=False):
 	tourneys,ids,p_info,records,skills = dicts
 	if year == None:
-		return [tourneys[t_id]['name'] for t_id in tourneys if t_id != 'slugs']
+		if list_ids:
+			return [[t_id,tourneys[t_id]['name']] for t_id in tourneys if t_id != 'slugs']
+		else:
+			return [tourneys[t_id]['name'] for t_id in tourneys if t_id != 'slugs']
 	else:
-		return [tourneys[t_id]['name'] for t_id in tourneys if t_id != 'slugs' for t_date in tourney[t_id]['date'] if t_date[2] == year]
+		if list_ids:
+			return [[t_id,tourneys[t_id]['name']] for t_id in tourneys if t_id != 'slugs' for t_date in tourney[t_id]['date'] if t_date[2] == year]
+		else:
+			return [tourneys[t_id]['name'] for t_id in tourneys if t_id != 'slugs' for t_date in tourney[t_id]['date'] if t_date[2] == year]
+
+# returns the number of times a player [p] used a given character [c] 
+# (by id values)
+def char_count(p,c,p_info):
+	return abs(p_info[p]['characters'][c][0])+abs(p_info[p]['characters'][c][1])
+
+# returns the character id that a player has used the most times
+def get_main(p,p_info): 
+	if 'characters' in p_info[p]:
+		charlist = sorted([[c_id, char_count(p,c_id,p_info)] if char_count(p,c_id,p_info) > 0 else ['',0] for c_id in p_info[p]['characters']], \
+									key=lambda c_l: c_l[1], \
+									reverse=True)
+		if len(charlist) > 0:
+			return charlist[0][0]
+		else:
+			return ''
+	else:
+		return ''
 
 # print (filtered) results for a given tourney
 def print_result(dicts,t_id,res_filt=None,max_place=64):

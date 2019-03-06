@@ -136,7 +136,6 @@ def table_index(doc,game,year):
 				return None
 
 # scrapes PGR/SSBMRank/etc. from ssbwiki for given game/year
-# ABANDONED
 def scrape_ranks(game,year):
 	if game == 1:
 		if year >= 2018:

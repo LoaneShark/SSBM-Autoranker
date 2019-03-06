@@ -10,6 +10,7 @@ import os,sys,pickle,time
 ## UTIL IMPORTS
 from calc_utils import *
 from readin_utils import *
+from dict_utils import *
 from db_utils import load_db_sets,easy_load_db_sets
 
 # gets a the "score" for each player, calculated as the average percentage of bracket completed
@@ -19,7 +20,7 @@ def get_scores(dicts,acc=3,scale_vals=False,activity=3):
 	scores = {}
 	for p_id in p_info:
 		if p_id in records and is_active(dicts,p_id,min_req=activity):
-			scores[p_id] = round(mean([score(dicts,records[p_id]['placings'][t_id],t_id) for t_id in tourneys if type(t_id) is int if t_id in records[p_id]['placings']]),acc)
+			scores[p_id] = round(mean([score(dicts,records[p_id]['placings'][t_id],t_id) for t_id in tourneys if type(t_id) is int if tourneys[t_id]['active'] if t_id in records[p_id]['placings']]),acc)
 	if scale_vals:
 		maxval = max([scores[p_id] for p_id in scores])
 		minval = min([scores[p_id] for p_id in scores])
@@ -42,7 +43,7 @@ def get_elos(dicts,acc=3,scale_vals=False,activity=3):
 	elos = {}
 	for p_id in p_info:
 		if p_id in records and is_active(dicts,p_id,min_req=activity):
-			#elos[p_id] = mean([score(dicts,records[p_id]['placings'][t_id],t_id) for t_id in tourneys if type(t_id) is int if t_id in records[p_id]['placings']])
+			#elos[p_id] = mean([score(dicts,records[p_id]['placings'][t_id],t_id) for t_id in tourneys if type(t_id) is int if tourneys[t_id]['active'] if t_id in records[p_id]['placings']])
 			elos[p_id] = round(p_info[p_id]['elo'],acc)
 	if scale_vals:
 		maxval = max([elos[p_id] for p_id in elos])
@@ -94,7 +95,7 @@ def get_avg_performances(dicts,acc=3,scale_vals=False):
 		if p_id in skills['perf']:
 		#print(records[p_info])
 			perfs = []
-			for t_id in skills['perf'][p_id]:
+			for t_id in skills['perf'][p_id] if tourneys[t_id]['active']:
 				#print(records[p_id]['performances'])
 				perfs.extend([skills['perf'][p_id][t_id]])
 
@@ -120,7 +121,7 @@ def get_best_performances(dicts,use_names=False,acc=3,scale_vals=False):
 			#print(skills['elo'][p_id],'\n',skills['glicko'][p_id],'\n',skills['sim'][p_id],'\n',skills['perf'][p_id])
 			best = -9999.
 			maxperf = [[round(skills['perf'][p_id][t_id],acc),t_id,records[p_id]['placings'][t_id], \
-						round(skills['elo_del'][p_id][t_id],acc),round(skills['glicko_del'][p_id][t_id][0],acc)] for t_id in skills['perf'][p_id]]
+						round(skills['elo_del'][p_id][t_id],acc),round(skills['glicko_del'][p_id][t_id][0],acc)] for t_id in skills['perf'][p_id] if tourneys[t_id]['active']]
 			#print(skills['perf'][p_id])
 			maxperf = sorted(maxperf,key=lambda l: l[0],reverse=True)[0]
 			#maxperf = list(maxperf)
@@ -501,20 +502,6 @@ def generate_tier_list(dicts,game,year,year_count,id_list=None,skill_weight=True
 
 	return sorted([[char_labels[char_id],char_skills[char_id]] for char_id in range(char_n)],key=lambda t: (9999. if type(t[1]) is str else t[1],t[1]))
 
-def char_count(p,c,p_info):
-	return abs(p_info[p]['characters'][c][0])+abs(p_info[p]['characters'][c][1])
-
-def get_main(p,p_info): 
-	if 'characters' in p_info[p]:
-		charlist = sorted([[c_id, char_count(p,c_id,p_info)] if char_count(p,c_id,p_info) > 0 else ['',0] for c_id in p_info[p]['characters']], \
-									key=lambda c_l: c_l[1], \
-									reverse=True)
-		if len(charlist) > 0:
-			return charlist[0][0]
-		else:
-			return ''
-	else:
-		return ''
 
 def disp_all(dicts,dispnum=20,key='elo',trans_cjk=True,avg_perf=False,scale_vals=False,min_activity=3,tier_tol=-1,plot_skills=False):
 	tourneys,ids,p_info,records,skills = dicts

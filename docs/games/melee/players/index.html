@@ -1,0 +1,53 @@
+---
+layout: pretty
+title: Melee Players
+---
+{% include bootstrap_css.html %}
+<h1>{{ page.title }}</h1>
+<div class="shadow rounded">
+	<div id='player_card' class='jumbotron'></div>
+</div>
+
+{% include bootstrap_scripts.html %}
+{% include firebase_scripts.html %}
+<script type="text/javascript" src="/assets/js/finch.min.js"></script>
+<script src="/assets/js/misc_utils.js"></script>
+<script>
+	Finch.route("/", function(bindings){
+		console.log("No player selected");
+	});
+	Finch.route("/:p_id", function(bindings){
+		console.log("Loading player page: "+bindings.p_id);
+		// draw player profile segment
+		$('#player_card').html(`{% include player_profile.html %}`);
+
+		// query db and populate profile
+		var player_ref_str = "/1_2018_1/p_info/"+bindings.p_id;
+		var player_ref = firebase.database().ref(player_ref_str);
+		var player_query = player_ref.once('value').then(function(PlayerSnapshot) {
+			if (PlayerSnapshot.exists()){
+				//var player_tuple = 
+				$('#player_tag').html(PlayerSnapshot.child('tag').val());
+				$('#player_team').html(PlayerSnapshot.child('team').val());
+				var p_region = PlayerSnapshot.child('region').val();
+				$('#player_region').html(p_region[2]);
+				var p_characters = PlayerSnapshot.child('region').val();
+				var p_used_characters = [];
+				for (i=0; i<p_characters.length; i++){
+					
+				}
+				//$('#player_characters').html(PlayerSnapshot.child('characters').val())
+			} else {
+				$('#player_div').html('No such player found: '+bindings.p_id);
+			};
+		});
+		//$('#player_id').html(bindings.p_id);
+	});
+	/*Finch.route("{{page.url}}:home", function(bindings){
+		console.log("Run on home");
+	});
+	Finch.route("{{page.url}}:x", function(bindings){
+		console.log("Hey! You're trying to go here: {#bindings.x}");
+	});*/
+	Finch.listen();
+</script>

@@ -578,7 +578,7 @@ def read_phases(tourney):
 	except HTTPError:
 		print('Error 404: tourney [%s] not found'%tourney)
 		return False
-	
+		
 
 if __name__ == '__main__':
 	#print(save_character_dicts(to_load=False))

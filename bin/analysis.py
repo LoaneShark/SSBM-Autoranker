@@ -55,7 +55,6 @@ from webdb import *
 ## 		 - allow analysis_utils to write to file for some queries, etc. (csv?)
 ## 		 - GUI/standalone executable tool/webapp
 ## 		 - Intelligent clustering of players by region
-## 		 - try and use actual sigmoid curves for expected win probs (like in matchup charts etc) instead of just skillranks
 ##
 
 ## ELO BALANCING:
@@ -67,10 +66,9 @@ from webdb import *
 ## 		- decay over time?
 ## 	- fit Glicko-2 (?)
 
-## SIMBRACK TODO:
-##  - skill-bin option/support?
-##	
-##	- Fourier analysis lmao
+## SIMRANK TODO:
+##  - make it work lmao
+##	- Fourier analysis ??????
 
 ## TOURNEY SHITLIST:
 ## 	- We Tech Those 3: PM Pool PMA2
@@ -155,13 +153,15 @@ def main():
 	if 1 < 0:
 		opts = find_opt_hyperparams(dicts,20,9,key_ids=[1000,19554])
 
-	to_calc_sigrank = False
+	to_calc_sigrank = True
 	if to_calc_sigrank:
 		array_t = timer()
 		if game_idx == 1:
-			iagorank_params = calc_sigrank(dicts,min_req=min_act,max_iter=1000,learn_decay=True,disp_size=300,verbosity=5,print_res=True,plot_ranks=False,mode='array',seed='blank',sig_mode='alt')
+			iagorank_params = calc_sigrank(dicts,min_req=min_act,max_iter=5000,learn_decay=False,disp_size=300,verbosity=5,print_res=True,plot_ranks=False,\
+				mode='array',seed='blank',sig_mode='simple',score_by='intsig',use_bins=False)
 		else:
-			iagorank_params = calc_sigrank(dicts,min_req=min_act,max_iter=1000,learn_decay=True,disp_size=300,verbosity=5,print_res=True,plot_ranks=False,mode='array',seed='placing',sig_mode='alt')
+			iagorank_params = calc_sigrank(dicts,min_req=min_act,max_iter=1000,learn_decay=True,disp_size=300,verbosity=5,print_res=True,plot_ranks=False,\
+				mode='array',seed='placing',sig_mode='alt',score_by='intsig')
 		array_time = timer()-array_t
 		print('Array time elapsed:','{:.3f}'.format(array_time) + ' s')
 		ISR = {'params': iagorank_params}
@@ -190,16 +190,23 @@ def main():
 	iter_num = len(data_hist[id_list[0]])
 	#print('Dict time elapsed:','{:.3f}'.format(dict_time) + ' s')
 	if game_idx == 1:
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1004,plot_tags=True,sig_mode='alt')
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1004,plot_tags=True,sig_mode='simple')
 		plot_hist(data_hist,p_id=1004,plot_delta=True)
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,4692,plot_tags=True,sig_mode='alt')
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,4692,plot_tags=True,sig_mode='simple')
 		plot_hist(data_hist,p_id=4692,plot_delta=True)
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1037,plot_tags=True,sig_mode='alt')
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1037,plot_tags=True,sig_mode='simple')
 		plot_hist(data_hist,p_id=1037,plot_delta=True)
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,16393,plot_tags=True,sig_mode='alt')
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,16393,plot_tags=True,sig_mode='simple')
 		plot_hist(data_hist,p_id=16393,plot_delta=True)
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,4127,plot_tags=True,sig_mode='alt')
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,4127,plot_tags=True,sig_mode='simple')
 		plot_hist(data_hist,p_id=4127,plot_delta=True)
+
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,6189,plot_tags=True,sig_mode='simple')
+		plot_hist(data_hist,p_id=6189,plot_delta=True)
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,16342,plot_tags=True,sig_mode='simple')
+		plot_hist(data_hist,p_id=16342,plot_delta=True)
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,32097,plot_tags=True,sig_mode='simple')
+		plot_hist(data_hist,p_id=32097,plot_delta=True)
 		if 1 < 0:
 			# plot mango
 			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1000,plot_tags=True,sig_mode='alt')
@@ -305,7 +312,7 @@ def main():
 	#return True
 
 	db_str_key = str(game_idx)+'_'+str(year)+'_'+str(year_count)
-	update_db(dicts,db_str_key,force_update=True)
+	#update_db(dicts,db_str_key,force_update=True)
 
 	#generate_matchup_chart(dicts,game_idx,year,year_count,id_list=id_list,label_mode='ones',v=int(args.verbosity),infer_characters=True,n_bins=10000)
 	'''

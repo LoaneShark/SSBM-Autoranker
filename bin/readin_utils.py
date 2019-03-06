@@ -399,6 +399,23 @@ def save_videogame_dicts(games='all',chars=None,to_load=True):
 	else:
 		return False
 
+# pulls just the tournament start date from the slug, without reading in the full event
+def get_tournament_date(slug):
+	tourneylink ='https://api.smash.gg/tournament/%s'%slug
+
+	try:
+		tfile = urlopen(tourneylink).read()
+		tdata = json.loads(tfile.decode('UTF-8'))
+
+		# date tuple in (year, month, day) format
+		t_date = time.localtime(tdata['entities']['tournament']['startAt'])[:3]
+
+		return t_date
+
+	except HTTPError:
+		print('Error 404: tourney [%s] not found'%tourney)
+		return False
+
 # prints tournament results by player's final placing
 def print_results(res,names,entrants,losses,characters,game=1,max_place=64,translate_cjk=True):
 	maxlen = 0
