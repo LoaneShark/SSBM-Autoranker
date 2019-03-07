@@ -14,7 +14,7 @@ title: Melee Players
 <script src="/assets/js/misc_utils.js"></script>
 <script>
 	Finch.route("/", function(bindings){
-		console.log("No player selected");
+		console.log("No player selected")
 	});
 	Finch.route("/:p_id", function(bindings){
 		console.log("Loading player page: "+bindings.p_id);
@@ -34,12 +34,12 @@ title: Melee Players
 				var p_characters = PlayerSnapshot.child('region').val();
 				var p_used_characters = [];
 				for (i=0; i<p_characters.length; i++){
-					
+					// do something
 				}
 				//$('#player_characters').html(PlayerSnapshot.child('characters').val())
 			} else {
-				$('#player_div').html('No such player found: '+bindings.p_id);
-			};
+				$('#player_div').html('No such player found: '+bindings.p_id)
+			}
 		});
 		//$('#player_id').html(bindings.p_id);
 	});

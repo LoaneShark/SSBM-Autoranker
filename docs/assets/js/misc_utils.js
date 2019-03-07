@@ -18,7 +18,7 @@ function getGameId(gameTitle){
 		case 'Ultimate':
 			return 1386;
 			break;
-	};
+	}
 }
 
 function snapshotToArray(snapshot) {

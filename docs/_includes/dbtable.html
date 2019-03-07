@@ -3,15 +3,15 @@
 <!--<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.1.1/css/responsive.bootstrap.min.css">-->
 <div>
 	<!-- nav tabs -->
-	<ul class="nav nav-tabs nav-justified center-block" role="tablist">
-		<li role="presentation" class="active"><a id="current-tab" class="nav-link active" href="#current" aria-controls="current" role="tab" data-toggle="tab">Current</a></li>
-		<li role="presentation"><a id="past-tab" class="nav-link" href="#past" aria-controls="past" role="tab" data-toggle="tab"></a></li>
-		<li role="presentation"><a id="alltime-tab" class="nav-link" href="#alltime" aria-controls="alltime" role="tab" data-toggle="tab">All-Time</a></li>
+	<ul class="nav nav-pills nav-fill" role="tablist" id=tables-tablist>
+		<li class="nav-item"><a id="current-tab" class="nav-link" href="#current-panel" aria-controls="current" role="tab" data-toggle="tab">Current</a></li>
+		<li class="nav-item"><a id="past-tab" class="nav-link" href="#past-panel" aria-controls="past" role="tab" data-toggle="tab"></a></li>
+		<li class="nav-item"><a id="alltime-tab" class="nav-link" href="#alltime-panel" aria-controls="alltime" role="tab" data-toggle="tab">All-Time</a></li>
 	</ul>
 
 	<!-- tab contents -->
 	<div class="tab-content">
-		<div role="tabpanel" class="tab-pane fade in active" id="current-panel">
+		<div role="tabpanel" class="tab-pane fade" id="current-panel" aria-labelledby="current-tab">
 			<table id="current-table" class="table table-striped table-bordered hover" cellspacing="0" width="100%">
 				<!-- table header -->
 				<colgroup>
@@ -58,7 +58,7 @@
 				</tbody>
 			</table> <!-- current year -->
 		</div> <!-- current year tab -->
-		<div role="tabpanel" class="tab-pane fade" id="past-panel">
+		<div role="tabpanel" class="tab-pane fade" id="past-panel" aria-labelledby="past-tab">
 			<table id="past-table" class="table table-striped table-bordered hover" cellspacing="0" width="100%">
 				<!-- table header -->
 				<colgroup>
@@ -105,7 +105,7 @@
 				</tbody>
 			</table> <!-- past year -->
 		</div> <!-- past year tab -->
-		<div role="tabpanel" class="tab-pane fade" id="alltime-panel">
+		<div role="tabpanel" class="tab-pane fade" id="alltime-panel" aria-labelledby="alltime-tab">
 			<table id="alltime-table" class="table table-striped table-bordered hover" cellspacing="0" width="100%">
 				<!-- table header -->
 				<colgroup>
@@ -158,7 +158,7 @@
 <!-- DB import/connection -->
 {% include firebase_scripts.html %}
 
-<!-- jQuery, Bootstrap, DataTables imports -->
+<!-- jQuery, Bootstrap, DataTables, etc. imports -->
 {% include bootstrap_scripts.html %}
 {% include datatables_scripts.html %}
 
@@ -168,10 +168,7 @@
 <script src="/assets/js/misc_utils.js"></script>
 <script>
 	$().ready(function() {
-		//var page_title = "{{page.title}}"
-		//var title_ids = {"Melee":1,"PM":2,"Smash4":3,"64":4,"Brawl":5,"Ultimate":1386}
-		//var game_id = title_ids[page_title]
-		var game_id = getGameId("{{page.title}}")
+		var game_id = getGameId("{{page.title}}");
 		// get current year for db lookups
 		var curr_year = new Date().getFullYear();
 		// label the past year's tab
@@ -187,18 +184,23 @@
 
 				$('#current-table').DataTable( {
 					data: players,
+					responsive: true,
 					ordering: true,
-					paging: false,        	
+					paging: false,        
+					//"autoWidth": false, 	
 					"order": [[ 3, "asc" ]],
 					"dom": '<"top"iflp<"clear">>rt<"bottom"iflp<"clear">>',
 					//scrollY: 200,
 					//scrollCollapse: true,
 					columnDefs: [{targets: 0, className:'dt-body-right'}]
 				});
+				$('#current-tab').tab('show')
+				$($.fn.dataTable.tables(true)).DataTable().columns.adjust();
 			} else {
-				console.log('whoops! db directory not found: '+ curr_ref_str)
-				$('#current-tab').addClass("disabled")
-			};
+				console.log('whoops! db directory not found: '+ curr_ref_str);
+				$('#current-tab').addClass("disabled");
+				$('#past-tab').tab('show')
+			}
 		});
 		// populate "past" table
 		var past_ref_str = "/" + game_id + "_" + (curr_year-1) + "_0/p_info";
@@ -210,46 +212,63 @@
 
 				$('#past-table').DataTable( {
 					data: players,
+					responsive: true,
 					ordering: true,
-					paging: false,        	
+					paging: false,       
+					//"autoWidth": false,  	
 					"order": [[ 3, "asc" ]],
 					"dom": '<"top"iflp<"clear">>rt<"bottom"iflp<"clear">>',
 					//scrollY: 200,
 					//scrollCollapse: true,
 					columnDefs: [{targets: 0, className:'dt-body-right'}]
 				});
+				$($.fn.dataTable.tables(true)).DataTable().columns.adjust();
 			} else {
-				console.log('whoops! db directory not found: '+ past_ref_str)
-				$('#past-tab').addClass("disabled")
-			};
+				console.log('whoops! db directory not found: '+ past_ref_str);
+				$('#past-tab').addClass("disabled");
+			}
 		});
 		// populate "all-time" table
 		var db_ref_str = "/" + game_id + "_2016_" + (curr_year-2016) + "/p_info";
 		var db_ref = firebase.database().ref(db_ref_str);
-		var db_query = db_ref.orderByChild('srank').limitToFirst(10)
+		var db_query = db_ref.orderByChild('srank').limitToFirst(10);
 		db_query.once('value').then(function(PlayerSnapshot) {
 			if (PlayerSnapshot.exists()) {
 				var players = snapshotToTable(PlayerSnapshot);
 
 				$('#alltime-table').DataTable( {
 					data: players,
+					responsive: true,
 					ordering: true,
-					paging: false,        	
+					paging: false,
+					//"autoWidth": false,      	
 					"order": [[ 3, "asc" ]],
 					"dom": '<"top"iflp<"clear">>rt<"bottom"iflp<"clear">>',
 					//scrollY: 200,
 					//scrollCollapse: true,
 					columnDefs: [{targets: 0, className:'dt-body-right'}]
 				});
+				$($.fn.dataTable.tables(true)).DataTable().columns.adjust();
 			} else {
-				console.log('whoops! db directory not found: '+ db_ref_str)
-				$('#alltime-tab').addClass("disabled")
-			};
+				console.log('whoops! db directory not found: '+ db_ref_str);
+				$('#alltime-tab').addClass("disabled");
+			}
 		});
 
+		/*
+		$(document).on('shown.bs.tab', 'a[data-toggle="tab"]', function (e) {
+			$.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
+			$('table.table').DataTable();
+		});*/
+		
 		$('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
-			$.fn.dataTable.tables({visible: true, api: true}).columns.adjust();
-	        var currentTab = $(e.target).text(); // gets current tab
+			////$.fn.dataTable.tables({visible: true, api: true}).columns.adjust().responsive.recalc();
+			//$($.fn.dataTable.tables(true)).DataTable().columns.adjust().responsive.recalc();
+			$($.fn.dataTable.tables(true)).css('width','100%');
+			$($.fn.dataTable.tables(true)).DataTable().columns.adjust().responsive.draw();
+			//$('#past-tab').tab('show')
+			
+	        /*var currentTab = $(e.target).text(); // gets current tab
 	        switch(currentTab) {
 	        	case 'current':
 	        		var table = $('#current-table').DataTable();
@@ -266,7 +285,7 @@
 	        		$('#container').css('display','block');
 	        		table.columns.adjust().draw();
 	        		break;
-	        	};
+	        	}*/
 		});
 	});
 </script>
@@ -294,13 +313,14 @@
 <script>
 	// fill the empty table with db values
 	window.onload = function() {
+		$.fn.dataTable.tables({visible: true, api: true}).columns.adjust();
 		//document.getElementById('team').innerHTML='big';
 		//document.getElementById('tag').innerHTML='chungus';
 		//document.getElementById('rank').innerHTML='is';
 		//document.getElementById('srank').innerHTML='very';
 		//document.getElementById('elo').innerHTML='VERY';
 		//document.getElementById('glicko').innerHTML='sexxy';
-	};
+	}
 </script>
 
 
