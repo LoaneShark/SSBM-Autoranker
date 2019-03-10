@@ -93,10 +93,11 @@ parser.add_argument('-d','--displaysize',help='lowest placing shown on pretty pr
 parser.add_argument('-sl','--slug',help='tournament URL slug',default=None)
 parser.add_argument('-ss','--short_slug',help='shorthand tournament URL slug',default=None)
 parser.add_argument('-p','--print',help='print tournament final results to console as they are read in (default False)',default=False)
-parser.add_argument('-c','--collect_garbage',help='delete phase data after tournament is done being read in (default True)',default=True)
+parser.add_argument('-cg','--collect_garbage',help='delete phase data after tournament is done being read in (default True)',default=True)
 parser.add_argument('-ar','--use_arcadians',help='count arcadian events (default False)',default=False)
 parser.add_argument('-gt','--glicko_tau',help='tau value to be used by Glicko-2 algorithm (default 0.5)',default=0.5)
 parser.add_argument('-ma','--min_activity',help='minimum number of tournament appearances in order to be ranked. ELO etc still calculated.',default=3)
+parser.add_argument('-c','--current_db',help='keep the database "current" i.e. delete tourney records over 1 year old (default False)',default=False)
 args = parser.parse_args()
 
 game_idx = int(args.game)
@@ -157,11 +158,11 @@ def main():
 	if to_calc_sigrank:
 		array_t = timer()
 		if game_idx == 1:
-			iagorank_params = calc_sigrank(dicts,min_req=min_act,max_iter=5000,learn_decay=False,disp_size=300,verbosity=5,print_res=True,plot_ranks=False,\
-				mode='array',seed='blank',sig_mode='simple',score_by='intsig',use_bins=False)
+			iagorank_params = calc_sigrank(dicts,min_req=min_act,max_iter=100,learn_decay=False,disp_size=300,verbosity=5,print_res=True,plot_ranks=False,\
+				mode='array',seed='blank',sig_mode='alt',score_by='intsig',use_bins=False,running_bins=True)
 		else:
-			iagorank_params = calc_sigrank(dicts,min_req=min_act,max_iter=1000,learn_decay=True,disp_size=300,verbosity=5,print_res=True,plot_ranks=False,\
-				mode='array',seed='placing',sig_mode='alt',score_by='intsig')
+			iagorank_params = calc_sigrank(dicts,min_req=min_act,max_iter=50,learn_decay=True,disp_size=300,verbosity=5,print_res=True,plot_ranks=False,\
+				mode='array',seed='blank',sig_mode='alt',score_by='intsig',use_bins=False,running_bins=True)
 		array_time = timer()-array_t
 		print('Array time elapsed:','{:.3f}'.format(array_time) + ' s')
 		ISR = {'params': iagorank_params}
@@ -183,29 +184,29 @@ def main():
 			i = 1
 			print('Rank | Tag        Avg  Int  Y-0  Split   p_id   N    Main')
 			data_res = [[iagoranks[p_id][0],round((iagoranks[p_id][2]+iagoranks[p_id][1])/2.,3),round(iagoranks[p_id][1],3),round(iagoranks[p_id][2],3),round(iagoranks[p_id][2]-iagoranks[p_id][1],3),p_id,len([opp_id for opp_id in winprobs[p_id]]),charmap[get_main(p_id,p_info)]] for p_id in id_list]
-			for line in sorted(data_res,key=lambda l: l[3])[:100]:
+			for line in sorted(data_res,key=lambda l: l[2])[:100]:
 				print('{:>3.3}'.format(str(i)),'|','  '.join([str(item) for item in line]))
 				i += 1
 				#print(line.join(' '))
 	iter_num = len(data_hist[id_list[0]])
 	#print('Dict time elapsed:','{:.3f}'.format(dict_time) + ' s')
 	if game_idx == 1:
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1004,plot_tags=True,sig_mode='simple')
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1004,plot_tags=True,sig_mode='alt',plot_running_sigmoid=True)
 		plot_hist(data_hist,p_id=1004,plot_delta=True)
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,4692,plot_tags=True,sig_mode='simple')
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,4692,plot_tags=True,sig_mode='alt',plot_running_sigmoid=True)
 		plot_hist(data_hist,p_id=4692,plot_delta=True)
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1037,plot_tags=True,sig_mode='simple')
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1037,plot_tags=True,sig_mode='alt',plot_running_sigmoid=True)
 		plot_hist(data_hist,p_id=1037,plot_delta=True)
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,16393,plot_tags=True,sig_mode='simple')
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,16393,plot_tags=True,sig_mode='alt',plot_running_sigmoid=True)
 		plot_hist(data_hist,p_id=16393,plot_delta=True)
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,4127,plot_tags=True,sig_mode='simple')
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,4127,plot_tags=True,sig_mode='alt',plot_running_sigmoid=True)
 		plot_hist(data_hist,p_id=4127,plot_delta=True)
 
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,6189,plot_tags=True,sig_mode='simple')
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,6189,plot_tags=True,sig_mode='alt',plot_running_sigmoid=True)
 		plot_hist(data_hist,p_id=6189,plot_delta=True)
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,16342,plot_tags=True,sig_mode='simple')
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,16342,plot_tags=True,sig_mode='alt',plot_running_sigmoid=True)
 		plot_hist(data_hist,p_id=16342,plot_delta=True)
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,32097,plot_tags=True,sig_mode='simple')
+		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,32097,plot_tags=True,sig_mode='alt',plot_running_sigmoid=True)
 		plot_hist(data_hist,p_id=32097,plot_delta=True)
 		if 1 < 0:
 			# plot mango
@@ -280,34 +281,46 @@ def main():
 
 				#print([p_id for p_id in id_list if sigmoids[p_id][2] > 1.1])
 
-	if (game_idx == 3 or game_idx == 1386) and 1 < 0:
-		# plot void
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,15768,plot_tags=True,sig_mode='alt')
-		plot_hist(data_hist,p_id=15768,plot_delta=True)
-		# plot larry lurr
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,23277,plot_tags=True,sig_mode='alt')
-		plot_hist(data_hist,p_id=23277,plot_delta=True)
-		# plot samsora
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,7648,plot_tags=True,sig_mode='alt')
-		plot_hist(data_hist,p_id=7648,plot_delta=True)
-		# plot nairo
-		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,16104,plot_tags=True,sig_mode='alt')
-		plot_hist(data_hist,p_id=16104,plot_delta=True)
-		if game_idx == 1386:
-			# plot schrader the toolbag
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,432879,plot_tags=True,sig_mode='alt')
-			plot_hist(data_hist,p_id=432879,plot_delta=True)
-			# plot blank
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,57924,plot_tags=True,sig_mode='alt')
-			plot_hist(data_hist,p_id=57924,plot_delta=True)
-		# plot swedish delight (only for -ma 2)
-		if 1055 in id_list:
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1055,plot_tags=True,sig_mode='alt')
-			plot_hist(data_hist,p_id=1055,plot_delta=True)
-		if 4465 in id_list:
-			# plot leffen
-			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,4465,plot_tags=True,sig_mode='alt')
-			plot_hist(data_hist,p_id=4465,plot_delta=True)
+
+
+	if (game_idx == 3 or game_idx == 1386):
+		#running_winprobs(iagoranks,winprobs,7648)
+		#running_winprobs(iagoranks,winprobs,15768)
+		#running_winprobs(iagoranks,winprobs,57924)
+		#running_winprobs(iagoranks,winprobs,65445)
+		#running_winprobs(iagoranks,winprobs,4465)
+
+		if 1 > 0:
+			# plot samsora
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,7648,plot_tags=True,sig_mode='alt',plot_running_sigmoid=True)
+			plot_hist(data_hist,p_id=7648,plot_delta=True)
+			# plot tweek
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,15768,plot_tags=True,sig_mode='alt',plot_running_sigmoid=True)
+			plot_hist(data_hist,p_id=15768,plot_delta=True)
+			# plot larry lurr
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,23277,plot_tags=True,sig_mode='alt',plot_running_sigmoid=True)
+			plot_hist(data_hist,p_id=23277,plot_delta=True)
+			# plot nairo
+			plot_winprobs(iagoranks,winprobs,sigmoids,id_list,16104,plot_tags=True,sig_mode='alt',plot_running_sigmoid=True)
+			plot_hist(data_hist,p_id=16104,plot_delta=True)
+			if game_idx == 1386:
+				# plot radda radda
+				plot_winprobs(iagoranks,winprobs,sigmoids,id_list,65445,plot_tags=True,sig_mode='alt')
+				plot_hist(data_hist,p_id=65445,plot_delta=True)
+				# plot schrader the toolbag
+				plot_winprobs(iagoranks,winprobs,sigmoids,id_list,432879,plot_tags=True,sig_mode='alt')
+				plot_hist(data_hist,p_id=432879,plot_delta=True)
+				# plot blank
+				plot_winprobs(iagoranks,winprobs,sigmoids,id_list,57924,plot_tags=True,sig_mode='alt')
+				plot_hist(data_hist,p_id=57924,plot_delta=True)
+			# plot swedish delight (only for -ma 2)
+			if 1055 in id_list:
+				plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1055,plot_tags=True,sig_mode='alt')
+				plot_hist(data_hist,p_id=1055,plot_delta=True)
+			if 4465 in id_list:
+				# plot leffen
+				plot_winprobs(iagoranks,winprobs,sigmoids,id_list,4465,plot_tags=True,sig_mode='alt')
+				plot_hist(data_hist,p_id=4465,plot_delta=True)
 
 	#return True
 

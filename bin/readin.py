@@ -35,10 +35,11 @@ parser.add_argument('-st','--static_teams',help='store teams as static units, ra
 parser.add_argument('-sl','--slug',help='tournament URL slug',default=None)
 parser.add_argument('-ss','--short_slug',help='shorthand tournament URL slug',default=None)
 parser.add_argument('-p','--print',help='print tournament final results to console as they are read in (default False)',default=False)
-parser.add_argument('-c','--collect_garbage',help='delete phase data after tournament is done being read in (default True)',default=True)
+parser.add_argument('-cg','--collect_garbage',help='delete phase data after tournament is done being read in (default True)',default=True)
 parser.add_argument('-ar','--use_arcadians',help='count arcadian events (default False)',default=False)
 parser.add_argument('-gt','--glicko_tau',help='tau value to be used by Glicko-2 algorithm (default 0.5)',default=0.5)
 parser.add_argument('-ma','--min_activity',help='minimum number of tournament appearances in order to be ranked. ELO etc still calculated.',default=3)
+parser.add_argument('-c','--current_db',help='keep the database "current" i.e. delete tourney records over 1 year old (default False)',default=False)
 args = parser.parse_args()
 
 v = int(args.verbosity)

@@ -266,7 +266,7 @@ def load_dict(name,ver,loc='db'):
 			#t['groups'] = {}
 			save_dict(t,name,ver,loc)
 			return t
-		if name == 'skills':
+		elif name == 'skills':
 			s = {}
 			s['elo'] = {}
 			s['elo_del'] = {}
@@ -276,11 +276,16 @@ def load_dict(name,ver,loc='db'):
 			s['srank_del'] = {}
 			s['srank_sig'] = {}
 			s['perf'] = {}
+			s['trueskill'] = {}
+			s['trueskill_del'] = {}
 			save_dict(s,name,ver,loc)
 			return s
 		else:
 			save_dict({},name,ver,loc)
 			return {}
+
+def write_blank_dict(name,loc='db'):
+	return save_dict(load_dict(name,None,None),name,'blank',loc)
 
 # deletes a single dict
 def delete_dict(name,ver,loc='db'):

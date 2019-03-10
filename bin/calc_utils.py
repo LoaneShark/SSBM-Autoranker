@@ -36,7 +36,7 @@ def is_active(dicts,p_id,tag=None,min_req=activity_min,min_wins=0):
 	if min_wins > 0:
 		if len([opp_id for opp_id in records[p_id]['wins']]) < min_wins:
 			return False
-	attendance = [t_id for t_id in records[p_id]['placings'] if type(records[p_id]['placings'][t_id]) is int if tourneys[t_id]['active'] if p_info[p_id]['sets_played'] > 6]
+	attendance = [t_id for t_id in records[p_id]['placings'] if type(records[p_id]['placings'][t_id]) is int if (t_id not in tourneys or tourneys[t_id]['active']) if p_info[p_id]['sets_played'] > 6]
 	#print(len(attendance))
 	return (len(attendance) >= min_req)
 
@@ -301,7 +301,7 @@ def update_glicko(dicts,matches,t_info,tau=0.5,ranking_period=60):
 # calculates scores based on sigmoid curves fit to win probability distributions
 def calc_sigrank(dicts,max_iter=1000,min_req=3,verbosity=0,rank_size=None,disp_size=100,alpha=0.5,\
 	mode='array',sig_mode='sigmoid',seed='elo',score_by='intsig',\
-	print_res=False,learn_decay=True,plot_ranks=True,use_bins=False):
+	print_res=False,learn_decay=True,plot_ranks=True,use_bins=False,running_bins=False):
 	tourneys,ids,p_info,records,skills = dicts
 	#larry_id,T_id,jtails_id = get_abs_id_from_tag(dicts,'Tweek'),get_abs_id_from_tag(dicts,'Ally'),get_abs_id_from_tag(dicts,'Jtails')
 	#print(void_id,dabuz_id,larry_id)
@@ -381,7 +381,7 @@ def calc_sigrank(dicts,max_iter=1000,min_req=3,verbosity=0,rank_size=None,disp_s
 		print('[sigmoid mode: %s]'%sig_mode)
 	#new_data_dict,sigs = sigrank(data_dict,winps,id_list,max_iter=max_iter)
 	#new_data_dict,sigs,data_hist = sigrank(data_dict,winps,chis,id_list,max_iter=max_iter,simulate_bracket=False,score_intsigs=True,learn_rate=0.5,learn_decay=False,simple_sigmoid=False)
-	new_data,sigs,data_hist,covs = sigrank(data_dict,winps,chis,id_list,max_iter=max_iter,v=verbosity,score_by=score_by,learn_rate=alpha,learn_decay=learn_decay,mode=mode,sig_mode=sig_mode,use_bins=use_bins)
+	new_data,sigs,data_hist,covs = sigrank(data_dict,winps,chis,id_list,max_iter=max_iter,v=verbosity,score_by=score_by,learn_rate=alpha,learn_decay=learn_decay,mode=mode,sig_mode=sig_mode,use_bins=use_bins,running_bins=running_bins)
 	if mode == 'dict':
 		new_data_dict = dcopy(new_data)
 
@@ -448,6 +448,8 @@ def calc_sigrank(dicts,max_iter=1000,min_req=3,verbosity=0,rank_size=None,disp_s
 
 			if disp_size <= len(intsig_res):
 				intsig_print_res = intsig_res[:disp_size]
+			else:
+				intsig_print_res = intsig_res
 			if score_by == 'integral':
 				col1 = 'Y-Int.'
 				col2 = 'Intsig'
@@ -489,7 +491,7 @@ def calc_sigrank(dicts,max_iter=1000,min_req=3,verbosity=0,rank_size=None,disp_s
 
 # main loop of calc_sigrank
 def sigrank(data,winps,chis,id_list,max_iter=1000,v=0,learn_rate=0.5,beta=0.9,tol=0.0001,\
-	simulate_bracket=False,score_by='intsig',learn_decay=True,mode='array',sig_mode='sigmoid',use_bins=False):
+	simulate_bracket=False,score_by='intsig',learn_decay=True,mode='array',sig_mode='sigmoid',use_bins=False,running_bins=False):
 	N = float(len(data.keys()))
 	n = float(len(id_list))
 	print("N:",N," n:",n)
@@ -550,7 +552,7 @@ def sigrank(data,winps,chis,id_list,max_iter=1000,v=0,learn_rate=0.5,beta=0.9,to
 			old_skills = dcopy(new_skills)
 
 			for p_id in id_list:
-				sigres = fitsig(new_skills,data,winps,chis,p_id,old_guess=sigs[p_id],mode=mode,sig_mode=sig_mode,use_hist=use_bins)
+				sigres = fitsig(new_skills,data,winps,chis,p_id,old_guess=sigs[p_id],mode=mode,sig_mode=sig_mode,use_hist=use_bins,running_hist=running_bins)
 				
 				sigs[p_id] = sigres[0]
 				covs[p_id] = sigres[1]
@@ -560,7 +562,7 @@ def sigrank(data,winps,chis,id_list,max_iter=1000,v=0,learn_rate=0.5,beta=0.9,to
 			wins = np.zeros((int(n),int(n)))
 			old_skills = np.array(new_skills,copy=True)
 
-			sigs,covs = fitsig(new_skills,data,winps,chis,np.array(id_list,dtype=int),old_guess=sigs,mode=mode,sig_mode=sig_mode,three_pass=True,use_hist=use_bins)
+			sigs,covs = fitsig(new_skills,data,winps,chis,np.array(id_list,dtype=int),old_guess=sigs,mode=mode,sig_mode=sig_mode,three_pass=True,use_hist=use_bins,running_hist=running_bins)
 			if any([type(sig) == type(None) for sig in sigs]):
 				return None
 
@@ -727,7 +729,7 @@ def update_sigmoids(dicts,t_info,sig='sigmoid',ranking_period=2,max_iterations=1
 	sigrank_history = skills['srank']
 	sigrank_deltas = skills['srank_del']
 	sigmoid_history = skills['srank_sig']
-	date_list = sorted([tourneys[t_id]['date'] for t_id in tourneys if tourneys[t_id]['active'] if 'date' in tourneys[t_id]],key=lambda t: date(t[0],t[1],t[2]))
+	date_list = sorted([tourneys[temp_id]['date'] for temp_id in tourneys if 'date' in tourneys[temp_id] if tourneys[temp_id]['active']],key=lambda t: date(t[0],t[1],t[2]))
 	if len(date_list) > 0:
 		last_date = date_list[-1]
 		first_date = date_list[0]
@@ -863,10 +865,61 @@ def winprobs(dicts,id_list=None,mode='array'):
 				winps[abs_idx,opp_idx] = prob
 	return winps,chis
 
+def running_winprobs(data,winps,p_id,mode='dict',plot_probs=True):
+	#tourneys,ids,p_info,records,skills = dicts
+	p_winps = winps[p_id]
+	opp_list = sorted([opp_id for opp_id in p_winps],key=lambda opp:p_winps[opp])
+
+	window_sigma = 0.1
+	window_step = 0.05
+	bin_locs = np.linspace(0.,1.,num=(1./window_step))
+	local_probs = np.zeros((len(bin_locs)))
+	local_errs = np.zeros((len(bin_locs)))
+
+	dist_weight = lambda sk,norm,loc: norm.pdf(sk)/norm.pdf(loc)
+
+	#opp_skills = {opp_id: skills['srank'][opp_id][p_info[opp_id]['last_event']] for opp_id in opp_list}
+	opp_skills = {opp_id: data[opp_id][1] for opp_id in opp_list}
+
+	for w_bin,w_loc in zip(range(len(bin_locs)),bin_locs):
+		# for all opponents within 3*sigma of the current skill window center, gather the win probabilities and gaussian weights
+		window_opps = [opp_id for opp_id in opp_list if abs(opp_skills[opp_id]-w_loc) <= 3.*window_sigma]
+		if len(window_opps) <= 0:
+			local_probs[w_bin] = 0.
+			local_errs[w_bin] = 1.
+		else:
+			# get all the values & weights for this window/bin
+			window_norm = sp.stats.norm(loc=w_loc,scale=window_sigma)
+			window_skills = [opp_skills[opp_id] for opp_id in window_opps]
+			window_weights = [dist_weight(o_skill,window_norm,w_loc) for opp_id,o_skill in zip(window_opps,window_skills)]
+			window_probs = [p_winps[opp_id] for opp_id in window_opps]
+			# clean up the outputs to be 1-D arrays
+			window_skills = np.array(window_skills)
+			if len(window_skills.shape) > 1:
+				window_skills = np.array([w_s[0] for w_s in window_skills])
+			window_weights = np.array(window_weights)
+			if len(window_weights.shape) > 1:
+				window_weights = np.array([w_w[0] for w_w in window_weights])
+			window_probs = np.array(window_probs)
+			# calculate weighted average skill of the window and its uncertainty
+			local_probs[w_bin] = np.average(window_probs,weights=window_weights)
+			local_errs[w_bin] = 1./sqrt(len(window_opps))
+
+	if plot_probs:
+		fig = plt.figure()
+		ax = fig.add_subplot(111)
+		ax.set_title(data[p_id][0])
+		ax.plot([opp_skills[opp_id] for opp_id in opp_list],[p_winps[opp_id] for opp_id in opp_list],'b.')
+		ax.plot(bin_locs,local_probs,'y-')
+		plt.show()
+
+	return bin_locs,local_probs,local_errs
+
+
 ## sigrank PRINTING UTILS
 # plots the win probabilities for a player given their rank, and 
 # calculates and plots the logistic function regression
-def plot_winprobs(data,winps,sigs,id_list,p_id,plot_sigmoid=True,plot_tags=False,plot_rank=True,scale_skills=False,char_data=None,mode='dict',sig_mode='sigmoid'):
+def plot_winprobs(data,winps,sigs,id_list,p_id,plot_sigmoid=True,plot_running_sigmoid=False,plot_tags=False,plot_rank=True,scale_skills=False,char_data=None,mode='dict',sig_mode='sigmoid'):
 	#tourneys,ids,p_info,records,skills = dicts
 	#dats = winps[p_id]
 	if sig_mode not in ['sigmoid','alt','simple','scipy']:
@@ -942,6 +995,9 @@ def plot_winprobs(data,winps,sigs,id_list,p_id,plot_sigmoid=True,plot_tags=False
 
 	fig = plt.figure()
 	ax = fig.add_subplot(111)
+	if plot_running_sigmoid:
+		bins,bin_probs,_ = running_winprobs(data,winps,p_id,plot_probs=False)
+		plt.plot(bins,bin_probs,'y--')
 	if plot_sigmoid:
 		ax.plot(x,y,'b.',scale_n*xp,pxp,'g-')
 		#plt.plot(N*x,y,'b.',N*xp,pxp,'g-')
@@ -1095,18 +1151,39 @@ def deep_sigmoid(x,x0,y0,c,k,y,s):
 def inv_sigmoid(y,p):
 	x0,y0,c,k=p
 	x = logit((y-y0)/c)/(10.*k)+x0
+	if np.isnan(x):
+		if sigmoid(0.,p[0],p[1],p[2],p[3]) > 0.5:
+			return 0.
+		elif sigmoid(1.,p[0],p[1],p[2],p[3]) < 0.5:
+			return 1.
+		else:
+			return x
 	return x
 def inv_alt_sigmoid(y,p):
 	# x0,g,c,k = p
 	inv = lambda p: logit((y-(p[1]*(1.-p[2])))/p[2])/(10.*p[3])+p[0]
 	vinv = np.vectorize(inv,excluded=[],otypes=[np.float64],signature='(k)->()')
 	intercept = vinv(p)
+	if np.isnan(intercept):
+		if alt_sigmoid(0.,p[0],p[1],p[2],p[3]) > 0.5:
+			return 0.
+		elif alt_sigmoid(1.,p[0],p[1],p[2],p[3]) < 0.5:
+			return 1.
+		else:
+			return intercept
 	return intercept#[0]
 def inv_simple_sigmoid(y,p):
 	# x0,k = p
 	inv = lambda p: logit(y)/(10.*p[1])+p[0]
 	vinv = np.vectorize(inv,excluded=[],otypes=[np.float64],signature='(k)->()')
 	intercept = vinv(p)
+	if np.isnan(intercept):
+		if simple_sigmoid(0.,p[0],p[1]) > 0.5:
+			return 0.
+		elif simple_sigmoid(1.,p[0],p[1]) < 0.5:
+			return 1.
+		else:
+			return intercept
 	return intercept
 
 def cfsigmoid(x,x0,y0,c,k):
@@ -1199,7 +1276,7 @@ def resize(arr,lower=0.0,upper=1.0):
 	return arr
 
 # fits a sigmoid function to the provided data, and then returns the parameters
-def fitsig(skill_ranks,data,winps,chis,id_list,old_guess=None,method='curve_fit',three_pass=False,soft_limit=False,use_hist=False,mode='array',sig_mode='sigmoid'):
+def fitsig(skill_ranks,data,winps,chis,id_list,old_guess=None,method='curve_fit',three_pass=False,soft_limit=False,use_hist=False,running_hist=False,mode='array',sig_mode='sigmoid'):
 	N = float(len(data.keys()))
 	if mode == 'dict':
 		n = 1.
@@ -1224,36 +1301,42 @@ def fitsig(skill_ranks,data,winps,chis,id_list,old_guess=None,method='curve_fit'
 
 		if mode == 'dict':
 			p_id = id_list
-			for opp_id in winps[p_id]:
-				ratio = float(winps[p_id][opp_id])
-				opp_skill = skill_ranks[opp_id][1]
-				if not np.isnan(opp_skill):
-					if ratio > 0:
-						xs.append(opp_skill)
-						ys.append(min(ratio,0.999))
-						ss.append(chis[p_id][opp_id])
-					if ratio == 0:
-						xs.append(opp_skill)
-						ys.append(0.001)
-						ss.append(chis[p_id][opp_id])
-
-		if mode == 'array':
+			if running_hist:
+				xs,ys,ss = running_winprobs(skill_ranks,winps,p_id,plot_probs=False)
+			else:
+				for opp_id in winps[p_id]:
+					ratio = float(winps[p_id][opp_id])
+					opp_skill = skill_ranks[opp_id][1]
+					if not np.isnan(opp_skill):
+						if ratio > 0:
+							xs.append(opp_skill)
+							ys.append(min(ratio,0.999))
+							ss.append(chis[p_id][opp_id])
+						if ratio == 0:
+							xs.append(opp_skill)
+							ys.append(0.001)
+							ss.append(chis[p_id][opp_id])
+		elif mode == 'array':
 			p_id = id_list[p_idx]
-			for opp_id in winps[p_id]:
-				ratio = float(winps[p_id][opp_id])
-				if opp_id in id_list:
-					opp_skill = skill_ranks[np.where(id_list == opp_id)][0]
-				else:
-					opp_skill = data[opp_id][1]
-				if not np.isnan(opp_skill):
-					if ratio > 0:
-						xs.append(opp_skill)
-						ys.append(min(ratio,0.999))
-						ss.append(chis[p_id][opp_id])
-					if ratio == 0:
-						xs.append(opp_skill)
-						ys.append(0.001)
-						ss.append(chis[p_id][opp_id])
+			if running_hist:
+				run_data = {opp_id: [data[opp_id][0],skill_ranks[np.where(id_list == opp_id)]] if opp_id in id_list else data[opp_id] for opp_id in winps[p_id]}
+				xs,ys,ss = running_winprobs(run_data,winps,p_id,plot_probs=False)
+			else:
+				for opp_id in winps[p_id]:
+					ratio = float(winps[p_id][opp_id])
+					if opp_id in id_list:
+						opp_skill = skill_ranks[np.where(id_list == opp_id)][0]
+					else:
+						opp_skill = data[opp_id][1]
+					if not np.isnan(opp_skill):
+						if ratio > 0:
+							xs.append(opp_skill)
+							ys.append(min(ratio,0.999))
+							ss.append(chis[p_id][opp_id])
+						if ratio == 0:
+							xs.append(opp_skill)
+							ys.append(0.001)
+							ss.append(chis[p_id][opp_id])
 
 		# pad LHS with 0s, high sigma
 		# (assume losing chance if they've never faced an opponenet of this caliber)

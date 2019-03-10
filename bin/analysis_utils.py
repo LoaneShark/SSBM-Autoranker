@@ -95,9 +95,10 @@ def get_avg_performances(dicts,acc=3,scale_vals=False):
 		if p_id in skills['perf']:
 		#print(records[p_info])
 			perfs = []
-			for t_id in skills['perf'][p_id] if tourneys[t_id]['active']:
-				#print(records[p_id]['performances'])
-				perfs.extend([skills['perf'][p_id][t_id]])
+			for t_id in skills['perf'][p_id] :
+				if tourneys[t_id]['active']:
+					#print(records[p_id]['performances'])
+					perfs.extend([skills['perf'][p_id][t_id]])
 
 			avg_perfs[p_id] = round(mean(perfs),acc)
 
