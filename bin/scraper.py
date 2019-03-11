@@ -123,8 +123,6 @@ def table_index(doc,game,year):
 			c_year = [c_year[0],c_game]
 		else:
 			c_year[1] = c_game
-		#print(old_c_year,c_year)
-		#print(i,c_year[0],game_ids[int(c_year[1])])
 
 		old_c_year = int(c_year[0])
 
@@ -135,29 +133,117 @@ def table_index(doc,game,year):
 			if int(c_year[0]) > year:
 				return None
 
-# scrapes PGR/SSBMRank/etc. from ssbwiki for given game/year
-def scrape_ranks(game,year):
+# gets the name of the ranking system and the necessary url slug for a given game and year
+def get_rank_name(game,year,yr_half=-1):
 	if game == 1:
 		if year >= 2018:
 			rank_name = 'MPGR'
+			yearstr = str(year) + '_'
+			if yr_half == 0:
+				yearstr = 'Summer_'+yearstr
 		else:
 			rank_name = 'SSBMRank'
+			yearstr = str(year) + '_'
+			if yr_half == 0:
+				yearstr = 'Summer_'+yearstr
 	elif game == 2:
 		rank_name = 'PMRank'
-	elif game == 3 or game == 1386:
+		yearstr = '_' + str(year)
+	elif game == 3:
 		rank_name = 'PGR'
+		if yr_half < 0:
+			yr_half = 1
+		pgr_map = {2016:{0:'v1',1:'v2'},2017:{0:'v3',1:'v4'},2018:{0:'v5',1:'100'}}
+		if year > 2018 or year < 2016:
+			yearstr = '_'+str(year)
+		else:
+			yearstr = '_'+pgr_map[year][yr_half]
+	elif game == 1386:
+		rank_name = 'PGRU'
+		yearstr = str(year) + '_'
+		if yr_half == 0:
+			yearstr = 'Summer_'+yearstr
 	elif game == 4:
 		rank_name = '64_League_Rankings'
+		#yearstr = str(year) + '_'
+		if year <= 2016:
+			yearstr = str(year)+'_'
+		else:
+			# only import 2017 until 2016 gets split out into its own article
+			yearstr = ''
 	elif game == 5:
 		rank_name = 'SSBBRank'
+		if year == 2016 or year == 2017:
+			yearstr = '2016-2017_'
+		elif year == 2014 or year == 2015:
+			yearstr = '2014_'
+		else:
+			yearstr = str(year) + '_'
 	else:
 		return False
+	return rank_name,yearstr
 
-	rank_url = 'https://www.ssbwiki.com/' + rank_name
+# scrapes PGR/SSBMRank/etc. from ssbwiki for given game/year
+def scrape_ranks(game,year,yr_half=-1):
+	rank_name,yearstr = get_rank_name(game,year,yr_half)
+
+	if game == 3 or game == 2:
+		rank_url = 'https://www.ssbwiki.com/'+rank_name+yearstr
+	else:
+		rank_url = 'https://www.ssbwiki.com/'+yearstr+rank_name
+
+	# load page for ranks
+	try:
+		page = urlopen(rank_url).read()
+		page = page.decode('UTF-8')
+		doc = BeautifulSoup(page,features='lxml')
+	except HTTPError:
+		if year <= 2015:
+			return False
+		else:
+			print('No ranks found for: %s, %d'%(rank_name,year))
+			return scrape_ranks(game,year-1)
+
+	tags = []
+	ratings = []
+	tables = doc.find_all('table')
+
+	# find index on page of ranking table
+	t_i = -1
+	for i in range(1,len(tables)):
+		curr_table = tables[i]
+		first_row = curr_table.find_all('tr')[0]
+		if len(first_row.find_all('th')) > 0:
+			if 'rank' in first_row.find_all('th')[0].text.lower():
+				t_i = i
+				break
+
+	if t_i < 0:
+		return False
+	rank_table = tables[t_i]
+
+	# scrape rankings
+	for player in rank_table.find_all('tr'):
+		if len(player.find_all('th')) > 0.:
+			continue # ignore header row
+		else:
+			player_content = player.find_all('td')
+			tags.append(player_content[1].find_all('a')[1].text.strip())
+			if len(player_content) >= 6:
+				ratings.append(float(player_content[5].text))
+
+	if ratings == []:
+		ratings = None
+	# take this out once the articles get split up
+	if game == 4:
+		yearstr = '2017'
+	return tags,ratings,yearstr.strip('_')
+
 
 
 if __name__ == '__main__':
-	print(scrape(1386,2019,verb=9))
+	#print(scrape(1386,2019,verb=9))
+	print(scrape_ranks(4,2018))
 	#scrape_slugs(['https://www.ssbwiki.com/Tournament:Valhalla'])
 	
 	#url = 'https://www.ssbwiki.com/List_of_national_tournaments'

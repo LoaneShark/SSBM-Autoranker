@@ -1,6 +1,7 @@
 #import numpy as np 
 #import scipy as sp 
 from six.moves.urllib.request import urlopen
+from six.moves.urllib.error import HTTPError
 import matplotlib.image as mpimg
 #from six.moves.urllib.parse import urlencode
 import requests
@@ -268,6 +269,8 @@ def load_dict(name,ver,loc='db'):
 			return t
 		elif name == 'skills':
 			s = {}
+			s['mainrank'] = {}
+			s['mainrank_readin'] = {}
 			s['elo'] = {}
 			s['elo_del'] = {}
 			s['glicko'] = {}
@@ -418,7 +421,7 @@ def get_tournament_date(slug):
 		return t_date
 
 	except HTTPError:
-		print('Error 404: tourney [%s] not found'%tourney)
+		print('Error 404: tourney [%s] not found'%slug)
 		return False
 
 # prints tournament results by player's final placing

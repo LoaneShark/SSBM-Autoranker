@@ -7,6 +7,7 @@ from copy import deepcopy as dcopy
 ## UTIL IMPORTS
 from readin_utils import *
 from region_utils import *
+from scraper import scrape_ranks
 
 flatten = lambda l: [item for sublist in l for item in sublist] if type(l) is list else []
 
@@ -225,15 +226,23 @@ def get_resume(dicts,p_id,tags=None,t_ids=None,team=None,slugs=None,chars=None):
 		#t_res = (records[p_id]['placings'][t_id],records[p_id]['paths'][t_id])
 	return res
 
-# returns (first stored) player id given their tag in a string
-def get_abs_id_from_tag(dicts,tag,first_only=True):
+# returns player id given their tag in a string
+# if multiple matches, returns first found result (by p_id or skill), unless first_only is disabled
+def get_abs_id_from_tag(dicts,tag,first_only=True,sort_by_skill=False):
 	tourneys,ids,p_info,records,skills = dicts
-	p_id = [abs_id for abs_id in p_info if tag in p_info[abs_id]['aliases']]
-	if len(p_id) > 0:
-		if first_only:
-			return p_id[0]
+	p_ids = [abs_id for abs_id in p_info if tag in p_info[abs_id]['aliases'] or \
+											tag.strip().lower() in [p_alias.strip().lower() for p_alias in p_info[abs_id]['aliases']]]
+	if len(p_ids) > 0:
+		if len(p_ids) == 1:
+			return p_ids[0]
 		else:
-			return p_id
+			if sort_by_skill:
+				# sort by s-rank first, elo second
+				p_ids = sorted(p_ids,key=lambda p_id: (skills['srank'][p_id][p_info[p_id]['last_event']],skills['elo'][p_id][p_info[p_id]['last_event']]))
+			if first_only:
+				return p_ids[0]
+			else:
+				return p_ids
 	else:
 		return None
 	#print(p_info[1000]['aliases'])
@@ -288,6 +297,29 @@ def list_tourneys(dicts,year=None,list_ids=False):
 			return [[t_id,tourneys[t_id]['name']] for t_id in tourneys if t_id != 'slugs' for t_date in tourney[t_id]['date'] if t_date[2] == year]
 		else:
 			return [tourneys[t_id]['name'] for t_id in tourneys if t_id != 'slugs' for t_date in tourney[t_id]['date'] if t_date[2] == year]
+
+## db_utils helpers
+def update_official_ranks(dicts,game,year,lookback=True):
+	tourneys,ids,p_info,records,skills = dicts
+	# update the previous year if it wasn't already there (for first import)
+	if lookback:
+		update_official_ranks(dicts,game,year-1,lookback=False)
+	#if get_rank_name(str(year))[1].strip('_') not in skills['mainrank_readin']:
+	scrape_res = scrape_ranks(game,year)
+	if not scrape_res:
+		return False
+	else:
+		tags,ratings,yearkey = scrape_res
+	if ratings is None:
+		#skills['mainrank_readin'][yearkey] = [i,tag,None for i,tag in enumerate(tags)]
+		ratings = [None for i in range(len(tags))]
+	skills['mainrank_readin'][yearkey] = [[i,tag,rating] for i,tag,rating in enumerate(zip(tags,ratings))]
+	# update p_info
+	for i,tag,rating in enumerate(zip(tags,ratings)):
+		p_id = get_abs_id_from_tag(dicts,tag,sort_by_skill=True)
+		if p_id not in skills['mainrank']:
+			skills['mainrank'][p_id] = {}
+		skills['mainrank'][p_id][yearkey] = [i,rating]
 
 # returns the number of times a player [p] used a given character [c] 
 # (by id values)

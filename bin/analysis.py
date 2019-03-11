@@ -154,7 +154,7 @@ def main():
 	if 1 < 0:
 		opts = find_opt_hyperparams(dicts,20,9,key_ids=[1000,19554])
 
-	to_calc_sigrank = True
+	to_calc_sigrank = False
 	if to_calc_sigrank:
 		array_t = timer()
 		if game_idx == 1:
@@ -325,7 +325,7 @@ def main():
 	#return True
 
 	db_str_key = str(game_idx)+'_'+str(year)+'_'+str(year_count)
-	#update_db(dicts,db_str_key,force_update=True)
+	update_db(dicts,db_str_key,force_update=True)
 
 	#generate_matchup_chart(dicts,game_idx,year,year_count,id_list=id_list,label_mode='ones',v=int(args.verbosity),infer_characters=True,n_bins=10000)
 	'''
@@ -339,10 +339,12 @@ def main_read():
 		yearstr = str(year)
 	else:
 		yearstr = str(year)+'-'+str(year+year_count)
+	if args.current_db:
+		yearstr += '_c'
 	tourneys,ids,p_info,records,skills = easy_load_db(str(game_idx)+'/'+yearstr)
-	tourneys,ids,p_info,records,skills = read_majors(game_idx,year,base=(tourneys,ids,p_info,records,skills))
+	tourneys,ids,p_info,records,skills = read_year(game_idx,year,base=(tourneys,ids,p_info,records,skills))
 	for i in range(1,year_count+1):
-		tourneys,ids,p_info,records,skills = read_majors(game_idx,year+i,base=(tourneys,ids,p_info,records,skills))
+		tourneys,ids,p_info,records,skills = read_year(game_idx,year+i,base=(tourneys,ids,p_info,records,skills))
 
 	if game_idx == 1386:
 		filename = 'ultimate_mains.csv'

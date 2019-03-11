@@ -12,7 +12,7 @@ from readin import readin,set_readin_args
 from readin_utils import *
 from calc_utils import *
 from region_utils import *
-from dict_utils import get_main
+from dict_utils import get_main,update_official_ranks
 import scraper
 
 ## ARGUMENT PARSING
@@ -77,7 +77,7 @@ glicko_tau = float(args.glicko_tau)
 # main loop. calls scraper to get slugs for every major that happened
 # in the specified year for the specified game (per smash.gg numeric id value)
 # returns in the form of 4 dicts: tourneys,ids,p_info,records
-def read_majors(game_id=int(db_game),year=int(db_year),base=None,current=False):
+def read_year(game_id=int(db_game),year=int(db_year),base=None,current=False):
 	set_readin_args(args)
 	#slugs = ["genesis-5","summit6","shine2018","tbh8","summit7"]
 	fails = []
@@ -116,7 +116,9 @@ def read_majors(game_id=int(db_game),year=int(db_year),base=None,current=False):
 		print(fails)
 	if to_save_db and not scrape_load and not slug_given:
 		save_slugs(slugs,game_id,year,to_save_db=to_save_db)
-	return(read_tourneys(slugs,ver=game_id,year=year,base=base,current=current))
+	dicts = read_tourneys(slugs,ver=game_id,year=year,base=base,current=current)
+	update_official_ranks(dicts,game_id,year)
+	return dicts
 
 def set_db_args(args):
 	collect = args.collect_garbage
@@ -156,7 +158,7 @@ def read_tourneys(slugs,ver='default',year=None,base=None,current=False):
 
 	for slug in slugs:
 		slug_date = get_tournament_date(slug)
-		if slug_date is None:
+		if slug_date is None or slug_date == False:
 			if v >= 4:
 				print('Could not import %s: no date available'%slug)
 		else:

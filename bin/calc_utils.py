@@ -1151,40 +1151,50 @@ def deep_sigmoid(x,x0,y0,c,k,y,s):
 def inv_sigmoid(y,p):
 	x0,y0,c,k=p
 	x = logit((y-y0)/c)/(10.*k)+x0
-	if np.isnan(x):
-		if sigmoid(0.,p[0],p[1],p[2],p[3]) > 0.5:
-			return 0.
-		elif sigmoid(1.,p[0],p[1],p[2],p[3]) < 0.5:
-			return 1.
-		else:
-			return x
+	#if np.isnan(x):
+	#	if sigmoid(0.,p[0],p[1],p[2],p[3]) > 0.5:
+	#		return 0.
+	#	elif sigmoid(1.,p[0],p[1],p[2],p[3]) < 0.5:
+	#		return 1.
+	#	else:
+	#		return x
 	return x
 def inv_alt_sigmoid(y,p):
 	# x0,g,c,k = p
-	inv = lambda p: logit((y-(p[1]*(1.-p[2])))/p[2])/(10.*p[3])+p[0]
+	inv = lambda i_p: logit((y-(i_p[1]*(1.-i_p[2])))/i_p[2])/(10.*i_p[3])+i_p[0]
 	vinv = np.vectorize(inv,excluded=[],otypes=[np.float64],signature='(k)->()')
 	intercept = vinv(p)
-	if np.isnan(intercept):
-		if alt_sigmoid(0.,p[0],p[1],p[2],p[3]) > 0.5:
-			return 0.
-		elif alt_sigmoid(1.,p[0],p[1],p[2],p[3]) < 0.5:
-			return 1.
-		else:
-			return intercept
-	return intercept#[0]
+	nan_round = lambda n_p: 0. if alt_sigmoid(0.,n_p[0],n_p[1],n_p[2],n_p[3]) > 0.5 else\
+							 1. if alt_sigmoid(1.,n_p[0],n_p[1],n_p[2],n_p[3]) < 0.5 else \
+							 0.5 if round(alt_sigmoid(0.5,n_p[0],n_p[1],n_p[2],n_p[3]),3) == 0.5 else \
+							 np.nan
+	#if np.isnan(intercept[0]):
+	#	if :
+	#		return 0.
+	#	elif alt_sigmoid(1.,p[0],p[1],p[2],p[3]) < 0.5:
+	#		return 1.
+	#	else:
+	#		return intercept
+	return [y_int if not np.isnan(y_int) else nan_round(y_int) for y_int,y_p in zip(intercept,p)]
+	#return intercept
 def inv_simple_sigmoid(y,p):
 	# x0,k = p
-	inv = lambda p: logit(y)/(10.*p[1])+p[0]
+	inv = lambda i_p: logit(y)/(10.*i_p[1])+i_p[0]
 	vinv = np.vectorize(inv,excluded=[],otypes=[np.float64],signature='(k)->()')
 	intercept = vinv(p)
-	if np.isnan(intercept):
-		if simple_sigmoid(0.,p[0],p[1]) > 0.5:
-			return 0.
-		elif simple_sigmoid(1.,p[0],p[1]) < 0.5:
-			return 1.
-		else:
-			return intercept
-	return intercept
+	nan_round = lambda n_p: 0. if simple_sigmoid(0.,n_p[0],n_p[1],n_p[2],n_p[3]) > 0.5 else\
+							 1. if simple_sigmoid(1.,n_p[0],n_p[1],n_p[2],n_p[3]) < 0.5 else \
+							 0.5 if round(simple_sigmoid(0.5,n_p[0],n_p[1],n_p[2],n_p[3]),3) == 0.5 else \
+							 np.nan
+	#if np.isnan(intercept[0]):
+	#	if simple_sigmoid(0.,p[0],p[1]) > 0.5:
+	#		return 0.
+	#	elif simple_sigmoid(1.,p[0],p[1]) < 0.5:
+	#		return 1.
+	#	else:
+	#		return intercept
+	return [y_int if not np.isnan(y_int) else nan_round(y_int) for y_int,y_p in zip(intercept,p)]
+	#return intercept
 
 def cfsigmoid(x,x0,y0,c,k):
 	#x0,y0,c,k=p
