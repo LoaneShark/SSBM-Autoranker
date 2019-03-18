@@ -10,38 +10,92 @@
 -->
 
 
-
-
-
-
-<div class="d-flex flex-row">
-	<div class="p-2 justify-content-middle" id="player_team_div">
-		<h1 class="display-5" id="player_team"></h1>
-	</div>
-	<div class="p-2 justify-content-middle" id="player_tag_div">
-		<h1 class="display-4" id="player_tag"></h1>
-	</div>
-	<div class="p-2" id="player_aliases_div">
-		<p id="player_aliases"></p>
-	</div>
-	<div class="p-2 justify-content-end" id="player_status_div">
-		<p id="player_status"></p>
-	</div>
-</div>
-<hr class="my-4">
-<div class="d-flex flex-row">
-	<div class="p-2" id="player_region_div">
-		<p class="lead" id="player_region"></p>
-	</div>
-	<div class="p-2" id="player_characters_div">
-		<p class="lead" id="player_characters"></p>
-	</div>
-</div>
-<hr class="my-4">
-<div class="d-flex flex-row">
-	<div class="p-2" id="player_info_div"></div>
-	<div class="p-2" id="player_accounts_div"></div>
-</div>
-<div class="d-flex flex-row">
-	<div class="p-2" id="player_games_div"></div>
-</div>
+		<!-- header -->
+		<div class="d-flex flex-column" id="player_info_div">
+			<div class="d-flex flex-row justify-content-between" id="player_header_div">
+				<div class="p-2" id="player_propic_div">
+				</div>
+				<div class="p-2 d-flex flex-grow-1 flex-row justify-content-center" id="player_tag_div">
+					<h1 id="player_team"></h1>
+					<h1 class="display-4" id="player_tag"></h1>
+				</div>	
+				<div class="p-4 d-flex flex-column justify-content-end shadow" id="player_region_div">
+					<p class="text-muted small font-italic">Region</p>
+					<p id="player_region"></p>
+				</div>
+			</div>
+			<!-- secondary info -->
+			<div class="d-flex flex-row justify-content-between" id="player_secondary_div">
+				<div class="p-2 justify-content-start" id="player_name_div">
+					<p class="text-muted small font-italic">Name</p>
+					<p class="lead" id="player_name"></p>
+				</div>
+				<div class="p-2 justify-content-center" id="player_alts_div">
+					<p class="text-muted small font-italic">Other Accounts</p>
+					<p id="player_alts"></p>
+				</div>
+			</div>
+			<!-- tertiary info -->
+			<div class="d-flex flex-row justify-content-between" id="player_tertiary_div">
+				<div class="p-2 justify-content-start invisible" id="player_characters_div">
+					<p class="text-muted small font-italic">Characters</p>
+					<p id="player_characters"></p>
+				</div>
+				<div class="p-2 justify-content-center invisible" id="player_games_div">
+					<p class="text-muted small font-italic">Other Games</p>
+					<p id="player_games"></p>
+				</div>
+				<div class="p-2 justify-content-end" id="player_social_div">
+					<p class="text-muted small font-italic">Social</p>
+					<p id="player_social"></p>
+				</div>
+			</div>
+		</div><!-- player info -->
+		<!-- line break -->
+		<hr class="my-4">
+		<!-- skills at a glance -->
+		<div class="d-flex flex-row justify-content-around" id="player_skills_div">
+			<div class="p-2" id="player_mainrank_div">
+				<p class="text-muted font-italic">
+									{% if {{page.game}} == 'Ultimate'%}
+										PGR
+									{% elsif {{page.game}} == 'Melee' %}
+										MPGR
+									{% elsif {{page.game}} == 'PM' %}
+										PMRank
+									{% elsif {{page.game}} == 'Smash4' %}
+										PGR
+									{% elsif {{page.game}} == 'Brawl' %}
+										SSBBRank
+									{% elsif {{page.game}} == '64' %}
+										64LR
+									{% else %}
+										Rank
+									{% endif %}</p>
+				<p class="lead" id="player_mainrank"></p>
+			</div>
+			<div class="p-2" id="player_elo_div">
+				<p class="text-muted font-italic">Elo</p>
+				<p class="lead" id="player_elo"></p>
+			</div>
+			<div class="p-2" id="player_glicko_div">
+				<p class="text-muted font-italic">Glicko</p>
+				<p class="lead" id="player_glicko"></p>
+			</div>
+			<div class="p-2" id="player_trueskill_div">
+				<p class="text-muted font-italic">TrueSkill</p>
+				<p class="lead" id="player_trueskill"></p>
+			</div>
+			<div class="p-2" id="player_srank_div">
+				<p class="text-muted font-italic">S-Rank</p>
+				<p class="lead" id="player_srank"></p>
+			</div>
+		</div>
+		<div class="d-flex flex-row justify-content-end" id="today_date_div">
+			<p class="text-muted small font-italic font-weight-light" id="today_date"></p>
+			</div>
+		<!-- line break -->
+		<hr class="my-4">
+		<!-- event cards -->
+		<div class="d-flex flex-row" id="player_events_div">
+		</div>

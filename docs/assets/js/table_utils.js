@@ -7,8 +7,12 @@ function snapshotToTable(snapshot) {
 
 	    player.push(childSnapshot.child('team').val());
 	    player.push(childSnapshot.child('tag').val());
-	    //player.push(Math.round(childSnapshot.child('off_rank').val()));
-	    player.push(Math.round(childSnapshot.child('elo').val()));
+        if (childSnapshot.child('mainrank').exists()){
+            player.push(Math.round(childSnapshot.child('mainrank').val()));
+        } else {
+            player.push('N/A');
+        }
+	    //player.push(Math.round(childSnapshot.child('elo').val()));
 	    player.push(Math.round(childSnapshot.child('srank').val() * 10000.0) / 100.0);
 	    player.push(Math.round(childSnapshot.child('elo').val()));
 	    player.push(Math.round(childSnapshot.child('glicko').val()[0]));
@@ -23,8 +27,12 @@ function snapshotToRankLine(snapshot) {
     var returnArr = [];
     returnArr.push(snapshot.child('team').val());
     returnArr.push(snapshot.child('tag').val());
-    //returnArr.push(Math.round(snapshot.child('off_rank').val()));
-	returnArr.push(Math.round(snapshot.child('elo').val()));
+        if (snapshot.child('mainrank').exists()){
+            returnArr.push(Math.round(snapshot.child('mainrank').val()));
+        } else {
+            returnArr.push('N/A');
+        }
+	//returnArr.push(Math.round(snapshot.child('elo').val()));
     returnArr.push(Math.round(snapshot.child('srank').val() * 10000.0) / 100.0);
     returnArr.push(Math.round(snapshot.child('elo').val()));
     returnArr.push(Math.round(snapshot.child('glicko').val()[0]));

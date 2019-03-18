@@ -3,7 +3,7 @@
 <!--<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.1.1/css/responsive.bootstrap.min.css">-->
 <div>
 	<!-- nav tabs -->
-	<ul class="nav nav-pills nav-fill" role="tablist" id=tables-tablist>
+	<ul class="nav nav-tabs nav-fill" role="tablist" id=tables-tablist>
 		<li class="nav-item"><a id="current-tab" class="nav-link" href="#current-panel" aria-controls="current" role="tab" data-toggle="tab">Current</a></li>
 		<li class="nav-item"><a id="past-tab" class="nav-link" href="#past-panel" aria-controls="past" role="tab" data-toggle="tab"></a></li>
 		<li class="nav-item"><a id="alltime-tab" class="nav-link" href="#alltime-panel" aria-controls="alltime" role="tab" data-toggle="tab">All-Time</a></li>
@@ -34,6 +34,10 @@
 								PMRank
 							{% elsif {{page.title}} == 'Smash4' %}
 								PGR
+							{% elsif {{page.title}} == 'Brawl' %}
+								SSBBRank
+							{% elsif {{page.title}} == '64' %}
+								64LR
 							{% else %}
 								Rank
 							{% endif %}
@@ -81,6 +85,10 @@
 								PMRank
 							{% elsif {{page.title}} == 'Smash4' %}
 								PGR
+							{% elsif {{page.title}} == 'Brawl' %}
+								SSBBRank
+							{% elsif {{page.title}} == '64' %}
+								64LR
 							{% else %}
 								Rank
 							{% endif %}
@@ -128,6 +136,10 @@
 								PMRank
 							{% elsif {{page.title}} == 'Smash4' %}
 								PGR
+							{% elsif {{page.title}} == 'Brawl' %}
+								SSBBRank
+							{% elsif {{page.title}} == '64' %}
+								64LR
 							{% else %}
 								Rank
 							{% endif %}
@@ -195,7 +207,7 @@
 					columnDefs: [{targets: 0, className:'dt-body-right'}]
 				});
 				$('#current-tab').tab('show')
-				$($.fn.dataTable.tables(true)).DataTable().columns.adjust();
+				$($.fn.dataTable.tables(true)).DataTable().columns.adjust().responsive.recalc();
 			} else {
 				console.log('whoops! db directory not found: '+ curr_ref_str);
 				$('#current-tab').addClass("disabled");
@@ -222,7 +234,7 @@
 					//scrollCollapse: true,
 					columnDefs: [{targets: 0, className:'dt-body-right'}]
 				});
-				$($.fn.dataTable.tables(true)).DataTable().columns.adjust();
+				$($.fn.dataTable.tables(true)).DataTable().columns.adjust().responsive.recalc();
 			} else {
 				console.log('whoops! db directory not found: '+ past_ref_str);
 				$('#past-tab').addClass("disabled");
@@ -248,7 +260,7 @@
 					//scrollCollapse: true,
 					columnDefs: [{targets: 0, className:'dt-body-right'}]
 				});
-				$($.fn.dataTable.tables(true)).DataTable().columns.adjust();
+				$($.fn.dataTable.tables(true)).DataTable().columns.adjust().responsive.recalc();
 			} else {
 				console.log('whoops! db directory not found: '+ db_ref_str);
 				$('#alltime-tab').addClass("disabled");
@@ -265,7 +277,7 @@
 			////$.fn.dataTable.tables({visible: true, api: true}).columns.adjust().responsive.recalc();
 			//$($.fn.dataTable.tables(true)).DataTable().columns.adjust().responsive.recalc();
 			$($.fn.dataTable.tables(true)).css('width','100%');
-			$($.fn.dataTable.tables(true)).DataTable().columns.adjust().responsive.draw();
+			$($.fn.dataTable.tables(true)).DataTable().columns.adjust().responsive.recalc();
 			//$('#past-tab').tab('show')
 			
 	        /*var currentTab = $(e.target).text(); // gets current tab

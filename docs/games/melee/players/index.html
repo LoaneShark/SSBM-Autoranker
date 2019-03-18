@@ -1,12 +1,31 @@
 ---
 layout: pretty
 title: Melee Players
+game: Melee
 ---
 {% include bootstrap_css.html %}
+<!--<style type="text/css">
+.jumbotron{
+
+	display: flex;
+	width: 700px;
+	margin: 0 auto;
+	/*align-items: center;*/
+}
+.jumbotron .contiainer {
+	display: flex;
+	position: relative;
+}
+</style>-->
 <h1>{{ page.title }}</h1>
-<div class="shadow rounded">
-	<div id='player_card' class='jumbotron'></div>
-</div>
+
+	<div class="jumbotron shadow rounded" id="player_card">
+		<!--<div class="d-flex align-items-center flex-column">
+		  <div class="p-2">Flex item</div>
+		  <div class="p-2">Flex item</div>
+		  <div class="mt-auto p-2">Flex item</div>
+		</div>-->
+	</div>
 
 {% include bootstrap_scripts.html %}
 {% include firebase_scripts.html %}
@@ -14,10 +33,12 @@ title: Melee Players
 <script src="/assets/js/misc_utils.js"></script>
 <script>
 	Finch.route("/", function(bindings){
-		console.log("No player selected")
+		console.log("No player selected");
+		$('#player_card').addClass("invisible");
 	});
 	Finch.route("/:p_id", function(bindings){
 		console.log("Loading player page: "+bindings.p_id);
+		$('#player_card').removeClass("invisible");
 		// draw player profile segment
 		$('#player_card').html(`{% include player_profile.html %}`);
 
@@ -27,16 +48,39 @@ title: Melee Players
 		var player_query = player_ref.once('value').then(function(PlayerSnapshot) {
 			if (PlayerSnapshot.exists()){
 				//var player_tuple = 
-				$('#player_tag').html(PlayerSnapshot.child('tag').val());
+				var p_tag = PlayerSnapshot.child('tag').val();
+				$('#player_tag').html(p_tag);
 				$('#player_team').html(PlayerSnapshot.child('team').val());
 				var p_region = PlayerSnapshot.child('region').val();
 				$('#player_region').html(p_region[2]);
-				var p_characters = PlayerSnapshot.child('region').val();
+				var propic_url = PlayerSnapshot.child('propic').val();
+				if (propic_url == null){
+					propic_url = "https://via.placeholder.com/100/81daea/f2f2f2?text="+p_tag.slice(0,1)
+				}
+				$('#player_propic_div').html('<img src="'+propic_url+'" alt="'+p_tag+'" class="rounded-circle"/>');
+				$('#player_name').html(PlayerSnapshot.child('firstname').val()+' '+PlayerSnapshot.child('lastname').val());
+				// onerror="this.onerror=null;this.src=\''++'\';" />');
+				$('#player_characters').html(PlayerSnapshot.child('main'+'/'+PlayerSnapshot.child('last_event').val()).val());
+				/*
+				// calculate character usage
+				var p_characters = PlayerSnapshot.child('characters').val();
 				var p_used_characters = [];
 				for (i=0; i<p_characters.length; i++){
-					// do something
+					if (p_characters[i][0] + p_characters[i][1] > 0):
+						p_used_characters.append()
 				}
-				//$('#player_characters').html(PlayerSnapshot.child('characters').val())
+				//$('#player_characters').html(PlayerSnapshot.child('characters').val())*/
+
+				// populate skills
+				$('#player_elo').html(Math.round(PlayerSnapshot.child('elo').val()));
+				$('#player_glicko').html(Math.round(PlayerSnapshot.child('glicko').val()[0]));
+				$('#player_srank').html(Math.round(PlayerSnapshot.child('srank').val()*100.));
+				$('#player_mainrank').html(PlayerSnapshot.child('mainrank').val());
+				//$('#player_trueskill').html(Math.round(PlayerSnapshot.child('trueskill').val()));
+
+				// add today's date/watermark
+				var utc_date = new Date().toJSON().slice(0,10).replace(/-/g,'/');
+				$('#today_date').html(utc_date)
 			} else {
 				$('#player_div').html('No such player found: '+bindings.p_id)
 			}
