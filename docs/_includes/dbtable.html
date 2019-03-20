@@ -189,7 +189,7 @@
 		// populate "current" table
 		var curr_ref_str = "/" + game_id + "_" + (curr_year-1) + "_1/p_info";
 		var curr_ref = firebase.database().ref(curr_ref_str);
-		var curr_query = curr_ref.orderByChild('srank').limitToFirst(10)
+		var curr_query = curr_ref.orderByChild('srank').limitToFirst(20)
 		curr_query.once('value').then(function(PlayerSnapshot) {
 			if (PlayerSnapshot.exists()) {
 				var players = snapshotToTable(PlayerSnapshot);

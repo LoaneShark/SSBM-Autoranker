@@ -8,8 +8,10 @@
 <p class="lead" id="player_characters"></p>
 <hr class="my-4">
 -->
-
-
+	<!-- icon -->
+	<div id="game_icon_div" class="float-right">
+	</div>
+	<div class="container">
 		<!-- header -->
 		<div class="d-flex flex-column" id="player_info_div">
 			<div class="d-flex flex-row justify-content-between" id="player_header_div">
@@ -30,9 +32,13 @@
 					<p class="text-muted small font-italic">Name</p>
 					<p class="lead" id="player_name"></p>
 				</div>
-				<div class="p-2 justify-content-center" id="player_alts_div">
+				<div class="p-2 justify-content-center invisible" id="player_alts_div">
 					<p class="text-muted small font-italic">Other Accounts</p>
 					<p id="player_alts"></p>
+				</div>
+				<div class="p-2 justify-content-end" id="player_status_div">
+					<p class="text-muted small font-italic">Status</p>
+					<p id="player_status"></p>
 				</div>
 			</div>
 			<!-- tertiary info -->
@@ -43,18 +49,18 @@
 				</div>
 				<div class="p-2 justify-content-center invisible" id="player_games_div">
 					<p class="text-muted small font-italic">Other Games</p>
-					<p id="player_games"></p>
+					<div id="player_games"></div>
 				</div>
 				<div class="p-2 justify-content-end" id="player_social_div">
 					<p class="text-muted small font-italic">Social</p>
 					<p id="player_social"></p>
 				</div>
 			</div>
-		</div><!-- player info -->
+		</div><!-- header -->
 		<!-- line break -->
-		<hr class="my-4">
+		<hr class="my-4" style="padding:0px;">
 		<!-- skills at a glance -->
-		<div class="d-flex flex-row justify-content-around" id="player_skills_div">
+		<div class="d-flex flex-row justify-content-around" id="player_skills_div" style="padding:0px;">
 			<div class="p-2" id="player_mainrank_div">
 				<p class="text-muted font-italic">
 									{% if {{page.game}} == 'Ultimate'%}
@@ -90,12 +96,13 @@
 				<p class="text-muted font-italic">S-Rank</p>
 				<p class="lead" id="player_srank"></p>
 			</div>
+		</div> <!-- skills -->
+		<div class="d-flex flex-row justify-content-end" id="today_date_div" style="padding:0px;margin:0px;">
+			<p class="text-muted small font-italic font-weight-light" id="today_date" style="padding:0px;margin:0px;"></p>
 		</div>
-		<div class="d-flex flex-row justify-content-end" id="today_date_div">
-			<p class="text-muted small font-italic font-weight-light" id="today_date"></p>
-			</div>
 		<!-- line break -->
-		<hr class="my-4">
+		<hr class="my-4" style="padding:0px;">
 		<!-- event cards -->
 		<div class="d-flex flex-row" id="player_events_div">
 		</div>
+	</div>

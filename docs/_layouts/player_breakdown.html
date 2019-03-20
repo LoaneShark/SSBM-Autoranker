@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="{{ site.lang | default: "en-US" }}">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+{% include bootstrap_css.html %}
+<style type="text/css">
+/*#player_searchbar .tt-dropdown-menu {
+  max-height: 150px;
+  overflow-y: auto;
+}*/
+.jumbotron{
+  position: relative;
+  padding:5px;
+  /*display: flex;
+  width: 700px;
+  margin: 0 auto;
+  align-items: center;*/
+}
+.jumbotron .container {
+  position: relative;
+  padding:35px;
+  /*display: flex;*/
+}
+</style>
+
+{% seo %}
+    <link rel="stylesheet" href="{{ "/assets/css/style.css?v=" | append: site.github.build_revision | relative_url }}">
+    <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        {% include navigation.html %}
+        {% if page.url == "/" %}
+          <h1><a href="{{ "/" | absolute_url }}">{{ site.title | default: site.github.repository_name }}</a></h1>
+          {% endif %}
+        
+        {% if site.logo %}
+          <img src="{{site.logo | relative_url}}" alt="Logo" />
+        {% endif %}
+      </header>
+      <section>
+
+      {{ content }}
+
+      </section>
+
+      {% include player_search.html %}
+      <div class="jumbotron shadow rounded" id="player_card">
+      </div>
+      {% include footer.html %}
+    </div>
+
+    <!-- Player Profile scripts -->
+
+  {% include bootstrap_scripts.html %}
+  {% include firebase_scripts.html %}
+  <script type="text/javascript" src="/assets/js/finch.min.js"></script>
+  <script type="text/javascript" src="/assets/js/typeahead.bundle.js"></script>
+  <script type="text/javascript" src="/assets/js/misc_utils.js"></script>
+  <script>
+    $('.typeahead').bind('typeahead:select', function(ev, suggestion) {
+      console.log('Selection: ' + suggestion);
+      console.log('Selection: ' + suggestion.name);
+      console.log('Selection: ' + suggestion.id);
+      Finch.navigate(''+suggestion.id)
+    });
+    var gameId = getGameId('{{page.game}}')
+    var searchbar_ref = firebase.database().ref("/"+gameId+"_2018_1/p_info");
+    var searchbar_query = searchbar_ref.orderByChild('srank').limitToFirst(500);
+    var searchbar_contents = searchbar_query.once('value').then(function(PlayerInfoSnapshot) {
+      if (PlayerInfoSnapshot.exists()) {
+        var searchbar_players = snapshotToSearchbar(PlayerInfoSnapshot,attr="key");
+        // custom tokenizer, so that search is sensetive to gamertag, player id, or any known aliases
+        function customTokenizer(datum) {
+          var nameTokens = Bloodhound.tokenizers.whitespace(datum.name);
+          var idTokens = Bloodhound.tokenizers.whitespace(datum.id);
+          var returnTokens = nameTokens.concat(idTokens);
+          for (i=0;i<datum.aliases.length;i++){
+            returnTokens = returnTokens.concat(Bloodhound.tokenizers.whitespace(datum.aliases[i]))
+          }
+          return returnTokens
+        }
+        var searchbar_engine = new Bloodhound({
+          datumTokenizer: customTokenizer,
+          //datumTokenizer: Bloodhound.tokenizers.whitespace,
+          queryTokenizer: Bloodhound.tokenizers.whitespace,
+          identify: function(obj) {return obj.id},
+          local: searchbar_players
+        });
+        $('#player_searchbar .typeahead').typeahead({
+          hint: true,
+          highlight: true,
+          minLength: 1
+        },{
+          name: 'players',
+          //display: function(obj) {return obj.name;},
+          displayKey: 'name',
+          //limit: 10,
+          source: searchbar_engine,
+          templates: {
+            //suggestion: Handlebars.compile('<div><strong>{{name}}</strong> - {{id}}</div>'),
+            empty: ['<div><p class="text-muted">Search...</p></div>']
+          }
+        });
+      }
+    });
+  </script>
+  <script>
+    Finch.route("/", function(bindings){
+      console.log("No player selected");
+      $('#player_card').addClass("invisible");
+    });
+    Finch.route("/:p_id", function(bindings){
+      console.log("Loading player page: "+bindings.p_id);
+      $('#player_card').removeClass("invisible");
+      // draw player profile segment
+      $('#player_card').html(`{% include player_profile.html %}`);
+
+      var playerId = bindings.p_id;
+      var gameId = getGameId('{{page.game}}')
+      $('#game_icon_div').html('<img src="'+getGameIconPath(gameId)+'" style="width:20px;height:20px;">');
+
+      // query db and populate profile
+      var player_ref_str = "/"+gameId+"_2018_1/p_info/"+bindings.p_id;
+      var player_ref = firebase.database().ref(player_ref_str);
+      var player_query = player_ref.once('value').then(function(PlayerSnapshot) {
+        if (PlayerSnapshot.exists()){
+          //var player_tuple = 
+          var p_tag = PlayerSnapshot.child('tag').val();
+          $('#player_tag').html(p_tag);
+          $('#player_team').html(PlayerSnapshot.child('team').val());
+          var p_region = PlayerSnapshot.child('region').val();
+          $('#player_region').html(p_region[2]);
+          var propic_url = PlayerSnapshot.child('propic').val();
+          if (propic_url == null){
+            propic_url = "https://via.placeholder.com/100/81daea/f2f2f2?text="+p_tag.slice(0,1)
+          }
+          $('#player_propic_div').html('<img src="'+propic_url+'" alt="'+p_tag+'" class="rounded-circle"/>');
+          $('#player_name').html(PlayerSnapshot.child('firstname').val()+' '+PlayerSnapshot.child('lastname').val());
+          var player_active = PlayerSnapshot.child('active');
+          if (player_active.exists()) {
+            if (player_active.val()){
+              $('#player_status').html('Active');
+              $('#player_status').addClass('text-success');
+            } else {
+              $('#player_status').html('Inactive');
+              $('#player_status').addClass('text-danger');
+            }
+          }
+          var player_otherGamesPromise = otherGameActivity(playerId,gameId);
+          console.log(player_otherGamesPromise);
+          player_otherGamesPromise.then(function(player_otherGames){
+            console.log(player_otherGames)
+            if (player_otherGames.length > 1) {
+              for (i=0;i<player_otherGames.length;i++){
+                if (player_otherGames[i] != gameId){
+                  $('#player_games').append('<a href="/games/'+getGameTitle(player_otherGames[i]).toLowerCase()+'/players/#'+playerId+'"><img src="'+getGameIconPath(player_otherGames[i])+'" style="width:30px;height:30px;"></a>');
+                }
+              }
+              $('#player_games_div').removeClass('invisible');
+            }
+          });
+          // onerror="this.onerror=null;this.src=\''++'\';" />');
+          $('#player_characters').html(PlayerSnapshot.child('main'+'/'+PlayerSnapshot.child('last_event').val()).val());
+          /*
+          // calculate character usage
+          var p_characters = PlayerSnapshot.child('characters').val();
+          var p_used_characters = [];
+          for (i=0; i<p_characters.length; i++){
+            if (p_characters[i][0] + p_characters[i][1] > 0):
+              p_used_characters.append()
+          }
+          //$('#player_characters').html(PlayerSnapshot.child('characters').val())*/
+
+          // populate skills
+          $('#player_elo').html(Math.round(PlayerSnapshot.child('elo').val()));
+          $('#player_glicko').html(Math.round(PlayerSnapshot.child('glicko').val()[0]));
+          $('#player_srank').html(Math.round(PlayerSnapshot.child('srank').val()*100.));
+          $('#player_mainrank').html(PlayerSnapshot.child('mainrank').val());
+          //$('#player_trueskill').html(Math.round(PlayerSnapshot.child('trueskill').val()));
+
+          // add today's date/watermark
+          var utc_date = new Date().toJSON().slice(0,10).replace(/-/g,'/');
+          $('#today_date').html(utc_date)
+        } else {
+          $('#player_div').html('Player ID not in database: '+bindings.p_id)
+        }
+      });
+      //$('#player_id').html(bindings.p_id);
+    });
+    /*Finch.route("{{page.url}}:home", function(bindings){
+      console.log("Run on home");
+    });
+    Finch.route("{{page.url}}:x", function(bindings){
+      console.log("Hey! You're trying to go here: {#bindings.x}");
+    });*/
+    Finch.listen();
+  </script>
+    <!-- Mobile scaling fix -->
+    <script src="{{ "/assets/js/scale.fix.js" | relative_url }}"></script>
+
+    <!-- Google Analytics shtuff -->
+    {% if site.google_analytics %}
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+      ga('create', '{{ site.google_analytics }}', 'auto');
+      ga('send', 'pageview');
+    </script>
+    {% endif %}
+  </body>
+</html>
