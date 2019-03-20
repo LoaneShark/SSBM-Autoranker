@@ -13,7 +13,7 @@ function snapshotToTable(snapshot) {
             player.push('N/A');
         }
 	    //player.push(Math.round(childSnapshot.child('elo').val()));
-	    player.push(Math.round(childSnapshot.child('srank').val() * 10000.0) / 100.0);
+	    player.push(Math.round(childSnapshot.child('srank').val() * 1000.0) / 1000.0);
 	    player.push(Math.round(childSnapshot.child('elo').val()));
 	    player.push(Math.round(childSnapshot.child('glicko').val()[0]));
 
@@ -33,7 +33,7 @@ function snapshotToRankLine(snapshot) {
             returnArr.push('N/A');
         }
 	//returnArr.push(Math.round(snapshot.child('elo').val()));
-    returnArr.push(Math.round(snapshot.child('srank').val() * 10000.0) / 100.0);
+    returnArr.push(Math.round(snapshot.child('srank').val() * 1000.0) / 1000.0);
     returnArr.push(Math.round(snapshot.child('elo').val()));
     returnArr.push(Math.round(snapshot.child('glicko').val()[0]));
 

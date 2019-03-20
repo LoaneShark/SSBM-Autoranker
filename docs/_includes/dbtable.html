@@ -217,7 +217,7 @@
 		// populate "past" table
 		var past_ref_str = "/" + game_id + "_" + (curr_year-1) + "_0/p_info";
 		var past_ref = firebase.database().ref(past_ref_str);
-		var past_query = past_ref.orderByChild('srank').limitToFirst(10)
+		var past_query = past_ref.orderByChild('srank').limitToFirst(20)
 		past_query.once('value').then(function(PlayerSnapshot) {
 			if (PlayerSnapshot.exists()) {
 				var players = snapshotToTable(PlayerSnapshot);
@@ -243,7 +243,7 @@
 		// populate "all-time" table
 		var db_ref_str = "/" + game_id + "_2016_" + (curr_year-2016) + "/p_info";
 		var db_ref = firebase.database().ref(db_ref_str);
-		var db_query = db_ref.orderByChild('srank').limitToFirst(10);
+		var db_query = db_ref.orderByChild('srank').limitToFirst(20);
 		db_query.once('value').then(function(PlayerSnapshot) {
 			if (PlayerSnapshot.exists()) {
 				var players = snapshotToTable(PlayerSnapshot);

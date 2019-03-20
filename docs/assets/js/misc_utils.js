@@ -47,24 +47,28 @@ function getGameTitle(gameId){
 function getGameIconPath(gameId){
 	switch(gameId) {
 		case 1:
-			return "/assets/images/game_icons/36px-SSBM_Icon.png"
+			return "/assets/images/game_icons/36px-SSBM_Icon.png";
 			break;
 		case 2:
-			return "/assets/images/game_icons/36px-PM_Icon.png"
+			return "/assets/images/game_icons/36px-PM_Icon.png";
 			break;
 		case 3:
-			return "/assets/images/game_icons/36px-SSB4_Icon.png"
+			return "/assets/images/game_icons/36px-SSB4_Icon.png";
 			break;
 		case 4:
-			return "/assets/images/game_icons/36px-SSB64_Icon.png"
+			return "/assets/images/game_icons/36px-SSB64_Icon.png";
 			break;
 		case 5:
-			return "/assets/images/game_icons/36px-SSBB_Icon.png"
+			return "/assets/images/game_icons/36px-SSBB_Icon.png";
 			break;
 		case 1386:
-			return "/assets/images/game_icons/36px-SSBU_Icon.png"
+			return "/assets/images/game_icons/36px-SSBU_Icon.png";
 			break;
 	}
+}
+
+function getStockIconPath(gameId,charId){
+	return "/assets/images/stock_icons/"+gameId+"/"+charId+".png";
 }
 
 function snapshotToArray(snapshot,attr="val") {

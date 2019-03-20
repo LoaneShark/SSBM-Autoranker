@@ -64,9 +64,9 @@
   <script type="text/javascript" src="/assets/js/misc_utils.js"></script>
   <script>
     $('.typeahead').bind('typeahead:select', function(ev, suggestion) {
-      console.log('Selection: ' + suggestion);
-      console.log('Selection: ' + suggestion.name);
-      console.log('Selection: ' + suggestion.id);
+      //console.log('Selection: ' + suggestion);
+      //console.log('Selection: ' + suggestion.name);
+      //console.log('Selection: ' + suggestion.id);
       Finch.navigate(''+suggestion.id)
     });
     var gameId = getGameId('{{page.game}}')
@@ -123,7 +123,7 @@
 
       var playerId = bindings.p_id;
       var gameId = getGameId('{{page.game}}')
-      $('#game_icon_div').html('<img src="'+getGameIconPath(gameId)+'" style="width:20px;height:20px;">');
+      $('#game_icon_div').html('<img src="'+getGameIconPath(gameId)+'" alt="'+gameId+'" style="width:20px;height:20px;">');
 
       // query db and populate profile
       var player_ref_str = "/"+gameId+"_2018_1/p_info/"+bindings.p_id;
@@ -153,13 +153,13 @@
             }
           }
           var player_otherGamesPromise = otherGameActivity(playerId,gameId);
-          console.log(player_otherGamesPromise);
+          //console.log(player_otherGamesPromise);
           player_otherGamesPromise.then(function(player_otherGames){
-            console.log(player_otherGames)
+            //console.log(player_otherGames)
             if (player_otherGames.length > 1) {
               for (i=0;i<player_otherGames.length;i++){
                 if (player_otherGames[i] != gameId){
-                  $('#player_games').append('<a href="/games/'+getGameTitle(player_otherGames[i]).toLowerCase()+'/players/#'+playerId+'"><img src="'+getGameIconPath(player_otherGames[i])+'" style="width:30px;height:30px;"></a>');
+                  $('#player_games').append('<a href="/games/'+getGameTitle(player_otherGames[i]).toLowerCase()+'/players/#'+playerId+'"><img src="'+getGameIconPath(player_otherGames[i])+'"  alt="'+player_otherGames[i]+'" style="width:30px;height:30px;"></a>');
                 }
               }
               $('#player_games_div').removeClass('invisible');
@@ -167,20 +167,33 @@
           });
           // onerror="this.onerror=null;this.src=\''++'\';" />');
           $('#player_characters').html(PlayerSnapshot.child('main'+'/'+PlayerSnapshot.child('last_event').val()).val());
-          /*
+          
           // calculate character usage
           var p_characters = PlayerSnapshot.child('characters').val();
+          var p_character_keys = Object.keys(p_characters);
           var p_used_characters = [];
-          for (i=0; i<p_characters.length; i++){
-            if (p_characters[i][0] + p_characters[i][1] > 0):
-              p_used_characters.append()
+          for (i=0; i<p_character_keys.length; i++){
+            k = p_character_keys[i];
+            if (p_characters[k][0] + p_characters[k][1] > 0){
+              p_used_characters.push([k,p_characters[k][0] + p_characters[k][1]]);
+            }
           }
-          //$('#player_characters').html(PlayerSnapshot.child('characters').val())*/
+          // sort by usage
+          p_used_characters.sort(function(a,b){
+            return b[1]-a[1];
+          });
+          // draw icons
+          if (p_used_characters.length > 0){
+            for (i=0;i<p_used_characters.length;i++){
+              $('#player_characters').append('<img src="'+getStockIconPath(gameId,p_used_characters[i][0])+'" alt="'+p_used_characters[i][0]+'" style="width:26px;height:26px;padding:1px;">');
+            }
+            $('#player_characters_div').removeClass('invisible');
+          }
 
           // populate skills
           $('#player_elo').html(Math.round(PlayerSnapshot.child('elo').val()));
           $('#player_glicko').html(Math.round(PlayerSnapshot.child('glicko').val()[0]));
-          $('#player_srank').html(Math.round(PlayerSnapshot.child('srank').val()*100.));
+          $('#player_srank').html(Math.round(PlayerSnapshot.child('srank').val()*1000.)/1000.);
           $('#player_mainrank').html(PlayerSnapshot.child('mainrank').val());
           //$('#player_trueskill').html(Math.round(PlayerSnapshot.child('trueskill').val()));
 
