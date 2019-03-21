@@ -63,7 +63,7 @@ def score(dicts,placing,t_id,t_size=None):
 # (not a very meaningful metric; unused in other calculations)
 def calc_performance(dicts,abs_id,t_info,use_FIDE=True):
 	tourneys,ids,p_info,records,skills = dicts
-	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size = t_info
+	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size,t_images = t_info
 	#print("Calculating performance: %d :: %s"%(abs_id,t_name))
 	w_count,l_count = 0.,0.
 	opp_skills = 0.
@@ -103,7 +103,7 @@ def calc_performance(dicts,abs_id,t_info,use_FIDE=True):
 
 def update_performances(dicts,t_info,use_FIDE=True):
 	tourneys,ids,p_info,records,skills = dicts
-	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size = t_info
+	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size,t_images = t_info
 
 	for abs_id in records:
 		if t_id in records[abs_id]['placings']:
@@ -236,7 +236,7 @@ def glicko_update_vol(mu,phi,sigma,p_matches,delta,v_g,tau):
 old_glicko_tau = 0.5
 def update_glicko(dicts,matches,t_info,tau=0.5,ranking_period=60):
 	tourneys,ids,p_info,records,skills = dicts
-	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size = t_info
+	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size,t_images = t_info
 	# converts match information to (s_j,mu_j,phi_j) format
 	p_info_old = dcopy(p_info)
 
@@ -305,7 +305,7 @@ def calc_sigrank(dicts,max_iter=1000,min_req=3,verbosity=0,rank_size=None,disp_s
 	tourneys,ids,p_info,records,skills = dicts
 	#larry_id,T_id,jtails_id = get_abs_id_from_tag(dicts,'Tweek'),get_abs_id_from_tag(dicts,'Ally'),get_abs_id_from_tag(dicts,'Jtails')
 	#print(void_id,dabuz_id,larry_id)
-	#t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size = t_info
+	#t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size,t_images = t_info
 	if mode != 'array':
 		mode == 'dict'
 	if sig_mode not in ['simple','scipy','alt']:
@@ -325,7 +325,7 @@ def calc_sigrank(dicts,max_iter=1000,min_req=3,verbosity=0,rank_size=None,disp_s
 
 	## initialize data with [id, tag, elo, glicko] structure
 	#data = np.array([[p_id,get_en_tag(dicts,tag=p_info[p_id]['tag']),float(p_info[p_id]['elo']),float(p_info[p_id]['glicko'][0])] for p_id in id_list],dtype='object')
-	data = np.array([[p_id,get_en_tag(dicts,tag=p_info[p_id]['tag']),float(p_info[p_id]['elo']),float(p_info[p_id]['glicko'][0])] for p_id in winps],dtype='object')
+	data = np.array([[p_id,get_en_tag(dicts,p_id=p_id),float(p_info[p_id]['elo']),float(p_info[p_id]['glicko'][0])] for p_id in winps],dtype='object')
 
 	# use previous sigranks as skill seeds
 	if seed == 'dict':
@@ -725,7 +725,7 @@ def sigrank(data,winps,chis,id_list,max_iter=1000,v=0,learn_rate=0.5,beta=0.9,to
 # if era <= 0, updates after each tourney
 def update_sigmoids(dicts,t_info,sig='sigmoid',ranking_period=2,max_iterations=1000,v=0):
 	tourneys,ids,p_info,records,skills = dicts
-	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size = t_info
+	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size,t_images = t_info
 	sigrank_history = skills['srank']
 	sigrank_deltas = skills['srank_del']
 	sigmoid_history = skills['srank_sig']
@@ -1175,7 +1175,7 @@ def inv_alt_sigmoid(y,p):
 	#		return 1.
 	#	else:
 	#		return intercept
-	return [y_int if not np.isnan(y_int) else nan_round(y_int) for y_int,y_p in zip(intercept,p)]
+	return [y_int if not np.isnan(y_int) else nan_round(y_p) for y_int,y_p in zip(intercept,p)]
 	#return intercept
 def inv_simple_sigmoid(y,p):
 	# x0,k = p
@@ -1193,7 +1193,7 @@ def inv_simple_sigmoid(y,p):
 	#		return 1.
 	#	else:
 	#		return intercept
-	return [y_int if not np.isnan(y_int) else nan_round(y_int) for y_int,y_p in zip(intercept,p)]
+	return [y_int if not np.isnan(y_int) else nan_round(y_p) for y_int,y_p in zip(intercept,p)]
 	#return intercept
 
 def cfsigmoid(x,x0,y0,c,k):

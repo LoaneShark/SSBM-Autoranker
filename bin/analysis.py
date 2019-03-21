@@ -126,6 +126,7 @@ def main():
 
 	#resume = get_resume(dicts,None,tags=['Iago','Jobbo','Jobboman','Crimock','CrimockLyte'])
 	#resume = get_resume(dicts,None,tags=['Draxsel','iModerz','TehGuitarLord','Joe-J','San','PikaPika!','K.I.D. Goggles','K.I.D.Goggles','Dom','Fun China'])
+	resume = get_resume(dicts,None,tags=['Nairo'])
 	
 	#if game_idx == 1:
 		#print(tourneys[6076])
@@ -281,7 +282,7 @@ def main():
 
 				#print([p_id for p_id in id_list if sigmoids[p_id][2] > 1.1])
 
-
+	print_resume(dicts,resume,g_key='player',s_key='event')
 
 	if (game_idx == 3 or game_idx == 1386):
 		#running_winprobs(iagoranks,winprobs,7648)
@@ -325,6 +326,8 @@ def main():
 	#return True
 
 	db_str_key = str(game_idx)+'_'+str(year)+'_'+str(year_count)
+	if args.current_db:
+		db_str_key += '_c'
 	update_db(dicts,db_str_key,force_update=True)
 
 	#generate_matchup_chart(dicts,game_idx,year,year_count,id_list=id_list,label_mode='ones',v=int(args.verbosity),infer_characters=True,n_bins=10000)

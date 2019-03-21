@@ -5,33 +5,44 @@ import firebase_admin
 from firebase_admin import db as fdb
 from firebase_admin.db import ApiCallError
 from firebase_admin import auth
+## UTIL IMPORTS
+from db_utils import load_db_sets,easy_load_db_sets
 
 def main():
-	return 0
+	return True
 
 # update firebase db by setting all values to local db, for a given game/year/count
 def update_db(dicts,db_key,force_update=False):
 	print('----------------------')
 	tourneys,ids,p_info,records,skills = dicts
+	# load sets from db and add them to 'dicts'
+	split_key = db_key.split('_')
+	yc_str = ''
+	if int(split_key[2]) > 0:
+		yc_str += '-'+str(int(split_key[1])+int(split_key[2]))
+	sets = easy_load_db_sets(ver=str(split_key[0])+'/'+str(split_key[1])+yc_str)
+	dicts = (tourneys,ids,p_info,records,skills,sets)
+
+	# open db
 	db = get_db_reference()
 	game_db = db.child(db_key)
 	# if db doesn't exist, create it
-	if db.get() is None or force_update:
+	if db.get() is None:
 		#game_db.set('')
 		#db.push(db_key)
-		print(db_key)
-		print('pushed')
+		#print(db_key)
+		#print('pushed')
+		print('no db found')
 	# if game not in db or game is blank, add it
 	if game_db.get() is None or (type(game_db.get()) is str and game_db.get() == '') or force_update:
 		#game_db.set('')
 		# add directories for all the major information dicts
 		for dictname,dictdata in zip(['tourneys','ids','p_info','records','skills','sets'],dicts):
-			#print(dictname)
-			#print(is_clean_dict(dictdata))
 			sub_db = game_db.child(dictname)
 			# import dict data to firebase db
-			if sub_db.get() is None:
+			if sub_db.get() is None or force_update:
 				sub_db.set(dictdata)
+		print('%s pushed'%db_key)
 
 # update all games for the given year/count [WIP]
 def update_all(dicts,year,year_count):

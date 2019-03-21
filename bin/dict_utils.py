@@ -2,6 +2,8 @@
 import matplotlib.pyplot as plt 
 import os,sys,pickle,time
 import re
+from six.moves.urllib.request import urlopen
+from six.moves.urllib.error import HTTPError
 from timeit import default_timer as timer
 from copy import deepcopy as dcopy
 ## UTIL IMPORTS
@@ -27,9 +29,10 @@ def get_result(dicts,t_id,res_filt=None):
 	player_places = [records[p_id]['placings'][t_id] for p_id in player_ids]
 	player_losses = []
 	player_wins = []
-	player_skills = [[round(skills['elo'][p_id][t_id],3),round(skills['glicko'][p_id][t_id][0],3),round(skills['srank'][p_id][t_id][0],3)] for p_id in player_ids]
+	player_skills = [[round(skills['elo'][p_id][t_id],3),round(skills['glicko'][p_id][t_id][0],3),round(skills['srank'][p_id][t_id],3)] for p_id in player_ids]
 	#player_skills = [[skills[key][p_id][t_id] for key in ['elo','glicko','sim']] for p_id in player_ids]
-	player_chars = [p_char for p_char in p_info[p_id]['characters']]
+	player_chars = [sorted([p_char for p_char in p_info[p_id]['characters'] if sum(p_info[p_id]['characters'][p_char]) > 0],key=lambda c_id: sum(p_info[p_id]['characters'][c_id]),reverse=True)\
+							 for p_id in player_ids]
 	for p_id in player_ids:
 		temp_l = []
 		for l_id in records[p_id]['losses']:
@@ -199,9 +202,9 @@ def get_resume(dicts,p_id,tags=None,t_ids=None,team=None,slugs=None,chars=None):
 		p_id = get_abs_id_from_tag(dicts,tags,first_only=False)
 		if p_id == None:
 			return []
-		elif len(p_id) == 1:
+		elif type(p_id) is list and len(p_id) == 1:
 			p_id = p_id[0]
-		else:
+		elif type(p_id) is list:
 			return flatten([get_resume(dicts,pid,tags=None,t_ids=t_ids,team=team,slugs=slugs,chars=chars) for pid in p_id])
 
 	# break if player is not in database
@@ -228,21 +231,22 @@ def get_resume(dicts,p_id,tags=None,t_ids=None,team=None,slugs=None,chars=None):
 
 # returns player id given their tag in a string
 # if multiple matches, returns first found result (by p_id or skill), unless first_only is disabled
-def get_abs_id_from_tag(dicts,tag,first_only=True,sort_by_skill=False):
+def get_abs_id_from_tag(dicts,tag,first_only=True,sort_by_skill=False,leet_sensetive=True):
 	tourneys,ids,p_info,records,skills = dicts
 	p_ids = [abs_id for abs_id in p_info if tag in p_info[abs_id]['aliases'] or \
 											tag.strip().lower() in [p_alias.strip().lower() for p_alias in p_info[abs_id]['aliases']]]
+
+	if len(p_ids) <= 0 and not leet_sensetive:
+		p_ids = [abs_id for abs_id in p_info if any([leet_tag.strip().lower() in [p_alias.strip().lower() for p_alias in p_info[abs_id]['aliases']] for leet_tag in leetify(tag)])]
 	if len(p_ids) > 0:
-		if len(p_ids) == 1:
-			return p_ids[0]
-		else:
+		if len(p_ids) > 1:
 			if sort_by_skill:
 				# sort by s-rank first, elo second
 				p_ids = sorted(p_ids,key=lambda p_id: (skills['srank'][p_id][p_info[p_id]['last_event']],skills['elo'][p_id][p_info[p_id]['last_event']]))
-			if first_only:
-				return p_ids[0]
-			else:
-				return p_ids
+		if first_only:
+			return p_ids[0]
+		else:
+			return p_ids
 	else:
 		return None
 	#print(p_info[1000]['aliases'])
@@ -272,6 +276,32 @@ def get_en_tag(dicts,tag=None,p_id=None):
 	else:
 		return tag
 
+# given a tag, returns all possible "leet" conversions of it, recursively
+# e.g. Mango -> [Mango, Mang0, M4ngo, M4ng0, M@ngo, M@ng0]
+def leetify(tag):
+	res = set([])
+	leetify_rec(tag,res,0)
+	res.remove(None)
+	return list(res)
+
+# recursive subprocess for leetify
+def leetify_rec(tag,convs,c_i):
+	if c_i >= len(tag):
+		return tag
+
+	leet_chars = {'a':['4','@'],'e':['3'],'t':['7','+'],'i':['1','!'],'o':['0'],'s':['5','$'],'b':['8'],'l':['1'], \
+				  '0':['o'],'1':['l','i'],'3':['e'],'4':['a'],'5':['s'],'7':['t'],'8':['b'],'!':['i'],'@':['4','a'],'$':['s','5']}
+	
+	tag_char = tag.lower()[c_i]
+	if tag_char in leet_chars.keys():
+		for alt_char in leet_chars[tag_char]:
+			temp_tag = tag[:c_i] + alt_char + tag[c_i+1:]
+			#temp_tag[c_i] = alt_char
+
+			#convs.append(temp_tag)
+			convs.add(leetify_rec(temp_tag,convs,c_i+1))
+	convs.add(leetify_rec(tag,convs,c_i+1))
+
 # returns a list of all player ids listed under this team
 def get_players_from_team(dicts,team):
 	tourneys,ids,p_info,records,skills = dicts
@@ -299,27 +329,55 @@ def list_tourneys(dicts,year=None,list_ids=False):
 			return [tourneys[t_id]['name'] for t_id in tourneys if t_id != 'slugs' for t_date in tourney[t_id]['date'] if t_date[2] == year]
 
 ## db_utils helpers
-def update_official_ranks(dicts,game,year,lookback=True):
+def update_official_ranks(dicts,game,year,lookback=False):
 	tourneys,ids,p_info,records,skills = dicts
+
+	## DELETE ME
+	#if 'mainrank' not in skills:
+	#	skills['mainrank'] = {}
+	#if 'mainrank_readin' not in skills:
+	#	skills['mainrank_readin'] = {}
+
 	# update the previous year if it wasn't already there (for first import)
 	if lookback:
 		update_official_ranks(dicts,game,year-1,lookback=False)
-	#if get_rank_name(str(year))[1].strip('_') not in skills['mainrank_readin']:
+	# scrape ranks if available
 	scrape_res = scrape_ranks(game,year)
 	if not scrape_res:
 		return False
 	else:
 		tags,ratings,yearkey = scrape_res
 	if ratings is None:
-		#skills['mainrank_readin'][yearkey] = [i,tag,None for i,tag in enumerate(tags)]
 		ratings = [None for i in range(len(tags))]
-	skills['mainrank_readin'][yearkey] = [[i,tag,rating] for i,tag,rating in enumerate(zip(tags,ratings))]
-	# update p_info
-	for i,tag,rating in enumerate(zip(tags,ratings)):
-		p_id = get_abs_id_from_tag(dicts,tag,sort_by_skill=True)
-		if p_id not in skills['mainrank']:
-			skills['mainrank'][p_id] = {}
-		skills['mainrank'][p_id][yearkey] = [i,rating]
+
+	# populate this ranking in the cache in a nice array format
+	skills['mainrank_readin'][yearkey] = [[i+1,rate_bundle[0],rate_bundle[1],get_abs_id_from_tag(dicts,rate_bundle[0],sort_by_skill=True,leet_sensetive=False)] for i,rate_bundle in enumerate(zip(tags,ratings))]
+
+	# remove all current 'mainranks' in p_info
+	for old_yearkey in skills['mainrank_readin']: # scan *all* previous years just to be safe
+		if not old_yearkey == yearkey:
+			#print(old_yearkey)
+			#print(skills['mainrank_readin'][old_yearkey])
+			for year_line in skills['mainrank_readin'][old_yearkey]:
+				#print(line)
+				line_id = year_line[3]
+				if 'mainrank' in p_info[line_id]:
+					del p_info[line_id]['mainrank']
+
+	# update skill histories
+	for line in skills['mainrank_readin'][yearkey]:
+		p_rank,p_tag,p_rating,p_id = line
+		if p_id == None:
+			# could not match player to db instance :c
+			print('Player not found in DB: %s (#%d)'%(p_tag,p_rank))
+		else:
+			# players get this listed under skills per year key
+			if p_id not in skills['mainrank']:
+				skills['mainrank'][p_id] = {}
+			skills['mainrank'][p_id][yearkey] = [p_rank,p_rating]
+						
+			# p_info is updated to contain the latest ranks
+			p_info[p_id]['mainrank'] = p_rank
 
 # returns the number of times a player [p] used a given character [c] 
 # (by id values)
@@ -338,6 +396,46 @@ def get_main(p,p_info):
 			return ''
 	else:
 		return ''
+
+def get_social_media(p_id):
+	player_url = 'https://api.smash.gg/player/%d'%p_id
+	try:
+		pfile = urlopen(player_url).read()
+		pdata = json.loads(pfile.decode('UTF-8'))
+
+		player_data = pdata['entities']['player']
+		p_twitter = player_data['twitterHandle']
+		p_twitch = player_data['twitchStream']
+		p_reddit = player_data['redditUsername']
+		p_youtube = player_data['youtube']
+		if player_data['smashboardsLink'] is not None and player_data['smashboardsUserId'] is not None:
+			p_smashboards = player_data['smashboardsLink']+'.'+str(player_data['smashboardsUserId'])
+		else:
+			p_smashboards = None
+		p_ssbwiki = player_data['ssbwikiLink']
+
+		return [p_twitter,p_twitch,p_reddit,p_youtube,p_smashboards,p_ssbwiki]
+	except HTTPError:
+		return False
+
+def update_social_media(dicts,p_ids):
+	tourneys,ids,p_info,records,skills = dicts
+
+	if p_ids == None:
+		p_ids = [p_id for p_id in p_info]
+	elif type(p_ids) is not list:
+		p_ids = [p_ids]
+
+	for abs_id in p_ids:
+		socials = get_social_media(abs_id)
+		p_twitter,p_twitch,p_reddit,p_youtube,p_smashboards,p_ssbwiki = socials
+		p_info[abs_id]['twitter'] = p_twitter
+		p_info[abs_id]['twitch'] = p_twitch
+		p_info[abs_id]['reddit'] = p_reddit
+		p_info[abs_id]['youtube'] = p_youtube
+		p_info[abs_id]['smashboards'] = p_smashboards
+		p_info[abs_id]['ssbwiki'] = p_ssbwiki
+		p_info[abs_id]['discord'] = None
 
 # print (filtered) results for a given tourney
 def print_result(dicts,t_id,res_filt=None,max_place=64):
@@ -481,7 +579,7 @@ def print_resume(dicts,res,g_key='player',s_key=None,disp_raw=False,disp_wins=Tr
 		if res[0][2] != None and res[0][2] != ' ' and res[0][2] != '':
 			tagstr += '%s | '%res[0][2]
 		tagstr += res[0][3]
-		print('%s (id: %d) || %s (Elo: %d, Glicko: %d, Simrank: %d)'%(tagstr,res[0][1],res[0][4],round(p_info[res[0][1]]['elo'],3),round(p_info[res[0][1]]['glicko'][0],3),round(p_info[res[0][1]]['srank'][0],3)))
+		print('%s (id: %d) || %s (Elo: %d, Glicko: %d, SigRank: %d)'%(tagstr,res[0][1],res[0][4],round(p_info[res[0][1]]['elo'],3),round(p_info[res[0][1]]['glicko'][0],3),round(p_info[res[0][1]]['srank'],3)))
 	else:
 		print(str(oldval)+': ')
 	s_tagstr = ''
@@ -502,7 +600,7 @@ def print_resume(dicts,res,g_key='player',s_key=None,disp_raw=False,disp_wins=Tr
 				if line[2] != None:
 					tagstr += '%s | '%line[2]
 				tagstr += line[3]
-				print('%s (id: %d) || %s (Elo: %d, Glicko: %d, Simrank: %d)'%(tagstr,line[1],line[4],round(p_info[line[1]]['elo'],3),round(p_info[line[1]]['glicko'][0],3),round(p_info[res[0][1]]['srank'][0],3)))
+				print('%s (id: %d) || %s (Elo: %d, Glicko: %d, SigRank: %d)'%(tagstr,line[1],line[4],round(p_info[line[1]]['elo'],3),round(p_info[line[1]]['glicko'][0],3),round(p_info[res[0][1]]['srank'][0],3)))
 			else:
 				print(str(line[h_idx])+': ')
 		# print secondary header if on new subsection
@@ -626,3 +724,7 @@ def old_print_event(dicts,t_id,max_place=64,translate_cjk=True):
 			#lsbuff = "\t"*(maxlen-len(path)+1)
 			print(('{:>%d.%d}'%(sp_len,sp_len)).format(sp),('{:<%d.%d}'%(tag_len,tag_len)).format(tag),'{:>7.7}'.format(str(p_id)), \
 				'  {:<5.5}'.format(str(placement)),'\t',('{:<%d.%d}'%(roundslen+5,roundslen+5)).format(str([t_labels[group] for group in path])),losses)
+
+#if __name__ == '__main__':
+	#print(leetify('Swedish Delight'))
+	#print('asdf')

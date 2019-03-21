@@ -74,6 +74,7 @@ if count_arcadians == -1:
 	only_arcadians = True
 else:
 	only_arcadians = False
+current_db = args.current_db
 
 ## MAIN FUNCTIONS
 def readin(tourney,t_type='slug'):
@@ -95,13 +96,13 @@ def readin(tourney,t_type='slug'):
 
 	if out:
 		t,ps,pdata = out
-		t_id,t_name,t_slug,t_ss,t_type,t_date,t_region = t
+		t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_images = t
 		es,ws,ls,rs,ns,ms = read_groups(t_id,ps,pdata)
 
 		if v >= 2 and v < 4:
 			print('{:.3f}'.format(timer()-start) + ' s')
 
-		t = (t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,len(es.keys()))
+		t = (t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,len(es.keys()),t_images)
 		if print_res:
 			print_results(rs,ns,es,ls,ms,game=game,max_place=disp_num)
 		return t,es,ns,rs,ws,ls,ms
@@ -128,6 +129,7 @@ def set_readin_args(args):
 	else:
 		t_slug_a = get_slug(t_ss_a)
 	print_res = args.print
+	current_db = args.current_db
 
 # reads the match data for a given phase
 def read_groups(t_id,groups,phase_data,translate_cjk=True):
@@ -260,7 +262,17 @@ def read_entrants(data,phase_data,entrants,names,xpath):
 				xpath[e_id] = [res,[group]]
 
 			#entrants[i] = (names[i], player_id[i])
-			entrants[e_id] = (names[e_id],abs_id,e_id,metainfo)
+			player_images = x['mutations']['players'][str(abs_id[0])]['images']
+			propic = None
+			if len(player_images) >= 0:
+				for p_image in player_images:
+					if p_image['type'] == 'profile':
+						if p_image['height'] == 100:
+							propic = p_image['url']
+			else:
+				propic = None
+
+			entrants[e_id] = (names[e_id],abs_id,e_id,metainfo,propic)
 	else:
 		if v >= 5:
 			print('Ignoring group: %s | %d. (Is Exhibition)'%(groupname,group))
@@ -478,7 +490,19 @@ def read_phases(tourney):
 		# date tuple in (year, month, day) format
 		t_date = time.localtime(tdata['entities']['tournament']['startAt'])[:3]
 		t_region = (tdata['entities']['tournament']['addrState'],tdata['entities']['tournament']['countryCode'])
-		t_info = (t_id,t_name,t_slug,t_ss,t_type,t_date,t_region)
+		# 2-length list with the urls for the first profile image and banner images found (for the tourney)
+		t_propic = [img['url'] for img in tdata['entities']['tournament']['images'] if img['type'] == 'profile']
+		if len(t_propic)>0:
+			t_propic = t_propic[0]
+		else:
+			t_propic = None
+		t_bannerpic = [img['url'] for img in tdata['entities']['tournament']['images'] if img['type'] == 'banner']
+		if len(t_bannerpic)>0:
+			t_bannerpic = t_bannerpic[0]
+		else:
+			t_bannerpic = None
+		t_images = [t_propic,t_bannerpic]
+		t_info = (t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_images)
 
 		if v >= 1:
 			print('Reading tournament: %s | %d'%(t_name,t_id))

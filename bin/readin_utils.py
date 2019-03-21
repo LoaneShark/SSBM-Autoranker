@@ -377,6 +377,29 @@ def save_character_dicts(games='smash',chars=None,to_load=True,force_new_icons=F
 	else:
 		return False
 
+# given the image data saved in a dict, converts them to folders of image files
+def save_stock_icons(games='all'):
+	if games == 'smash':
+		games = [1,2,3,4,5,1386]
+	elif games == 'all':
+		games = (load_dict('videogames',None,'../lib')).keys()
+	if type(games) is int:
+		games = [games]
+	
+	icons = load_dict('character_icons',None,'../lib')
+
+	if not os.path.isdir('../lib/icons'):
+		os.mkdir('../lib/icons')
+
+	for game_id in games:
+		if game_id in icons:
+			if not os.path.isdir('../lib/icons/%d'%game_id):
+				os.mkdir('../lib/icons/%d'%game_id)
+			for char_id in icons[game_id]:
+				mpimg.imsave('../lib/icons/%d/%d.png'%(game_id,char_id),icons[game_id][char_id])
+
+	return True
+
 # pulls the list of videogames/ids from the old API and saves them locally as a dict
 def save_videogame_dicts(games='all',chars=None,to_load=True):
 	if to_load:
@@ -554,3 +577,6 @@ def print_results(res,names,entrants,losses,characters,game=1,max_place=64,trans
 				'  {:<5.5}'.format(str(player[1][0])),('{:<%d.%d}'%(roundslen+5,roundslen+5)).format('['+', '.join(str(i) for i in [names['groups'][group] for group in player[1][1]])+']'),ls)
 
 	return res_s
+
+#if __name__ == '__main__':
+#	print(save_stock_icons())
