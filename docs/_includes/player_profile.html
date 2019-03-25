@@ -32,9 +32,9 @@
 					<p class="text-muted small font-italic">Name</p>
 					<p class="lead" id="player_name"></p>
 				</div>
-				<div class="p-2 justify-content-center invisible" id="player_alts_div">
-					<p class="text-muted small font-italic">Other Accounts</p>
-					<p id="player_alts"></p>
+				<div class="p-2 justify-content-center invisible" id="player_aliases_div">
+					<p class="text-muted small font-italic">AKA</p>
+					<p id="player_aliases"></p>
 				</div>
 				<div class="p-2 justify-content-end" id="player_status_div">
 					<p class="text-muted small font-italic">Status</p>
@@ -43,7 +43,7 @@
 			</div>
 			<!-- tertiary info -->
 			<div class="d-flex flex-row justify-content-between" id="player_tertiary_div">
-				<div class="p-2 justify-content-start invisible" id="player_characters_div">
+				<div class="p-2 justify-content-start invisible" id="player_characters_div" data-toggle="tooltip" data-placement="right" title="">
 					<p class="text-muted small font-italic">Characters</p>
 					<p id="player_characters"></p>
 				</div>
@@ -53,56 +53,97 @@
 				</div>
 				<div class="p-2 justify-content-end invisible" id="player_social_div">
 					<p class="text-muted small font-italic">Social</p>
-					<p id="player_social"></p>
+					<div id="player_social"></div>
 				</div>
 			</div>
 		</div><!-- header -->
 		<!-- line break -->
 		<hr class="my-4" style="padding:0px;">
 		<!-- skills at a glance -->
-		<div class="d-flex flex-row justify-content-around" id="player_skills_div" style="padding:0px;">
-			<div class="p-2" id="player_mainrank_div">
-				<p class="text-muted font-italic">
-									{% if {{page.game}} == 'Ultimate'%}
-										PGR
-									{% elsif {{page.game}} == 'Melee' %}
-										MPGR
-									{% elsif {{page.game}} == 'PM' %}
-										PMRank
-									{% elsif {{page.game}} == 'Smash4' %}
-										PGR
-									{% elsif {{page.game}} == 'Brawl' %}
-										SSBBRank
-									{% elsif {{page.game}} == '64' %}
-										64LR
-									{% else %}
-										Rank
-									{% endif %}</p>
-				<p class="lead" id="player_mainrank"></p>
-			</div>
-			<div class="p-2" id="player_elo_div">
-				<p class="text-muted font-italic">Elo</p>
-				<p class="lead" id="player_elo"></p>
-			</div>
-			<div class="p-2" id="player_glicko_div">
-				<p class="text-muted font-italic">Glicko</p>
-				<p class="lead" id="player_glicko"></p>
-			</div>
-			<div class="p-2" id="player_trueskill_div">
+		<!--<div class="d-flex flex-row justify-content-around" id="player_skills_div" style="padding:0px;">-->
+		<div class="btn-group" role="group" aria-label="Skills" id="player_skills_div">
+			<a class="btn" data-toggle="collapse" href="#mainrank-chart-container" role="button" aria-expanded="false" aria-controls="mainrank-button">
+				<div class="p-2" id="player_mainrank_div">
+					<p class="text-muted font-italic">
+										{% if {{page.game}} == 'Ultimate'%}
+											PGR
+										{% elsif {{page.game}} == 'Melee' %}
+											MPGR
+										{% elsif {{page.game}} == 'PM' %}
+											PMRank
+										{% elsif {{page.game}} == 'Smash4' %}
+											PGR
+										{% elsif {{page.game}} == 'Brawl' %}
+											SSBBRank
+										{% elsif {{page.game}} == '64' %}
+											64LR
+										{% else %}
+											Rank
+										{% endif %}</p>
+					<p class="lead" id="player_mainrank"></p>
+				</div>
+			</a>
+			<a class="btn" data-toggle="collapse" href="#elo-chart-container" role="button" aria-expanded="false" aria-controls="elo-button">
+				<div class="p-2" id="player_elo_div">
+					<p class="text-muted font-italic">Elo</p>
+					<p class="lead" id="player_elo"></p>
+				</div>
+			</a>
+			<a class="btn" data-toggle="collapse" href="#glicko-chart-container" role="button" aria-expanded="false" aria-controls="glicko-button">
+				<div class="p-2" id="player_glicko_div">
+					<p class="text-muted font-italic">Glicko</p>
+					<p class="lead" id="player_glicko"></p>
+				</div>
+			</a>
+			<!--<div class="p-2" id="player_trueskill_div">
 				<p class="text-muted font-italic">TrueSkill</p>
 				<p class="lead" id="player_trueskill"></p>
-			</div>
-			<div class="p-2" id="player_srank_div">
-				<p class="text-muted font-italic">S-Rank</p>
-				<p class="lead" id="player_srank"></p>
-			</div>
+			</div>-->
+			<a class="btn" data-toggle="collapse" href="#srank-chart-container" role="button" aria-expanded="false" aria-controls="srank-button">
+				<div class="p-2" id="player_srank_div">
+					<p class="text-muted font-italic">S-Rank</p>
+					<p class="lead" id="player_srank"></p>
+				</div>
+			</a>
 		</div> <!-- skills -->
 		<div class="d-flex flex-row justify-content-end" id="today_date_div" style="padding:0px;margin:0px;">
 			<p class="text-muted small font-italic font-weight-light" id="today_date" style="padding:0px;margin:0px;"></p>
 		</div>
+		<!-- data chart -->
+		<div id="mainrank-chart-container" class="chart-container collapse" style="position: relative;">
+			<div class="card">
+				<canvas id="mainrank-chart" class="chart" aria-label="mainrank-chart" width="400" height="200"></canvas>
+			</div>
+		</div>
+		<div id="elo-chart-container" class="chart-container collapse" style="position: relative;">
+			<div class="card">
+				<canvas id="elo-chart" class="chart" aria-label="elo-chart" width="400" height="200"></canvas>
+			</div>
+		</div>
+		<div id="glicko-chart-container" class="chart-container collapse" style="position: relative;">
+			<div class="card">
+				<canvas id="glicko-chart" class="chart" aria-label="glicko-chart" width="400" height="200"></canvas>
+			</div>
+		</div>
+		<div id="srank-chart-container" class="chart-container collapse" style="position: relative;">
+			<div class="card">
+				<canvas id="srank-chart" class="chart" aria-label="srank-chart" width="400" height="200"></canvas>
+			</div>
+		</div>
 		<!-- line break -->
 		<hr class="my-4" style="padding:0px;">
 		<!-- event cards -->
-		<div class="d-flex flex-row" id="player_events_div">
+		<div class="card-deck" id="player_events_deck">
+			{% for i in (0..3) %}
+			<div class="card invisible" id="event_card_{{i}}">
+				<div class="card-body" id="event_card_body_{{i}}">
+					<h6 class="card-title" id="event_card_title_{{i}}"></h6>
+					<p class="card-text" id="event_card_text_{{i}}"></p>
+				</div>
+				<div class="card-footer" id="event_card_footer_{{i}}">
+					<small class="text-muted" id="event_card_footer_text_{{i}}"></small>
+				</div>
+			</div>
+			{% endfor %}
 		</div>
 	</div>

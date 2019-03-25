@@ -57,163 +57,272 @@
 
     <!-- Player Profile scripts -->
 
-  {% include bootstrap_scripts.html %}
-  {% include firebase_scripts.html %}
-  <script type="text/javascript" src="/assets/js/finch.min.js"></script>
-  <script type="text/javascript" src="/assets/js/typeahead.bundle.js"></script>
-  <script type="text/javascript" src="/assets/js/misc_utils.js"></script>
-  <script>
-    $('.typeahead').bind('typeahead:select', function(ev, suggestion) {
-      //console.log('Selection: ' + suggestion);
-      //console.log('Selection: ' + suggestion.name);
-      //console.log('Selection: ' + suggestion.id);
-      Finch.navigate(''+suggestion.id)
-    });
-    var gameId = getGameId('{{page.game}}')
-    var searchbar_ref = firebase.database().ref("/"+gameId+"_2018_1/p_info");
-    var searchbar_query = searchbar_ref.orderByChild('srank').limitToFirst(500);
-    var searchbar_contents = searchbar_query.once('value').then(function(PlayerInfoSnapshot) {
-      if (PlayerInfoSnapshot.exists()) {
-        var searchbar_players = snapshotToSearchbar(PlayerInfoSnapshot,attr="key");
-        // custom tokenizer, so that search is sensetive to gamertag, player id, or any known aliases
-        function customTokenizer(datum) {
-          var nameTokens = Bloodhound.tokenizers.whitespace(datum.name);
-          var idTokens = Bloodhound.tokenizers.whitespace(datum.id);
-          var returnTokens = nameTokens.concat(idTokens);
-          for (i=0;i<datum.aliases.length;i++){
-            returnTokens = returnTokens.concat(Bloodhound.tokenizers.whitespace(datum.aliases[i]))
-          }
-          return returnTokens
-        }
-        var searchbar_engine = new Bloodhound({
-          datumTokenizer: customTokenizer,
-          //datumTokenizer: Bloodhound.tokenizers.whitespace,
-          queryTokenizer: Bloodhound.tokenizers.whitespace,
-          identify: function(obj) {return obj.id},
-          local: searchbar_players
-        });
-        $('#player_searchbar .typeahead').typeahead({
-          hint: true,
-          highlight: true,
-          minLength: 1
-        },{
-          name: 'players',
-          //display: function(obj) {return obj.name;},
-          displayKey: 'name',
-          //limit: 10,
-          source: searchbar_engine,
-          templates: {
-            //suggestion: Handlebars.compile('<div><strong>{{name}}</strong> - {{id}}</div>'),
-            empty: ['<div><p class="text-muted">Search...</p></div>']
-          }
-        });
-      }
-    });
-  </script>
-  <script>
-    Finch.route("/", function(bindings){
-      console.log("No player selected");
-      $('#player_card').addClass("invisible");
-    });
-    Finch.route("/:p_id", function(bindings){
-      console.log("Loading player page: "+bindings.p_id);
-      $('#player_card').removeClass("invisible");
-      // draw player profile segment
-      $('#player_card').html(`{% include player_profile.html %}`);
-
-      var playerId = bindings.p_id;
+    {% include bootstrap_scripts.html %}
+    {% include firebase_scripts.html %}
+    <script type="text/javascript" src="/assets/js/finch.min.js"></script>
+    <script type="text/javascript" src="/assets/js/typeahead.bundle.js"></script>
+    <script type="text/javascript" src="/assets/js/misc_utils.js"></script>
+    <script type="text/javascript" src="/assets/js/graph_utils.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.bundle.min.js"></script>
+    <script>
+      $('.typeahead').bind('typeahead:select', function(ev, suggestion) {
+        //console.log('Selection: ' + suggestion);
+        //console.log('Selection: ' + suggestion.name);
+        //console.log('Selection: ' + suggestion.id);
+        Finch.navigate(''+suggestion.id)
+      });
       var gameId = getGameId('{{page.game}}')
-      $('#game_icon_div').html('<img src="'+getGameIconPath(gameId)+'" alt="'+gameId+'" style="width:20px;height:20px;">');
-
-      // query db and populate profile
-      var player_ref_str = "/"+gameId+"_2018_1/p_info/"+bindings.p_id;
-      var player_ref = firebase.database().ref(player_ref_str);
-      var player_query = player_ref.once('value').then(function(PlayerSnapshot) {
-        if (PlayerSnapshot.exists()){
-          //var player_tuple = 
-          var p_tag = PlayerSnapshot.child('tag').val();
-          $('#player_tag').html(p_tag);
-          $('#player_team').html(PlayerSnapshot.child('team').val());
-          var p_region = PlayerSnapshot.child('region').val();
-          $('#player_region').html(p_region[2]);
-          var propic_url = PlayerSnapshot.child('propic').val();
-          if (propic_url == null){
-            propic_url = "https://via.placeholder.com/100/81daea/f2f2f2?text="+p_tag.slice(0,1)
-          }
-          $('#player_propic_div').html('<img src="'+propic_url+'" alt="'+p_tag+'" class="rounded-circle"/>');
-          $('#player_name').html(PlayerSnapshot.child('firstname').val()+' '+PlayerSnapshot.child('lastname').val());
-          var player_active = PlayerSnapshot.child('active');
-          if (player_active.exists()) {
-            if (player_active.val()){
-              $('#player_status').html('Active');
-              $('#player_status').addClass('text-success');
-            } else {
-              $('#player_status').html('Inactive');
-              $('#player_status').addClass('text-danger');
+      var searchbar_ref = firebase.database().ref("/"+gameId+"_2018_1/p_info");
+      //var searchbar_ref = firebase.database().ref("/"+gameId+"_2016_3_c/p_info");
+      var searchbar_query = searchbar_ref.orderByChild('srank').limitToFirst(500);
+      var searchbar_contents = searchbar_query.once('value').then(function(PlayerInfoSnapshot) {
+        if (PlayerInfoSnapshot.exists()) {
+          var searchbar_players = snapshotToSearchbar(PlayerInfoSnapshot,attr="key");
+          // custom tokenizer, so that search is sensetive to gamertag, player id, or any known aliases
+          function customTokenizer(datum) {
+            var nameTokens = Bloodhound.tokenizers.whitespace(datum.name);
+            var idTokens = Bloodhound.tokenizers.whitespace(datum.id);
+            var returnTokens = nameTokens.concat(idTokens);
+            for (i=0;i<datum.aliases.length;i++){
+              returnTokens = returnTokens.concat(Bloodhound.tokenizers.whitespace(datum.aliases[i]))
             }
+            return returnTokens
           }
-          var player_otherGamesPromise = otherGameActivity(playerId,gameId);
-          //console.log(player_otherGamesPromise);
-          player_otherGamesPromise.then(function(player_otherGames){
-            //console.log(player_otherGames)
-            if (player_otherGames.length > 1) {
-              for (i=0;i<player_otherGames.length;i++){
-                if (player_otherGames[i] != gameId){
-                  $('#player_games').append('<a href="/games/'+getGameTitle(player_otherGames[i]).toLowerCase()+'/players/#'+playerId+'"><img src="'+getGameIconPath(player_otherGames[i])+'"  alt="'+player_otherGames[i]+'" style="width:30px;height:30px;"></a>');
-                }
-              }
-              $('#player_games_div').removeClass('invisible');
+          var searchbar_engine = new Bloodhound({
+            datumTokenizer: customTokenizer,
+            //datumTokenizer: Bloodhound.tokenizers.whitespace,
+            queryTokenizer: Bloodhound.tokenizers.whitespace,
+            identify: function(obj) {return obj.id},
+            local: searchbar_players
+          });
+          $('#player_searchbar .typeahead').typeahead({
+            hint: true,
+            highlight: true,
+            minLength: 1
+          },{
+            name: 'players',
+            //display: function(obj) {return obj.name;},
+            displayKey: 'name',
+            //limit: 10,
+            source: searchbar_engine,
+            templates: {
+              //suggestion: Handlebars.compile('<div><strong>{{name}}</strong> - {{id}}</div>'),
+              empty: ['<div><p class="text-muted">Search...</p></div>']
             }
           });
-          // onerror="this.onerror=null;this.src=\''++'\';" />');
-          $('#player_characters').html(PlayerSnapshot.child('main'+'/'+PlayerSnapshot.child('last_event').val()).val());
-          
-          // calculate character usage
-          var p_characters = PlayerSnapshot.child('characters').val();
-          var p_character_keys = Object.keys(p_characters);
-          var p_used_characters = [];
-          for (i=0; i<p_character_keys.length; i++){
-            k = p_character_keys[i];
-            if (p_characters[k][0] + p_characters[k][1] > 0){
-              p_used_characters.push([k,p_characters[k][0] + p_characters[k][1]]);
-            }
-          }
-          // sort by usage
-          p_used_characters.sort(function(a,b){
-            return b[1]-a[1];
-          });
-          // draw icons
-          if (p_used_characters.length > 0){
-            for (i=0;i<p_used_characters.length;i++){
-              $('#player_characters').append('<img src="'+getStockIconPath(gameId,p_used_characters[i][0])+'" alt="'+p_used_characters[i][0]+'" style="width:26px;height:26px;padding:1px;">');
-            }
-            $('#player_characters_div').removeClass('invisible');
-          }
-
-          // populate skills
-          $('#player_elo').html(Math.round(PlayerSnapshot.child('elo').val()));
-          $('#player_glicko').html(Math.round(PlayerSnapshot.child('glicko').val()[0]));
-          $('#player_srank').html(Math.round(PlayerSnapshot.child('srank').val()*1000.)/1000.);
-          $('#player_mainrank').html(PlayerSnapshot.child('mainrank').val());
-          //$('#player_trueskill').html(Math.round(PlayerSnapshot.child('trueskill').val()));
-
-          // add today's date/watermark
-          var utc_date = new Date().toJSON().slice(0,10).replace(/-/g,'/');
-          $('#today_date').html(utc_date)
-        } else {
-          $('#player_div').html('Player ID not in database: '+bindings.p_id)
         }
       });
-      //$('#player_id').html(bindings.p_id);
-    });
-    /*Finch.route("{{page.url}}:home", function(bindings){
-      console.log("Run on home");
-    });
-    Finch.route("{{page.url}}:x", function(bindings){
-      console.log("Hey! You're trying to go here: {#bindings.x}");
-    });*/
-    Finch.listen();
-  </script>
+    </script>
+    <script>
+
+      var currentDB = false;
+
+      Finch.route("/", function(bindings){
+        console.log("No player selected");
+        $('#player_card').addClass("invisible");
+      });
+      Finch.route("/:p_id", function(bindings){
+        console.log("Loading player page: "+bindings.p_id);
+        $('#player_card').removeClass("invisible");
+        // draw player profile segment
+        $('#player_card').html(`{% include player_profile.html %}`);
+
+        var playerId = bindings.p_id;
+        var gameId = getGameId('{{page.game}}');
+        $('#game_icon_div').html('<img src="'+getGameIconPath(gameId)+'" alt="'+gameId+'" style="width:20px;height:20px;">');
+
+        // query db and populate profile
+        if (currentDB){
+          var player_ref_str = "/"+gameId+"_2016_3_c/p_info/"+playerId;
+        } else {
+          var player_ref_str = "/"+gameId+"_2018_1/p_info/"+playerId;
+        }
+        var player_ref = firebase.database().ref(player_ref_str);
+        var player_query = player_ref.once('value').then(function(PlayerSnapshot) {
+          if (PlayerSnapshot.exists()){
+            //var player_tuple = 
+            var p_tag = PlayerSnapshot.child('tag').val();
+            $('#player_tag').html(p_tag);
+            $('#player_team').html(PlayerSnapshot.child('team').val());
+            var p_region = PlayerSnapshot.child('region').val();
+            $('#player_region').html(p_region[2]);
+            var propic_url = PlayerSnapshot.child('propic').val();
+            if (propic_url == null){
+              propic_url = "https://via.placeholder.com/100/81daea/f2f2f2?text="+p_tag.slice(0,1)
+            }
+            $('#player_propic_div').html('<img src="'+propic_url+'" alt="'+p_tag+'" class="rounded-circle"/>');
+            $('#player_name').html(PlayerSnapshot.child('firstname').val()+' '+PlayerSnapshot.child('lastname').val());
+            var player_active = PlayerSnapshot.child('active');
+            if (player_active.exists()) {
+              if (player_active.val()){
+                $('#player_status').html('Active');
+                $('#player_status').addClass('text-success');
+              } else {
+                $('#player_status').html('Inactive');
+                $('#player_status').addClass('text-danger');
+              }
+            }
+            var p_aliases = PlayerSnapshot.child('aliases').val();
+            if (p_aliases.length > 1){
+              p_aliases = p_aliases.filter(function(value, index, arr){
+                return value != p_tag;
+              });
+              $('#player_aliases').html(p_aliases.join());
+              $('#player_aliases_div').removeClass('invisible');
+            }
+            // add social media accounts
+            acctNames = ['twitter','twitch','smashboards','ssbwiki','youtube','discord','reddit'];
+            acctIcons = ['twt-512px.png','ttv-322px.jpg','sb-280px.jpg','sw-200px.png','ytb-800px.png','dcd-800px.png','rdt-256px.png']
+            acctStubs = ['twitter.com/','twitch.tv/','smashboards.com/members/','ssbwiki.com/Smasher:','youtube.com/channel/','','reddit.com/u/']
+            for (i=0;i<acctNames.length;i++){
+              if (PlayerSnapshot.child(acctNames[i]).exists()){
+                $('#player_social').append('<a href="https://'+acctStubs[i]+PlayerSnapshot.child(acctNames[i]).val()+'"><img src="/assets/images/social_icons/'+acctIcons[i]+'" alt="'+PlayerSnapshot.child(acctNames[i]).val()+'" style="width:32px;height:32px;padding:1px;" class="rounded"></a>');
+                $('#player_social_div').removeClass('invisible')
+              }
+            }
+            var player_otherGamesPromise = otherGameActivity(playerId,gameId);
+            //console.log(player_otherGamesPromise);
+            player_otherGamesPromise.then(function(player_otherGames){
+              //console.log(player_otherGames)
+              if (player_otherGames.length > 1) {
+                for (i=0;i<player_otherGames.length;i++){
+                  if (player_otherGames[i] != gameId){
+                    $('#player_games').append('<a href="/games/'+getGameTitle(player_otherGames[i]).toLowerCase()+'/players/#'+playerId+'"><img src="'+getGameIconPath(player_otherGames[i])+'"  alt="'+player_otherGames[i]+'" style="width:30px;height:30px;"></a>');
+                  }
+                }
+                $('#player_games_div').removeClass('invisible');
+              }
+            });
+            // onerror="this.onerror=null;this.src=\''++'\';" />');
+            //$('#player_characters').html(PlayerSnapshot.child('main'+'/'+PlayerSnapshot.child('last_event').val()).val());
+            
+            // calculate character usage
+            if (PlayerSnapshot.child('characters').exists()) {
+              var p_characters = PlayerSnapshot.child('characters').val();
+              var p_character_keys = Object.keys(p_characters);
+              var p_used_characters = [];
+              for (i=0; i<p_character_keys.length; i++){
+                var k = p_character_keys[i];
+                if (p_characters[k][0] + p_characters[k][1] > 0){
+                  p_used_characters.push([k,p_characters[k][0] + p_characters[k][1]]);
+                }
+              }
+              // sort by usage
+              p_used_characters.sort(function(a,b){
+                return b[1]-a[1];
+              });
+              console.log(p_used_characters);
+              // get total N
+              var totalSets = p_used_characters.reduce(function(total,num){
+                return total + num[1];
+              },0);
+              console.log(totalSets);
+              // draw icons
+              if (p_used_characters.length > 0){
+                for (i=0;i<p_used_characters.length;i++){
+                  $('#player_characters').append('<img src="'+getStockIconPath(gameId,p_used_characters[i][0])+'" alt="'+p_used_characters[i][0]+'" style="width:26px;height:26px;padding:1px;">');
+                  if (i > 0){
+                    var newLine = '\n';
+                  } else {
+                    var newLine = '';
+                  }
+                  usagePct = Math.round(p_used_characters[i][1]*10000.0/totalSets)/100.0;
+                  $('#player_characters_div').attr('title',$('#player_characters_div').attr('title')+newLine+usagePct+'%')
+                }
+                $('#player_characters_div').removeClass('invisible');
+              }
+            }
+
+            // populate skills
+            $('#player_elo').html(Math.round(PlayerSnapshot.child('elo').val()));
+            $('#player_glicko').html(Math.round(PlayerSnapshot.child('glicko').val()[0]));
+            $('#player_srank').html(Math.round(PlayerSnapshot.child('srank').val()*1000.)/1000.);
+            $('#player_mainrank').html(PlayerSnapshot.child('mainrank').val());
+            //$('#player_trueskill').html(Math.round(PlayerSnapshot.child('trueskill').val()));
+
+            // add today's date/watermark
+            var utc_date = new Date().toJSON().slice(0,10).replace(/-/g,'/');
+            $('#today_date').html(utc_date);
+
+            // get last events
+            if (currentDB){
+              var placeRef = firebase.database().ref("/"+gameId+"_2016_3_c/records/"+playerId+"/placings");
+            } else {
+              var placeRef = firebase.database().ref("/"+gameId+"_2018_1/records/"+playerId+"/placings");
+            }
+            var placeQuery = placeRef.once('value').then(function(PlacementSnapshot){
+              var placements = snapshotToArray(PlacementSnapshot,attr="both");
+              var eventPromises = placementsToEvents(placements,gameId);
+              // populate the cards
+              Promise.all(eventPromises).then(function(PlayerEvents){
+                if (PlayerEvents.length>0){
+                  for (i=0;i<4;i++){
+                    var eventRes = placements[i];
+                    if (eventRes != null){
+                      $('#event_card_'+i).removeClass('invisible')
+                      var eventId = eventRes.key;
+                      var eventInfo = PlayerEvents[i];
+                      
+                      $('#event_card_title_'+i).html(eventInfo[0]);
+                      eventDate = new Date(eventInfo[1]).toJSON().slice(0,10).replace(/-/g,'/');
+                      $('#event_card_footer_text_'+i).html(eventDate);
+                      if (!eventInfo[3]){
+                        $('#event_card_footer_text_'+i).addClass('text-danger');
+                      }
+                      $('#event_card_text_'+i).html('<strong>'+eventRes.val+'</strong>'+' / '+ eventInfo[2]);
+                    }
+                  }
+                }
+              });
+              // draw skill graphs
+              if (currentDB){
+                var tourneyRefStr = '/'+gameId+'_2016_3_c/tourneys/'
+              } else {
+                var tourneyRefStr = '/'+gameId+'_2018_1/tourneys/'
+              }
+              var tourneyRef = firebase.database().ref(tourneyRefStr);
+              var tourneyQuery = tourneyRef.once('value').then(function(TourneySnapshot){
+                if (TourneySnapshot.exists()){
+                  // fix this
+                  //skillTypes = ['elo'];
+                  skillTypes = ['mainrank','elo','glicko','srank'];
+                  if (currentDB){
+                    var skillRefStr = '/'+gameId+'_2016_3_c/skills/';
+                  } else {
+                    var skillRefStr = '/'+gameId+'_2018_1/skills/';
+                  }
+                  var skillPromises = snapshotToSkillHistory(skillRefStr,playerId,skillTypes)
+                  Promise.all(skillPromises).then(function(PlayerSkills){
+                    for (i=0;i<skillPromises.length;i++){
+                      SkillHistory = PlayerSkills[i];
+                      if (SkillHistory != null){
+                        var timeChart = skillChart(SkillHistory,TourneySnapshot,PlacementSnapshot,gameId,skillTypes[i]);
+                        timeChart.update();
+                      } else {
+                        console.log('SkillHistory does not exist!');
+                      }
+                    }//endfor
+
+                  });
+                } else {
+                  console.log('TourneySnapshot does not exist!');
+                }
+              });
+            });
+          } else {
+            $('#player_div').html('Player ID not in database: '+bindings.p_id)
+          }
+        });
+        //$('#player_id').html(bindings.p_id);
+      });
+      /*Finch.route("{{page.url}}:home", function(bindings){
+        console.log("Run on home");
+      });
+      Finch.route("{{page.url}}:x", function(bindings){
+        console.log("Hey! You're trying to go here: {#bindings.x}");
+      });*/
+      Finch.listen();
+    </script>
     <!-- Mobile scaling fix -->
     <script src="{{ "/assets/js/scale.fix.js" | relative_url }}"></script>
 

@@ -181,6 +181,7 @@
 <script>
 	$().ready(function() {
 		var game_id = getGameId("{{page.title}}");
+		var gameTitle = "{{page.title}}"
 		// get current year for db lookups
 		var curr_year = new Date().getFullYear();
 		// label the past year's tab
@@ -188,6 +189,7 @@
 
 		// populate "current" table
 		var curr_ref_str = "/" + game_id + "_" + (curr_year-1) + "_1/p_info";
+		//var curr_ref_str = "/" + game_id + "_2016_" + (curr_year-2016)+ "_c" + "/p_info";
 		var curr_ref = firebase.database().ref(curr_ref_str);
 		var curr_query = curr_ref.orderByChild('srank').limitToFirst(20)
 		curr_query.once('value').then(function(PlayerSnapshot) {
@@ -204,7 +206,12 @@
 					"dom": '<"top"iflp<"clear">>rt<"bottom"iflp<"clear">>',
 					//scrollY: 200,
 					//scrollCollapse: true,
-					columnDefs: [{targets: 0, className:'dt-body-right'}]
+					columnDefs: [
+								{targets: 0, className: 'text-right'},
+								{targets: 1, data: null, render: function(dataCol){
+									return '<a href="/games/'+gameTitle.toLowerCase()+'/players/#'+dataCol[6]+'">'+dataCol[1]+'</a>'
+								}}
+								]
 				});
 				$('#current-tab').tab('show')
 				$($.fn.dataTable.tables(true)).DataTable().columns.adjust().responsive.recalc();
@@ -232,7 +239,10 @@
 					"dom": '<"top"iflp<"clear">>rt<"bottom"iflp<"clear">>',
 					//scrollY: 200,
 					//scrollCollapse: true,
-					columnDefs: [{targets: 0, className:'dt-body-right'}]
+					columnDefs: [{targets: 0, className:'text-right'},
+								{targets: 1, data: null, render: function(dataCol){
+									return '<a href="/games/'+gameTitle.toLowerCase()+'/players/#'+dataCol[6]+'">'+dataCol[1]+'</a>'
+								}}]
 				});
 				$($.fn.dataTable.tables(true)).DataTable().columns.adjust().responsive.recalc();
 			} else {
@@ -258,7 +268,10 @@
 					"dom": '<"top"iflp<"clear">>rt<"bottom"iflp<"clear">>',
 					//scrollY: 200,
 					//scrollCollapse: true,
-					columnDefs: [{targets: 0, className:'dt-body-right'}]
+					columnDefs: [{targets: 0, className:'text-right'}
+								{targets: 1, data: null, render: function(dataCol){
+									return '<a href="/games/'+gameTitle.toLowerCase()+'/players/#'+dataCol[6]+'">'+dataCol[1]+'</a>'
+								}}]
 				});
 				$($.fn.dataTable.tables(true)).DataTable().columns.adjust().responsive.recalc();
 			} else {

@@ -79,7 +79,7 @@ function snapshotToArray(snapshot,attr="val") {
 		} else if (attr == "key") {
         	var item = childSnapshot.key;
         } else if (attr == "both") {
-        	var item = childSnapshot.val();
+        	var item = {val: childSnapshot.val()};
         	item.key = childSnapshot.key;
         }
         returnArr.push(item);
@@ -105,9 +105,7 @@ function otherGameActivity(p_id,game_id){
 			gamePromises.push(true);
 		}
 	}
-	
 	var otherGamesPromise = Promise.all(gamePromises).then(function(results){
-		//console.log(results);
 		for (j=0;j<gameIds.length;j++){
 			if(results[j]){
 				otherGames.push(gameIds[j]);
@@ -115,8 +113,22 @@ function otherGameActivity(p_id,game_id){
 		}
 		return otherGames;
 	});
-
 	return otherGamesPromise;
+}
+
+function placementsToEvents(placements,gameId){
+	var eventPromises = [];
+	for (i=0;i<placements.length;i++){
+		eventId = placements[i].key;
+		var refStr = "/"+gameId+"_2018_1/tourneys/"+eventId;
+
+		var eventRef = firebase.database().ref(refStr)
+		var eventQuery = eventRef.once('value').then(function(EventSnapshot){
+			return [EventSnapshot.child('name').val(),EventSnapshot.child('date').val(),EventSnapshot.child('numEntrants').val(),EventSnapshot.child('active').val()];
+		});
+		eventPromises.push(eventQuery);
+	}
+	return eventPromises;
 }
 
 function snapshotToSearchbar(snapshot){
