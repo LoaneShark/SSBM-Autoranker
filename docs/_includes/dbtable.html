@@ -188,8 +188,8 @@
 		$('#past-tab').html(curr_year-1)
 
 		// populate "current" table
-		var curr_ref_str = "/" + game_id + "_" + (curr_year-1) + "_1/p_info";
-		//var curr_ref_str = "/" + game_id + "_2016_" + (curr_year-2016)+ "_c" + "/p_info";
+		var curr_ref_str = "/" + game_id + "_2016_" + (curr_year-2016)+ "_c" + "/p_info";
+		//var curr_ref_str = "/" + game_id + "_" + (curr_year-1) + "_1/p_info";
 		var curr_ref = firebase.database().ref(curr_ref_str);
 		var curr_query = curr_ref.orderByChild('srank').limitToFirst(20)
 		curr_query.once('value').then(function(PlayerSnapshot) {
@@ -222,7 +222,8 @@
 			}
 		});
 		// populate "past" table
-		var past_ref_str = "/" + game_id + "_" + (curr_year-1) + "_0/p_info";
+		var past_ref_str = "/" + game_id + "_2016_" + (curr_year-2016)-1 + "_c/p_info";
+		//var curr_ref_str = "/" + game_id + "_2016_" + (curr_year-2016)-1+ "_c" + "/p_info";
 		var past_ref = firebase.database().ref(past_ref_str);
 		var past_query = past_ref.orderByChild('srank').limitToFirst(20)
 		past_query.once('value').then(function(PlayerSnapshot) {
@@ -264,11 +265,11 @@
 					ordering: true,
 					paging: false,
 					//"autoWidth": false,      	
-					"order": [[ 3, "asc" ]],
+					"order": [[ 3, "asc" ],[4,"desc"]],
 					"dom": '<"top"iflp<"clear">>rt<"bottom"iflp<"clear">>',
 					//scrollY: 200,
 					//scrollCollapse: true,
-					columnDefs: [{targets: 0, className:'text-right'}
+					columnDefs: [{targets: 0, className:'text-right'},
 								{targets: 1, data: null, render: function(dataCol){
 									return '<a href="/games/'+gameTitle.toLowerCase()+'/players/#'+dataCol[6]+'">'+dataCol[1]+'</a>'
 								}}]

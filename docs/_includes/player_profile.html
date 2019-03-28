@@ -21,9 +21,10 @@
 					<h1 id="player_team"></h1>
 					<h1 class="display-4" id="player_tag"></h1>
 				</div>	
-				<div class="p-4 d-flex flex-column justify-content-end shadow" id="player_region_div">
+				<div class="p-4 d-flex flex-column justify-content-end shadow invisible" id="player_region_div">
 					<p class="text-muted small font-italic">Region</p>
 					<p id="player_region"></p>
+					<img id="player_region_flag" src="/assets/images/blank.gif" class="flag"></img>
 				</div>
 			</div>
 			<!-- secondary info -->
@@ -66,7 +67,7 @@
 				<div class="p-2" id="player_mainrank_div">
 					<p class="text-muted font-italic">
 										{% if {{page.game}} == 'Ultimate'%}
-											PGR
+											PGRU
 										{% elsif {{page.game}} == 'Melee' %}
 											MPGR
 										{% elsif {{page.game}} == 'PM' %}
@@ -112,30 +113,36 @@
 		<!-- data chart -->
 		<div id="mainrank-chart-container" class="chart-container collapse" style="position: relative;">
 			<div class="card">
-				<canvas id="mainrank-chart" class="chart" aria-label="mainrank-chart" width="400" height="200"></canvas>
+				<canvas id="mainrank-chart" class="p-3 chart" aria-label="mainrank-chart" width="400" height="200"></canvas>
 			</div>
 		</div>
 		<div id="elo-chart-container" class="chart-container collapse" style="position: relative;">
 			<div class="card">
-				<canvas id="elo-chart" class="chart" aria-label="elo-chart" width="400" height="200"></canvas>
+				<canvas id="elo-chart" class="p-3 chart" aria-label="elo-chart" width="400" height="200"></canvas>
 			</div>
 		</div>
 		<div id="glicko-chart-container" class="chart-container collapse" style="position: relative;">
 			<div class="card">
-				<canvas id="glicko-chart" class="chart" aria-label="glicko-chart" width="400" height="200"></canvas>
+				<canvas id="glicko-chart" class="p-3 chart" aria-label="glicko-chart" width="400" height="200"></canvas>
 			</div>
 		</div>
 		<div id="srank-chart-container" class="chart-container collapse" style="position: relative;">
 			<div class="card">
-				<canvas id="srank-chart" class="chart" aria-label="srank-chart" width="400" height="200"></canvas>
+				<canvas id="srank-chart" class="p-3 chart" aria-label="srank-chart" width="400" height="200"></canvas>
 			</div>
 		</div>
+		<!--<div id="trueskill-chart-container" class="chart-container collapse" style="position: relative;">
+			<div class="card">
+				<canvas id="trueskill-chart" class="p-3 chart" aria-label="trueskill-chart" width="400" height="200"></canvas>
+			</div>
+		</div>-->
 		<!-- line break -->
 		<hr class="my-4" style="padding:0px;">
 		<!-- event cards -->
 		<div class="card-deck" id="player_events_deck">
 			{% for i in (0..3) %}
 			<div class="card invisible" id="event_card_{{i}}">
+				<img class="card-img-top" id="event_card_image_{{i}}">
 				<div class="card-body" id="event_card_body_{{i}}">
 					<h6 class="card-title" id="event_card_title_{{i}}"></h6>
 					<p class="card-text" id="event_card_text_{{i}}"></p>

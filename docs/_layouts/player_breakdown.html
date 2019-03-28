@@ -23,8 +23,12 @@
   padding:35px;
   /*display: flex;*/
 }
+.card-img-top {
+  height:5vw;
+  object-fit:cover;
+}
 </style>
-
+<link href="/assets/css/flags.css" rel=stylesheet type="text/css">
 {% seo %}
     <link rel="stylesheet" href="{{ "/assets/css/style.css?v=" | append: site.github.build_revision | relative_url }}">
     <!--[if lt IE 9]>
@@ -62,8 +66,8 @@
     <script type="text/javascript" src="/assets/js/finch.min.js"></script>
     <script type="text/javascript" src="/assets/js/typeahead.bundle.js"></script>
     <script type="text/javascript" src="/assets/js/misc_utils.js"></script>
-    <script type="text/javascript" src="/assets/js/graph_utils.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.bundle.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.bundle.min.js" async></script>
+    <script type="text/javascript" src="/assets/js/graph_utils.js" async></script>
     <script>
       $('.typeahead').bind('typeahead:select', function(ev, suggestion) {
         //console.log('Selection: ' + suggestion);
@@ -72,8 +76,8 @@
         Finch.navigate(''+suggestion.id)
       });
       var gameId = getGameId('{{page.game}}')
-      var searchbar_ref = firebase.database().ref("/"+gameId+"_2018_1/p_info");
-      //var searchbar_ref = firebase.database().ref("/"+gameId+"_2016_3_c/p_info");
+      //var searchbar_ref = firebase.database().ref("/"+gameId+"_2018_1/p_info");
+      var searchbar_ref = firebase.database().ref("/"+gameId+"_2016_3_c/p_info");
       var searchbar_query = searchbar_ref.orderByChild('srank').limitToFirst(500);
       var searchbar_contents = searchbar_query.once('value').then(function(PlayerInfoSnapshot) {
         if (PlayerInfoSnapshot.exists()) {
@@ -115,7 +119,7 @@
     </script>
     <script>
 
-      var currentDB = false;
+      var currentDB = true;
 
       Finch.route("/", function(bindings){
         console.log("No player selected");
@@ -145,7 +149,22 @@
             $('#player_tag').html(p_tag);
             $('#player_team').html(PlayerSnapshot.child('team').val());
             var p_region = PlayerSnapshot.child('region').val();
-            $('#player_region').html(p_region[2]);
+            console.log(p_region)
+            if (p_region[2] != 'N/A'){
+              $('#player_region_div').removeClass('invisible');
+              $('#player_region').html(p_region[2]);
+              // draw country flag in region box
+              if (p_region[1] == 'Europe' || p_region[1] == 'America'){
+                var c_code = countryNameToCC(p_region[2])
+              } else {
+                var c_code = countryNameToCC(p_region[1]);
+              }
+              if (c_code){
+                $('#player_region_flag').addClass('flag-'+c_code.toLowerCase());
+              } else {
+                $('#player_region_flag').addClass('invisible');
+              }
+            }
             var propic_url = PlayerSnapshot.child('propic').val();
             if (propic_url == null){
               propic_url = "https://via.placeholder.com/100/81daea/f2f2f2?text="+p_tag.slice(0,1)
@@ -211,12 +230,10 @@
               p_used_characters.sort(function(a,b){
                 return b[1]-a[1];
               });
-              console.log(p_used_characters);
               // get total N
               var totalSets = p_used_characters.reduce(function(total,num){
                 return total + num[1];
               },0);
-              console.log(totalSets);
               // draw icons
               if (p_used_characters.length > 0){
                 for (i=0;i<p_used_characters.length;i++){
@@ -256,6 +273,9 @@
               // populate the cards
               Promise.all(eventPromises).then(function(PlayerEvents){
                 if (PlayerEvents.length>0){
+                  PlayerEvents.sort(function(a,b){
+                    return b[1]-a[1]
+                  });
                   for (i=0;i<4;i++){
                     var eventRes = placements[i];
                     if (eventRes != null){
@@ -264,6 +284,8 @@
                       var eventInfo = PlayerEvents[i];
                       
                       $('#event_card_title_'+i).html(eventInfo[0]);
+                      $('#event_card_image_'+i).attr('src',eventInfo[4]);
+                      $('#event_card_image_'+i).attr('alt',eventId);
                       eventDate = new Date(eventInfo[1]).toJSON().slice(0,10).replace(/-/g,'/');
                       $('#event_card_footer_text_'+i).html(eventDate);
                       if (!eventInfo[3]){
