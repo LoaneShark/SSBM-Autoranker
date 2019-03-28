@@ -128,7 +128,7 @@ function placementsToEvents(placements,gameId){
 		var eventQuery = eventRef.once('value').then(function(EventSnapshot){
 			pyDate = EventSnapshot.child('date').val()
 			jsDate = new Date(pyDate[0],pyDate[1]-1,pyDate[2])
-			return [EventSnapshot.child('name').val(),jsDate,EventSnapshot.child('numEntrants').val(),EventSnapshot.child('active').val(),EventSnapshot.child('url_banner').val()];
+			return [EventSnapshot.child('name').val(),jsDate,EventSnapshot.child('numEntrants').val(),EventSnapshot.child('active').val(),EventSnapshot.child('url_banner').val(),EventSnapshot.child('slug').val(),EventSnapshot.key];
 		});
 		eventPromises.push(eventQuery);
 	}

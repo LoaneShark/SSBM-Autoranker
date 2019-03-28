@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-{% include bootstrap_css.html %}
+    {% include bootstrap_css.html %}
+    {% include bootstrap_scripts.html %}
 <style type="text/css">
 /*#player_searchbar .tt-dropdown-menu {
   max-height: 150px;
@@ -61,7 +62,6 @@
 
     <!-- Player Profile scripts -->
 
-    {% include bootstrap_scripts.html %}
     {% include firebase_scripts.html %}
     <script type="text/javascript" src="/assets/js/finch.min.js"></script>
     <script type="text/javascript" src="/assets/js/typeahead.bundle.js"></script>
@@ -273,19 +273,31 @@
               // populate the cards
               Promise.all(eventPromises).then(function(PlayerEvents){
                 if (PlayerEvents.length>0){
+                  // sort chronologically
                   PlayerEvents.sort(function(a,b){
-                    return b[1]-a[1]
+                    return b[1]-a[1];
+                  });
+                  for (i=0;i<placements.length;i++){
+                    placements[i].idx = PlayerEvents.findIndex(function(p_event){
+                      return p_event[6] == placements[i].key
+                    });
+                  }
+                  placements.sort(function(a,b){
+                    return a.idx-b.idx;
                   });
                   for (i=0;i<4;i++){
                     var eventRes = placements[i];
                     if (eventRes != null){
                       $('#event_card_'+i).removeClass('invisible')
                       var eventId = eventRes.key;
+                      // eventInfo = [eventName,eventDate,numEntrants,isActive,bannerUrl,slug,eventId]
                       var eventInfo = PlayerEvents[i];
+                      var smashggUrl = 'http://www.smash.gg/tournament/'+eventInfo[5];
                       
                       $('#event_card_title_'+i).html(eventInfo[0]);
                       $('#event_card_image_'+i).attr('src',eventInfo[4]);
                       $('#event_card_image_'+i).attr('alt',eventId);
+                      $('#event_card_image_link_'+i).attr('href',smashggUrl);
                       eventDate = new Date(eventInfo[1]).toJSON().slice(0,10).replace(/-/g,'/');
                       $('#event_card_footer_text_'+i).html(eventDate);
                       if (!eventInfo[3]){
@@ -321,7 +333,10 @@
                         var timeChart = skillChart(SkillHistory,TourneySnapshot,PlacementSnapshot,gameId,skillTypes[i]);
                         timeChart.update();
                       } else {
-                        console.log('SkillHistory does not exist!');
+                        $('#player_'+skillTypes[i]+'_button').addClass('disabled');
+                        $('#player_'+skillTypes[i]).html('N/A');
+                        $('#'+skillTypes[i]+'_chart_container').addClass('invisible');
+                        console.log(skillTypes[i]+'SkillHistory does not exist!');
                       }
                     }//endfor
 

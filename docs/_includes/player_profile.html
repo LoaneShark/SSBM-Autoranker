@@ -63,7 +63,7 @@
 		<!-- skills at a glance -->
 		<!--<div class="d-flex flex-row justify-content-around" id="player_skills_div" style="padding:0px;">-->
 		<div class="btn-group" role="group" aria-label="Skills" id="player_skills_div">
-			<a class="btn" data-toggle="collapse" href="#mainrank-chart-container" role="button" aria-expanded="false" aria-controls="mainrank-button">
+			<a class="btn" data-toggle="collapse" href="#mainrank_chart_container" role="button" aria-expanded="false" aria-controls="mainrank-button" id="player_mainrank_button">
 				<div class="p-2" id="player_mainrank_div">
 					<p class="text-muted font-italic">
 										{% if {{page.game}} == 'Ultimate'%}
@@ -84,13 +84,13 @@
 					<p class="lead" id="player_mainrank"></p>
 				</div>
 			</a>
-			<a class="btn" data-toggle="collapse" href="#elo-chart-container" role="button" aria-expanded="false" aria-controls="elo-button">
+			<a class="btn" data-toggle="collapse" href="#elo_chart_container" role="button" aria-expanded="false" aria-controls="elo-button" id="player_elo_button">
 				<div class="p-2" id="player_elo_div">
 					<p class="text-muted font-italic">Elo</p>
 					<p class="lead" id="player_elo"></p>
 				</div>
 			</a>
-			<a class="btn" data-toggle="collapse" href="#glicko-chart-container" role="button" aria-expanded="false" aria-controls="glicko-button">
+			<a class="btn" data-toggle="collapse" href="#glicko_chart_container" role="button" aria-expanded="false" aria-controls="glicko-button" id="player_glicko_button">
 				<div class="p-2" id="player_glicko_div">
 					<p class="text-muted font-italic">Glicko</p>
 					<p class="lead" id="player_glicko"></p>
@@ -100,9 +100,16 @@
 				<p class="text-muted font-italic">TrueSkill</p>
 				<p class="lead" id="player_trueskill"></p>
 			</div>-->
-			<a class="btn" data-toggle="collapse" href="#srank-chart-container" role="button" aria-expanded="false" aria-controls="srank-button">
+			<a class="btn" data-toggle="collapse" href="#srank_chart_container" role="button" aria-expanded="false" aria-controls="srank-button" id="player_srank_button">
 				<div class="p-2" id="player_srank_div">
-					<p class="text-muted font-italic">S-Rank</p>
+					<p class="text-muted font-italic">S-Rank
+					<span class="fa-layers fa-fw">
+						<i class="fas fa-square" data-fa-transform="shrink-3 up-3"></i>
+						<span class="fa-layers-text fa-inverse" data-fa-transform="shrink-8 up-4 left-0.5" style="font-weight:400">
+							&alpha;
+						</span>
+					</span>
+					</p>
 					<p class="lead" id="player_srank"></p>
 				</div>
 			</a>
@@ -111,29 +118,29 @@
 			<p class="text-muted small font-italic font-weight-light" id="today_date" style="padding:0px;margin:0px;"></p>
 		</div>
 		<!-- data chart -->
-		<div id="mainrank-chart-container" class="chart-container collapse" style="position: relative;">
+		<div id="mainrank_chart_container" class="chart-container collapse" style="position: relative;">
 			<div class="card">
-				<canvas id="mainrank-chart" class="p-3 chart" aria-label="mainrank-chart" width="400" height="200"></canvas>
+				<canvas id="mainrank_chart" class="p-3 chart" aria-label="mainrank-chart" width="400" height="200"></canvas>
 			</div>
 		</div>
-		<div id="elo-chart-container" class="chart-container collapse" style="position: relative;">
+		<div id="elo_chart_container" class="chart-container collapse" style="position: relative;">
 			<div class="card">
-				<canvas id="elo-chart" class="p-3 chart" aria-label="elo-chart" width="400" height="200"></canvas>
+				<canvas id="elo_chart" class="p-3 chart" aria-label="elo-chart" width="400" height="200"></canvas>
 			</div>
 		</div>
-		<div id="glicko-chart-container" class="chart-container collapse" style="position: relative;">
+		<div id="glicko_chart_container" class="chart-container collapse" style="position: relative;">
 			<div class="card">
-				<canvas id="glicko-chart" class="p-3 chart" aria-label="glicko-chart" width="400" height="200"></canvas>
+				<canvas id="glicko_chart" class="p-3 chart" aria-label="glicko-chart" width="400" height="200"></canvas>
 			</div>
 		</div>
-		<div id="srank-chart-container" class="chart-container collapse" style="position: relative;">
+		<div id="srank_chart_container" class="chart-container collapse" style="position: relative;">
 			<div class="card">
-				<canvas id="srank-chart" class="p-3 chart" aria-label="srank-chart" width="400" height="200"></canvas>
+				<canvas id="srank_chart" class="p-3 chart" aria-label="srank-chart" width="400" height="200"></canvas>
 			</div>
 		</div>
-		<!--<div id="trueskill-chart-container" class="chart-container collapse" style="position: relative;">
+		<!--<div id="trueskill_chart_container" class="chart-container collapse" style="position: relative;">
 			<div class="card">
-				<canvas id="trueskill-chart" class="p-3 chart" aria-label="trueskill-chart" width="400" height="200"></canvas>
+				<canvas id="trueskill_chart" class="p-3 chart" aria-label="trueskill-chart" width="400" height="200"></canvas>
 			</div>
 		</div>-->
 		<!-- line break -->
@@ -142,7 +149,9 @@
 		<div class="card-deck" id="player_events_deck">
 			{% for i in (0..3) %}
 			<div class="card invisible" id="event_card_{{i}}">
-				<img class="card-img-top" id="event_card_image_{{i}}">
+				<a id="event_card_image_link_{{i}}" href="">
+					<img class="card-img-top" id="event_card_image_{{i}}">
+				</a>
 				<div class="card-body" id="event_card_body_{{i}}">
 					<h6 class="card-title" id="event_card_title_{{i}}"></h6>
 					<p class="card-text" id="event_card_text_{{i}}"></p>

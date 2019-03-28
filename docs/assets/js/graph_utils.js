@@ -25,7 +25,7 @@ Chart.plugins.register({
 
 
 function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='elo'){
-	var ctx = $('#'+type+'-chart')[0].getContext('2d');
+	var ctx = $('#'+type+'_chart')[0].getContext('2d');
 	//var ctx = $('#tempChart');
 
 	var skillset = [];
@@ -102,15 +102,15 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 		data: {
 			datasets: [{
 				label: chartLabelFromType(type,gameId),
-				backgroundColor: legendColors[1],
-				borderColor: legendColors[0],
+				backgroundColor: legendColors[0][1],
+				borderColor: legendColors[0][0],
 				steppedLine: true,
 				fill: false,
 				data: skillset
 			},{
 				label: chartLabelFromType(type,gameId)+' (Inferred)',
-				backgroundColor: legendColors[1],
-				borderColor: legendColors[0],
+				backgroundColor: legendColors[1][1],
+				borderColor: legendColors[1][0],
 				steppedLine: true,
 				pointRadius: 0,
 				pointHoverRadius: 0,
@@ -119,8 +119,8 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 				data: initialSkillset
 			},{
 				label: chartLabelFromType(type,gameId)+' (Current)',
-				backgroundColor: legendColors[1],
-				borderColor: legendColors[0],
+				backgroundColor: legendColors[2][1],
+				borderColor: legendColors[2][0],
 				steppedLine: true,
 				pointRadius: 0,
 				pointHoverRadius: 0,
@@ -129,8 +129,8 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 				data: postPeriod
 			},{
 				label: chartLabelFromType(type,gameId)+' (Unranked)',
-				backgroundColor: legendColors[1],
-				borderColor: legendColors[0],
+				backgroundColor: legendColors[3][1],
+				borderColor: legendColors[3][0],
 				steppedLine: true,
 				fill: false,
 				borderDash: [5,5],
@@ -309,19 +309,34 @@ function chartLabelFromType(type='elo',gameId){
 function chartColorsFromType(type='elo'){
 	switch (type){
 		case 'mainrank':
-			return ['rgb(30, 173, 234)','rgb(40, 183, 244)'];
+			return {0:['rgb(30, 173, 234, 1)','rgb(40, 183, 244, 1)'],
+					1:['rgb(30, 173, 234, 0.5)','rgb(40, 183, 244, 0.5)'],
+					2:['rgb(30, 173, 234, 0.5)','rgb(40, 183, 244, 0.5)'],
+					3:['rgb(30, 173, 234, 1)','rgb(40, 183, 244, 1)']};
 			break;
 		case 'elo':
-			return ['rgb(144,227,184)','rgb(154,247,194)'];
+			return {0:['rgb(144,227,184, 1)','rgb(154,247,194, 1)'],
+					1:['rgb(144,227,184, 0.5)','rgb(154,247,194, 0.5)'],
+					2:['rgb(144,227,184, 0.5)','rgb(154,247,194, 0.5)'],
+					3:['rgb(144,227,184, 1)','rgb(154,247,194, 1)']};
 			break;
 		case 'glicko':
-			return ['rgb(242, 96, 96)','rgb(252, 106, 106)'];
+			return {0:['rgb(242, 96, 96, 1)','rgb(252, 106, 106, 1)'],
+					1:['rgb(242, 96, 96, 0.5)','rgb(252, 106, 106, 0.5)'],
+					2:['rgb(242, 96, 96, 0.5)','rgb(252, 106, 106, 0.5)'],
+					3:['rgb(242, 96, 96, 1)','rgb(252, 106, 106, 1)']};
 			break;
 		case 'trueskill':
-			return ['rgb(204, 204, 10)','rgb(214, 214, 20)'];
+			return {0:['rgb(204, 204, 10, 1)','rgb(214, 214, 20, 1)'],
+					1:['rgb(204, 204, 10, 0.5)','rgb(214, 214, 20, 0.5)'],
+					2:['rgb(204, 204, 10, 0.5)','rgb(214, 214, 20, 0.5)'],
+					3:['rgb(204, 204, 10, 1)','rgb(214, 214, 20, 1)']};
 			break;
 		case 'srank':
-			return ['rgb(139, 55, 229)','rgb(149, 65, 239)'];
+			return {0:['rgb(139, 55, 229, 1)','rgb(149, 65, 239, 1)'],
+					1:['rgb(139, 55, 229, 0.5)','rgb(149, 65, 239, 0.5)'],
+					2:['rgb(139, 55, 229, 0.5)','rgb(149, 65, 239, 0.5)'],
+					3:['rgb(139, 55, 229, 1)','rgb(149, 65, 239, 1)']};
 			break;
 	}
 }
