@@ -179,13 +179,12 @@ def calc_region(country,state=None,city=None,granularity=2,force_new=False):
 	else:
 		[l_city,l_state,l_county,l_country,l_continent] = locdict[locstr]
 
-
 	# return continent (or country for US/CA)
 	if granularity == 1:
-		if l_continent != None:
-			return l_continent
 		if l_country in ['United States','USA','U.S.A.','United States of America','Canada','Japan']:
 			return l_country
+		elif l_continent != None:
+			return l_continent
 		else:
 			#country_alpha2 = pycountry.countries.get(name=country).alpha_2
 			continent = cc.convert(names=[country],to='continent')
@@ -560,5 +559,8 @@ if __name__ == '__main__':
 
 	print(ca_dict['Los Angeles'])
 	print(fl_dict['Miami'])'''
+	for gran in range(1,6):
+		print(gran)
+		print(calc_region('Japan',city='Tokyo',granularity=gran))
 
 	#save_dict(cities,state,'cities','obj')

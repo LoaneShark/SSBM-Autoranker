@@ -12,7 +12,7 @@ from readin import readin,set_readin_args
 from readin_utils import *
 from calc_utils import *
 from region_utils import *
-from dict_utils import get_main,update_official_ranks,update_social_media
+from dict_utils import get_main,update_official_ranks,update_social_media,update_percentiles
 import scraper
 
 ## ARGUMENT PARSING
@@ -149,7 +149,7 @@ def set_db_args(args):
 
 ## AUXILIARY FUNCTIONS
 # loads database and stores any tournament data not already present given the url slug
-def read_tourneys(slugs,ver='default',year=None,base=None,current=False):
+def read_tourneys(slugs,ver='default',year=None,base=None,current=False,to_update_socials=False):
 	if year != None:
 		verstr = '%s/%s'%(ver,db_yearstr)
 	else:
@@ -192,6 +192,9 @@ def read_tourneys(slugs,ver='default',year=None,base=None,current=False):
 			else:
 				if v >= 4:
 					print('Skipping %s: more recent events already present'%slug)
+
+	if to_update_socials:
+		update_social_media((tourneys,ids,p_info,records,skills))
 	return tourneys,ids,p_info,records,skills
 
 # helper function to store all data from a call to readin
@@ -222,6 +225,7 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 		for e_id in entrants:
 			#e_id = entrant[2]
 			for abs_id in entrants[e_id][1]:
+				to_update_socials = False
 				idx = entrants[e_id][1].index(abs_id)
 				# store matrix to get entrant ids for each tourney given absolute id'
 				# (and also to get the reverse)
@@ -236,8 +240,7 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 				# team, tag, firstname, lastname, state, country
 				if abs_id not in p_info:
 					p_info[abs_id] = {}
-					# only update socials once, to avoid making calls for every entrant
-					update_social_media(dicts,abs_id)
+					to_update_socials = True
 				p_info[abs_id]['active'] = True
 				if names[e_id][0][idx] == None:
 					if 'team' not in p_info[abs_id]:
@@ -292,6 +295,10 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 				# store their current main // make a slot for it
 				if 'main' not in p_info[abs_id]:
 					p_info[abs_id]['main'] = None
+
+				# only update socials once, to avoid making calls for every entrant
+				if to_update_socials:
+					update_social_media(dicts,abs_id)
 
 				# store ranking data, with initial values if needed
 				if 'elo' not in skills:
@@ -469,6 +476,7 @@ def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_up
 			if sigrank_res:
 				ISR = {'params': sigrank_res}
 				save_dict(ISR,'ISR_%d_%d_%d'%(db_game,db_year,db_year_count),None,'..\\lib')
+		update_percentiles(dicts)
 
 	return True
 

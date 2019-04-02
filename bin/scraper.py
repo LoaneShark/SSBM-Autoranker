@@ -239,11 +239,79 @@ def scrape_ranks(game,year,yr_half=-1):
 		yearstr = '2017'
 	return tags,ratings,yearstr.strip('_')
 
+def check_ssbwiki(dicts,p_id,tag):
+	tourneys,ids,p_info,records,skills = dicts
+	#print('Checking Wiki for: %s (%d)'%(tag,p_id))
+	# modify tag to handle properly in urls
+	if tag is None:
+		return None
+	tag = tag.strip()
+	tag = tag.replace(' ','%20')
+	urlattempt = 'https://www.ssbwiki.com/Smasher:'+tag
 
+	try:
+		page = urlopen(urlattempt).read()
+		page = page.decode('UTF-8')
+		doc = BeautifulSoup(page,features='lxml')
+
+		head1 = doc.find('h1')
+		if head1.get('id') == 'firstHeading':
+			if 'disambiguation' in head1.text:
+				print('attempting to match...')
+				bulletlist = doc.find('ul')
+				for line in bulletlist.find_all('li'):
+					if ', a smasher from ' in line.text:
+						state = line.text.split(', a smasher from ')
+						state = state[1]
+
+						if state in p_info[p_id]['region']:
+							ssbwiki_stub = line.find('a').get('href')
+							print('matched: %s'%ssbwiki_stub)
+							return ssbwiki_stub[9:] # remove the '/Smasher:' that is prepended
+				print('no match found')
+				return None
+
+		for div in doc.find_all('div'):
+			if div.get('id') == 'mw-content-text':
+				if div.find('div').get('class') == None:
+					return urlattempt.split('/Smasher:')[1]
+				else:
+					#if div.find('div').get('class').split(' ')[0] == 'noarticletext':
+					return None
+		
+	except HTTPError:
+		#print('Page not found')
+		return None
+	except UnicodeEncodeError:
+		#print('Unicode Error')
+		return None
+
+	return None
 
 if __name__ == '__main__':
 	#print(scrape(1386,2019,verb=9))
-	print(scrape_ranks(4,2018))
+	#print(scrape_ranks(4,2018))
+	urlattempt = 'https://www.ssbwiki.com/Smasher:Light'
+
+	try:
+		page = urlopen(urlattempt).read()
+		page = page.decode('UTF-8')
+		doc = BeautifulSoup(page,features='lxml')
+
+		head1 = doc.find('h1')
+		if head1.get('id') == 'firstHeading':
+			if 'disambiguation' in head1.text:
+				bulletlist = doc.find('ul')
+				for line in bulletlist.find_all('li'):
+					if ', a smasher from ' in line.text:
+						state = line.text.split(', a smasher from ')
+						state = state[1]
+
+						#if state in p_info[p_id]['region']:
+						ssbwiki_stub = line.find('a').get('href')
+						print(ssbwiki_stub[9:]) # remove the '/Smasher:' that is prepended
+	except HTTPError:
+		print('ass')
 	#scrape_slugs(['https://www.ssbwiki.com/Tournament:Valhalla'])
 	
 	#url = 'https://www.ssbwiki.com/List_of_national_tournaments'

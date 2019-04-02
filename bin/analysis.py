@@ -126,7 +126,8 @@ def main():
 
 	#resume = get_resume(dicts,None,tags=['Iago','Jobbo','Jobboman','Crimock','CrimockLyte'])
 	#resume = get_resume(dicts,None,tags=['Draxsel','iModerz','TehGuitarLord','Joe-J','San','PikaPika!','K.I.D. Goggles','K.I.D.Goggles','Dom','Fun China'])
-	resume = get_resume(dicts,None,tags=['Nairo'])
+	#resume = get_resume(dicts,None,tags=['Nairo','Axe','Iago'])
+	#print(get_social_media(dicts,1004))
 	
 	#if game_idx == 1:
 		#print(tourneys[6076])
@@ -147,6 +148,7 @@ def main():
 		#print(get_region(dicts,14514,to_calc=True))
 	#resume = get_resume(dicts,[1000,4465,1004])
 	#resume = get_resume(dicts,None,tags=['Surfero','kla','ZENT','FriedLizard','Katsu','Bread'])
+	#print_resume(dicts,resume,g_key='player',s_key='event')
 	#print_resume(dicts,resume,g_key='player',s_key='event')
 	#disp_all(dicts,key='elo',dispnum=10,min_activity=min_act,tier_tol=-1,plot_skills=False)
 	#if game_idx == 1386 or game_idx == 3:
@@ -191,7 +193,7 @@ def main():
 				#print(line.join(' '))
 	iter_num = len(data_hist[id_list[0]])
 	#print('Dict time elapsed:','{:.3f}'.format(dict_time) + ' s')
-	if game_idx == 1:
+	if game_idx == 1 and False:
 		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,1004,plot_tags=True,sig_mode='alt',plot_running_sigmoid=True)
 		plot_hist(data_hist,p_id=1004,plot_delta=True)
 		plot_winprobs(iagoranks,winprobs,sigmoids,id_list,4692,plot_tags=True,sig_mode='alt',plot_running_sigmoid=True)
@@ -282,9 +284,9 @@ def main():
 
 				#print([p_id for p_id in id_list if sigmoids[p_id][2] > 1.1])
 
-	print_resume(dicts,resume,g_key='player',s_key='event')
 
-	if (game_idx == 3 or game_idx == 1386):
+	#if (game_idx == 3 or game_idx == 1386):
+	if game_idx == 1386:
 		#running_winprobs(iagoranks,winprobs,7648)
 		#running_winprobs(iagoranks,winprobs,15768)
 		#running_winprobs(iagoranks,winprobs,57924)
@@ -328,7 +330,8 @@ def main():
 	db_str_key = str(game_idx)+'_'+str(year)+'_'+str(year_count)
 	if args.current_db:
 		db_str_key += '_c'
-	update_db(dicts,db_str_key,force_update=True)
+	#update_db(dicts,db_str_key,force_update=True)
+	update_db(dicts,db_str_key,force_update=False)
 
 	#generate_matchup_chart(dicts,game_idx,year,year_count,id_list=id_list,label_mode='ones',v=int(args.verbosity),infer_characters=True,n_bins=10000)
 	'''
@@ -347,7 +350,11 @@ def main_read():
 	tourneys,ids,p_info,records,skills = easy_load_db(str(game_idx)+'/'+yearstr)
 	tourneys,ids,p_info,records,skills = read_year(game_idx,year,base=(tourneys,ids,p_info,records,skills))
 	for i in range(1,year_count+1):
-		tourneys,ids,p_info,records,skills = read_year(game_idx,year+i,base=(tourneys,ids,p_info,records,skills))
+		if i == year_count:
+			#tourneys,ids,p_info,records,skills = read_year(game_idx,year+i,base=(tourneys,ids,p_info,records,skills),to_update_socials=True)
+			tourneys,ids,p_info,records,skills = read_year(game_idx,year+i,base=(tourneys,ids,p_info,records,skills))
+		else:
+			tourneys,ids,p_info,records,skills = read_year(game_idx,year+i,base=(tourneys,ids,p_info,records,skills))
 
 	if game_idx == 1386:
 		filename = 'ultimate_mains.csv'

@@ -1,10 +1,11 @@
 import numpy as np 
 import scipy as sp 
-import os,sys,pickle,time,datetime
+import os,sys,pickle,time,datetime,math
 import firebase_admin
 from firebase_admin import db as fdb
 from firebase_admin.db import ApiCallError
 from firebase_admin import auth
+from six.moves.urllib.error import HTTPError
 ## UTIL IMPORTS
 from db_utils import load_db_sets,easy_load_db_sets
 
@@ -34,19 +35,45 @@ def update_db(dicts,db_key,force_update=False):
 		#print('pushed')
 		print('no db found')
 	# if game not in db or game is blank, add it
-	if game_db.get() is None or (type(game_db.get()) is str and game_db.get() == '') or force_update:
+	if game_db.get() is None or (type(game_db.get()) is str and game_db.get() == '') or force_update or True:
 		#game_db.set('')
 		# add directories for all the major information dicts
 		for dictname,dictdata in zip(['tourneys','ids','p_info','records','skills','sets'],dicts):
 			sub_db = game_db.child(dictname)
 			# import dict data to firebase db
 			if sub_db.get() is None or force_update:
-				sub_db.set(dictdata)
+				try:
+					sub_db.set(dictdata)
+				# if dict is too big to upload at once
+				except ApiCallError as e:
+					print('ApiCallError pushing \'%s\': attempting batch upload...'%dictname)
+					if dictname == 'skills':
+						for skill_key in dictdata.keys():
+							skill_db_ref = sub_db.child(skill_key)
+							try:
+								skill_db_ref.set(dictdata[skill_key])
+							except ApiCallError as e2:
+								batch_upload(dictdata[skill_key],skill_db_ref)
+					else:
+						batch_upload(dictdata,sub_db)
 		print('%s pushed'%db_key)
 
 # update all games for the given year/count [WIP]
-def update_all(dicts,year,year_count):
-	return False
+def update_all(dicts,year,year_count,is_current=False):
+	for game_id in [1,2,3,4,5,1386]:
+		gamestr = str(game_id)+'_'+str(year)+'_'+str(year_count)
+		if is_current:
+			gamestr += '_c'
+		update_db(dicts,gamestr)
+
+def delete_sub_db(db_ref,game,year,year_count,is_current=False):
+	gamestr = str(game)+'_'+str(year)+'_'+str(year_count)
+	if is_current:
+		gamestr += '_c'
+	print('deleting... ',gamestr)
+	sub_ref = db_ref.child(gamestr)
+
+	return sub_ref.delete()
 
 # gets a reference to the firebase db object
 def get_db_reference():
@@ -76,7 +103,31 @@ def is_clean_dict(e_dict,e_key=None):
 			print(e_dict)
 			return False
 
+# uploads a dict by chunks, in the event that it's too big to be pushed all at once
+def batch_upload(big_dict,sub_db_ref,batch_size=500):
+	dict_keys = sorted(big_dict.keys())
+	num_batches = math.ceil(float(len(dict_keys))/float(batch_size))
+	print('Separating into batches:... N:',len(dict_keys),'  N_batches:',num_batches)
+
+	for nb in range(num_batches):
+		print('uploading batch: %d'%nb)
+		# if it's the last batch, go til the end of the remaining keys
+		if nb >= num_batches-1:
+			upload_batch = dict_keys[nb*batch_size:]
+		else:
+			upload_batch = dict_keys[nb*batch_size:(nb+1)*batch_size]
+
+		upload_dict = {this_key:big_dict[this_key] for this_key in upload_batch}
+		print(len(upload_batch),len(upload_dict))
+
+		sub_db_ref.update(upload_dict)
+
 if __name__ == '__main__':
 
-	for user in auth.list_users().iterate_all():
-		print('User: ' + user.uid)
+	#for user in auth.list_users().iterate_all():
+	#	print('User: ' + user.uid)
+	curr_db = get_db_reference()
+	for game in [1,2,3,4,5,1386]:
+		print(delete_sub_db(curr_db,game,2018,0))
+		print(delete_sub_db(curr_db,game,2018,1))
+		print(delete_sub_db(curr_db,game,2018,1,True))

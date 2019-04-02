@@ -1,6 +1,7 @@
 ## DEPENDENCY IMPORTS
+import numpy as np
 import matplotlib.pyplot as plt 
-import os,sys,pickle,time
+import os,sys,pickle,time,math
 import re
 from six.moves.urllib.request import urlopen
 from six.moves.urllib.error import HTTPError
@@ -9,7 +10,7 @@ from copy import deepcopy as dcopy
 ## UTIL IMPORTS
 from readin_utils import *
 from region_utils import *
-from scraper import scrape_ranks
+from scraper import scrape_ranks,check_ssbwiki
 
 flatten = lambda l: [item for sublist in l for item in sublist] if type(l) is list else []
 
@@ -233,11 +234,12 @@ def get_resume(dicts,p_id,tags=None,t_ids=None,team=None,slugs=None,chars=None):
 # if multiple matches, returns first found result (by p_id or skill), unless first_only is disabled
 def get_abs_id_from_tag(dicts,tag,first_only=True,sort_by_skill=False,leet_sensetive=True):
 	tourneys,ids,p_info,records,skills = dicts
-	p_ids = [abs_id for abs_id in p_info if tag in p_info[abs_id]['aliases'] or \
-											tag.strip().lower() in [p_alias.strip().lower() for p_alias in p_info[abs_id]['aliases']]]
+	#print(tag)
+	p_ids = [abs_id for abs_id in p_info if tag is not None if tag in p_info[abs_id]['aliases'] or \
+											tag.lower().strip() in [p_alias.lower().strip() for p_alias in p_info[abs_id]['aliases'] if p_alias is not None]]
 
 	if len(p_ids) <= 0 and not leet_sensetive:
-		p_ids = [abs_id for abs_id in p_info if any([leet_tag.strip().lower() in [p_alias.strip().lower() for p_alias in p_info[abs_id]['aliases']] for leet_tag in leetify(tag)])]
+		p_ids = [abs_id for abs_id in p_info if any([leet_tag.lower().strip() in [p_alias.lower().strip() for p_alias in p_info[abs_id]['aliases'] if p_alias is not None] for leet_tag in leetify(tag)])]
 	if len(p_ids) > 0:
 		if len(p_ids) > 1:
 			if sort_by_skill:
@@ -278,6 +280,7 @@ def get_en_tag(dicts,tag=None,p_id=None):
 
 # given a tag, returns all possible "leet" conversions of it, recursively
 # e.g. Mango -> [Mango, Mang0, M4ngo, M4ng0, M@ngo, M@ng0]
+# (this feature was added almost entirely because of mango/mang0)
 def leetify(tag):
 	res = set([])
 	leetify_rec(tag,res,0)
@@ -329,20 +332,16 @@ def list_tourneys(dicts,year=None,list_ids=False):
 			return [tourneys[t_id]['name'] for t_id in tourneys if t_id != 'slugs' for t_date in tourney[t_id]['date'] if t_date[2] == year]
 
 ## db_utils helpers
-def update_official_ranks(dicts,game,year,lookback=False):
+def update_official_ranks(dicts,game,year,year_half=1,lookback=False):
 	tourneys,ids,p_info,records,skills = dicts
-
-	## DELETE ME
-	#if 'mainrank' not in skills:
-	#	skills['mainrank'] = {}
-	#if 'mainrank_readin' not in skills:
-	#	skills['mainrank_readin'] = {}
 
 	# update the previous year if it wasn't already there (for first import)
 	if lookback:
 		update_official_ranks(dicts,game,year-1,lookback=False)
+	if game == 3 and year_half == 1:
+		update_official_ranks(dicts,game,year,year_half=0)
 	# scrape ranks if available
-	scrape_res = scrape_ranks(game,year)
+	scrape_res = scrape_ranks(game,year,year_half)
 	if not scrape_res:
 		return False
 	else:
@@ -359,10 +358,10 @@ def update_official_ranks(dicts,game,year,lookback=False):
 			#print(old_yearkey)
 			#print(skills['mainrank_readin'][old_yearkey])
 			for year_line in skills['mainrank_readin'][old_yearkey]:
-				#print(line)
 				line_id = year_line[3]
-				if 'mainrank' in p_info[line_id]:
-					del p_info[line_id]['mainrank']
+				if line_id is not None:
+					if 'mainrank' in p_info[line_id]:
+						del p_info[line_id]['mainrank']
 
 	# update skill histories
 	for line in skills['mainrank_readin'][yearkey]:
@@ -374,10 +373,40 @@ def update_official_ranks(dicts,game,year,lookback=False):
 			# players get this listed under skills per year key
 			if p_id not in skills['mainrank']:
 				skills['mainrank'][p_id] = {}
-			skills['mainrank'][p_id][yearkey] = [p_rank,p_rating]
+			if year not in skills['mainrank'][p_id]:
+				skills['mainrank'][p_id][year] = {}
+			skills['mainrank'][p_id][year][yearkey] = [p_rank,p_rating]
 						
 			# p_info is updated to contain the latest ranks
 			p_info[p_id]['mainrank'] = p_rank
+
+def update_percentiles(dicts):
+	tourneys,ids,p_info,records,skills = dicts
+
+	for skill_key in ['elo','glicko','srank']:
+	#for skill_key in ['elo','glicko','srank','trueskill']:
+
+		if skill_key == 'srank':
+			p_data = np.array([[p_id,1.-p_info[p_id][skill_key]] for p_id in p_info])
+		elif skill_key == 'glicko':
+			p_data = np.array([[p_id,p_info[p_id][skill_key][0]] for p_id in p_info])
+		else:
+			p_data = np.array([[p_id,p_info[p_id][skill_key]] for p_id in p_info])
+		# p_data = [p_id,skill]
+
+		p_rank_data = [[i,p_sub[0],p_sub[1]] for i,p_sub in enumerate(sorted(p_data,key=lambda l: l[1],reverse=True),1)]
+		# p_rank_data = [rank,p_id,skill]
+
+		print('min/max ranks:',skill_key)
+		print(p_rank_data[0],p_info[p_rank_data[0][1]])
+		print(p_rank_data[-1],p_info[p_rank_data[-1][1]])
+		skillmax = float(p_rank_data[0][2])
+		skillmin = float(p_rank_data[-1][2])
+
+		for p_line in p_rank_data:
+			p_info[int(p_line[1])][skill_key+'-rnk'] = p_line[0]
+			p_info[int(p_line[1])][skill_key+'-pct'] = int(((float(p_line[2])-skillmin)/(skillmax-skillmin))*100)
+
 
 # returns the number of times a player [p] used a given character [c] 
 # (by id values)
@@ -397,11 +426,15 @@ def get_main(p,p_info):
 	else:
 		return ''
 
-def get_social_media(p_id):
+def get_social_media(dicts,p_id):
+	tourneys,ids,p_info,records,skills = dicts
 	player_url = 'https://api.smash.gg/player/%d'%p_id
+	#print(p_id)
+	aliases = p_info[p_id]['aliases']
 	try:
 		pfile = urlopen(player_url).read()
 		pdata = json.loads(pfile.decode('UTF-8'))
+		#print('opened file')
 
 		player_data = pdata['entities']['player']
 		p_twitter = player_data['twitterHandle']
@@ -413,9 +446,32 @@ def get_social_media(p_id):
 		else:
 			p_smashboards = None
 		p_ssbwiki = player_data['ssbwikiLink']
+		# check ssbwiki manually if not provided
+		if p_ssbwiki == None:
+			if aliases is None:
+				#print('..no aliases')
+				tag = player_data['gamerTag']
+				if has_cjk(tag):
+					#print('..before tag: %s'%tag)
+					tag = transliterate(tag).strip(' <>')
+					#print('..after tag: %s'%tag)
+				wiki_url = check_ssbwiki(dicts,p_id,tag)
+				if wiki_url is not None:
+					p_ssbwiki = wiki_url
+				else:
+					#print('..check failed')
+					p_ssbwiki = None
+			else:
+				#print('..checking aliases')
+				for tag in aliases:
+					wiki_url = check_ssbwiki(dicts,p_id,tag)
+					if wiki_url is not None:
+						p_ssbwiki = wiki_url
+						break
 
 		return [p_twitter,p_twitch,p_reddit,p_youtube,p_smashboards,p_ssbwiki]
-	except HTTPError:
+	except HTTPError as e:
+		print('Connection Error::',e)
 		return False
 
 def update_social_media(dicts,p_ids):
@@ -427,7 +483,13 @@ def update_social_media(dicts,p_ids):
 		p_ids = [p_ids]
 
 	for abs_id in p_ids:
-		socials = get_social_media(abs_id)
+		#print(abs_id)
+		socials = get_social_media(dicts,abs_id)
+		# if the player doesn't exist (???)
+		if not socials:
+			print('Error: %d (%s) not found on smash.gg player API'%(abs_id,p_info[abs_id]))
+			return False
+		#print(p_id)
 		p_twitter,p_twitch,p_reddit,p_youtube,p_smashboards,p_ssbwiki = socials
 		p_info[abs_id]['twitter'] = p_twitter
 		p_info[abs_id]['twitch'] = p_twitch
@@ -579,7 +641,7 @@ def print_resume(dicts,res,g_key='player',s_key=None,disp_raw=False,disp_wins=Tr
 		if res[0][2] != None and res[0][2] != ' ' and res[0][2] != '':
 			tagstr += '%s | '%res[0][2]
 		tagstr += res[0][3]
-		print('%s (id: %d) || %s (Elo: %d, Glicko: %d, SigRank: %d)'%(tagstr,res[0][1],res[0][4],round(p_info[res[0][1]]['elo'],3),round(p_info[res[0][1]]['glicko'][0],3),round(p_info[res[0][1]]['srank'],3)))
+		print('%s (id: %d) || %s (Elo: %d, Glicko: %d, SigRank: %d)'%(tagstr,res[0][1],res[0][4],round(p_info[res[0][1]]['elo'],3),round(p_info[res[0][1]]['glicko'][0],3),p_info[res[0][1]]['srank']))
 	else:
 		print(str(oldval)+': ')
 	s_tagstr = ''
@@ -600,7 +662,7 @@ def print_resume(dicts,res,g_key='player',s_key=None,disp_raw=False,disp_wins=Tr
 				if line[2] != None:
 					tagstr += '%s | '%line[2]
 				tagstr += line[3]
-				print('%s (id: %d) || %s (Elo: %d, Glicko: %d, SigRank: %d)'%(tagstr,line[1],line[4],round(p_info[line[1]]['elo'],3),round(p_info[line[1]]['glicko'][0],3),round(p_info[res[0][1]]['srank'][0],3)))
+				print('%s (id: %d) || %s (Elo: %d, Glicko: %d, SigRank: %d)'%(tagstr,line[1],line[4],round(p_info[line[1]]['elo'],3),round(p_info[line[1]]['glicko'][0],3),p_info[res[0][1]]['srank']))
 			else:
 				print(str(line[h_idx])+': ')
 		# print secondary header if on new subsection

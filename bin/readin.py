@@ -488,7 +488,7 @@ def read_phases(tourney):
 		t_slug = tdata['entities']['tournament']['slug'].split('/')[1]
 		t_type = tdata['entities']['tournament']['tournamentType']
 		# date tuple in (year, month, day) format
-		t_date = time.localtime(tdata['entities']['tournament']['startAt'])[:3]
+		t_date = time.localtime(tdata['entities']['tournament']['endAt'])[:3]
 		t_region = (tdata['entities']['tournament']['addrState'],tdata['entities']['tournament']['countryCode'])
 		# 2-length list with the urls for the first profile image and banner images found (for the tourney)
 		t_propic = [img['url'] for img in tdata['entities']['tournament']['images'] if img['type'] == 'profile']
