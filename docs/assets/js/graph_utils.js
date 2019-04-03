@@ -23,30 +23,63 @@ Chart.plugins.register({
   }
 });
 
-
 function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='elo'){
 	var ctx = $('#'+type+'_chart')[0].getContext('2d');
 	//var ctx = $('#tempChart');
-
+	//console.log(type)
 	var skillset = [];
 	var initialSkillset = [];
 	var rankPeriod = [];
 	var postPeriod = [];
 	if (type == 'mainrank'){
-		var skillKeys = Object.keys(skillHistory)
+		var timeScale = 'year'
+		var skillYears = Object.keys(skillHistory)
+		console.log(skillHistory)
 		//skillKeys = Object.keys(skillHistory[skillYear])
-		for (j=0;j<skillKeys.length;j++){
-			var rankName = skillKeys[j];
-			var skillval = skillHistory[rankName][0];
+		for (j=0;j<skillYears.length;j++){
+			var skillYear = skillYears[j];
+			var yearRankNames = Object.keys(skillHistory[skillYear]);
+			for (k=0;k<yearRankNames.length;k++){
+				rankName = yearRankNames[k];
+				rankVal = skillHistory[skillYear][rankName][0];
+				var jsDate = new Date(skillYear,k*(12/yearRankNames.length),1);
+
+				// prevents plotting of the same ranking twice -- needed until I fix my db
+				if (!skillset.some(e => e.label === rankName)) {
+					skillset.push({'t': jsDate, 'y': rankVal, 'label': rankName, 'present': true});
+				}
+
+			}
 			//skillval = skillHistory[skillYear][skillKeys[j]][0];
-			var jsDate = new Date(2016+j,0,1);
 			// var jsDate = skillYear;
 
-			skillset.push({'t': jsDate, 'y': skillval, 'label': rankName});
 		}
+		//console.log(skillset)
+	} else if (type == 'srank'){
+		var skillTourneys = Object.keys(skillHistory)
+		var timeScale = 'month';
+		var placementArray = [];
+		var tempArray = [];
+		placementSnapshot.forEach(function(childSnapshot){
+			placementArray.push(childSnapshot.key);
+		});
+		for (j=0;j<skillTourneys.length;j++){
+			var t_id = skillTourneys[j];
+			var skillval = skillHistory[t_id];
+
+			var t_date = tourneySnapshot.child(t_id.toString()).child('date').val();
+			var t_name = tourneySnapshot.child(t_id.toString()).child('name').val();
+			var jsDate = new Date(t_date[0],t_date[1]-1,t_date[2]);
+
+			// add to skillset
+			var attendance = placementArray.includes(t_id);
+			skillset.push({'t': jsDate, 'y': skillval, 'label':t_name, 'present':attendance});
+		}
+		var totalLen = skillset.length;
 	} else {
 		placementSnapshot.forEach(function(childSnapshot){
 			var t_id = childSnapshot.key;
+			var timeScale = 'month'
 			var skillval = skillHistory[t_id];
 			if (type == 'glicko'){
 				skillval = skillval[0];
@@ -56,45 +89,100 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 			var jsDate = new Date(t_date[0],t_date[1]-1,t_date[2]);
 
 			// add to skillset
-			skillset.push({'t': jsDate, 'y': skillval, 'label':t_name});
+			skillset.push({'t': jsDate, 'y': skillval, 'label':t_name, 'present':true});
 		});
+	}
+	// return null if player is inactive
+	if (skillset.length == 0){
+		return null;
 	}
 	skillset.sort(function(a,b){
 		return a.t-b.t;
 	})
 
-
 	var legendColors = chartColorsFromType(type);
 	var todayDate = new Date();
-	firstEvent = skillset[0]
-	lastEvent = skillset[skillset.length-1]
+	if (type != 'srank'){
+		var firstEvent = skillset[0]
+	} else { // get "first event" of the "current" section of the db
+		var firstEvent = null;
+		var srankOldSkill = 1.;
+		for (ei=0;ei<skillset.length;ei++){
+			if (firstEvent == null && skillset[ei].present){
+				firstEvent = skillset[ei];
+				if (ei > 0){ // get the skill value at the final "non-current" event (as the "initial" skill) 
+					srankOldSkill = skillset[ei-1].y;
+				}
+			}
+		}
+		if (firstEvent == null){ // handle error cases
+			firstEvent = skillset[0]
+		}
+	}
+	var lastEvent = skillset[skillset.length-1]
 	var initialDate = new Date(firstEvent.t.getFullYear(),Math.max(firstEvent.t.getMonth()-1,0),1);
 	var yBounds = getYAxisBounds(gameId,type);
+
+	var srankPointBackgrounds = []
+	var srankPointBackgrounds = []
+	var srankCurrentBackgrounds = []
+	var srankUnrankedBackgrounds = []
+	var srankBgs = [srankPointBackgrounds,srankPointBackgrounds,srankCurrentBackgrounds,srankUnrankedBackgrounds]
 	// fill in "skill" before being placed,ranked (dashed line)
 	if (type == 'srank'){
-		initialSkillset.push({'t':initialDate,'y':1.0,'label':''});
-		initialSkillset.push({'t':firstEvent.t,'y':firstEvent.y,'label':''});
+		initialSkillset.push({'t':initialDate,'y':srankOldSkill,'label':'','present':false});
+		initialSkillset.push({'t':firstEvent.t,'y':firstEvent.y,'label':'','present':true});
 	} else if (type == 'elo' || type == 'glicko' || type == 'trueskill'){
-		initialSkillset.push({'t':initialDate,'y':1500,'label':''})
-		initialSkillset.push({'t':firstEvent.t,'y':firstEvent.y,'label':''});
+		initialSkillset.push({'t':initialDate,'y':1500,'label':'','present':false})
+		initialSkillset.push({'t':firstEvent.t,'y':firstEvent.y,'label':'','present':true});
 	}
 	initialSkillset.sort(function(a,b){
 		return a.t-b.t;
 	})
-	// add a dotted line from their last event to today's date
-	postPeriod.push({'t':lastEvent.t,'y':lastEvent.y,'label':''})
-	postPeriod.push({'t':todayDate,'y':postPeriod[0].y,'label':''})
 	// separate out the period before being ranked from the rest of the sets
 	if (type == 'srank'){
-		rankLen = Math.min(3,skillset.length);
+		maxRankLen = 3;
+		rankLen = Math.min(maxRankLen,skillset.length);
+		r_i = 0;
 		for (i=0;i<rankLen;i++){
-			if (i<rankLen-1){
-				rankEvent = skillset.shift()
-				rankPeriod.push({'t':rankEvent.t,'y':rankEvent.y,'label':rankEvent.label});
+			// in the event they are not done being ranked yet
+			if (skillset.length == 0){
+				continue;
 			} else {
-				rankPeriod.push({'t':skillset[0].t,'y':skillset[0].y,'label':skillset[0].label});
+				// if present at this event, add to "rank period"
+				if (skillset[r_i].present){
+					if (i<rankLen-1){
+						rankEvent = skillset.shift();
+						rankPeriod.push({'t':rankEvent.t,'y':rankEvent.y,'label':rankEvent.label,'present':rankEvent.present});
+					} else {
+						rankPeriod.push({'t':skillset[r_i].t,'y':skillset[r_i].y,'label':skillset[r_i].label,'present':skillset[r_i].present});
+					}
+				// otherwise add other events and extend "rank period" (so we get 3 "present" events to complete ranking period)
+				} else {
+					i -= 1;
+					if (i<rankLen-1){
+						rankEvent = skillset.shift();
+						//rankPeriod.push({'t':rankEvent.t,'y':rankEvent.y,'label':rankEvent.label,'present':rankEvent.present});
+					} else {
+						rankPeriod.push({'t':skillset[r_i].t,'y':skillset[r_i].y,'label':skillset[r_i].label,'present':skillset[r_i].present});
+					}
+				}
 			}
 		}
+	}
+	// add a dotted line from their last event to today's date
+	if (skillset.length == 0){
+		if (rankPeriod.length == 0){
+			return null; // if both are empty, this is an inactive player
+		} else {
+			lastEvent = rankPeriod[rankPeriod.length-1];
+		}
+	} else {
+		lastEvent = skillset[skillset.length-1];
+	}
+	if (type != 'mainrank'){
+		postPeriod.push({'t':lastEvent.t,'y':lastEvent.y,'label':'','present':lastEvent.present})
+		postPeriod.push({'t':todayDate,'y':postPeriod[0].y,'label':'','present':false})
 	}
 
 	var myChart = new Chart(ctx, {
@@ -104,6 +192,8 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 				label: chartLabelFromType(type,gameId),
 				backgroundColor: legendColors[0][1],
 				borderColor: legendColors[0][0],
+				pointBackgroundColor: srankBgs[0],
+				//pointBorderColor: srankBgs[0],
 				steppedLine: true,
 				fill: false,
 				data: skillset
@@ -131,6 +221,8 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 				label: chartLabelFromType(type,gameId)+' (Unranked)',
 				backgroundColor: legendColors[3][1],
 				borderColor: legendColors[3][0],
+				pointBackgroundColor: srankBgs[3],
+				//pointBorderColor: srankBgs[3],
 				steppedLine: true,
 				fill: false,
 				borderDash: [5,5],
@@ -164,7 +256,7 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 						var eventName = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].label;
 						var currSkill = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y;
 						if (type == 'srank'){
-							currSkill = Math.round(currSkill*100.0)/100.0;
+							currSkill = Math.round(currSkill*1000.0)/1000.0;
 						} else {
 							currSkill = Math.round(currSkill);
 						}
@@ -174,10 +266,10 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 						//console.log(tooltipItem)
 						if (tooltipItem.index == 0){
 							if (type == 'srank'){
-								var oldSkill = 1.0;
+								var oldSkill = srankOldSkill;
 							} else if (type == 'mainrank'){
-								var oldSkill = getMainrankSize(gameId);
 								return 'NEW!'
+								var oldSkill = getMainrankSize(gameId);
 							} else {
 								var oldSkill = 1500.0;
 							}
@@ -186,7 +278,7 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 						}
 						var skillDel = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y - oldSkill;
 						if (type == 'srank'){
-							skillDel = Math.round(100.0*skillDel)/100.0;
+							skillDel = Math.round(1000.0*skillDel)/1000.0;
 						} else {
 							skillDel = Math.round(skillDel);
 						}
@@ -203,9 +295,10 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 					labelTextColor: function(tooltipItem,data){
 						if (tooltipItem.index == 0){
 							if (type == 'mainrank'){
+								return 'rgb(255,255,255)';
 								var oldSkill = 999999;
 							}else if (type == 'srank'){
-								var oldSkill = 1;
+								var oldSkill = srankOldSkill;
 							} else {
 								var oldSkill = 1500.0;
 							}
@@ -236,7 +329,7 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 	            xAxes: [{
 	                type: 'time',
 	                time: {
-	                    unit: 'month',
+	                    unit: timeScale,
 	                    min: initialDate,
 	                    max: todayDate
 	                }
@@ -251,6 +344,32 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 	        }
 	    }
 	});
+	if (type == 'srank'){
+		// change fill for "not present" events for s-rank
+		datasetsToUpdate = [0,3];
+		for (ds = 0; ds<datasetsToUpdate.length; ds++){
+			ds_i = datasetsToUpdate[ds];
+			bgArr = srankBgs[ds_i];
+			for (p_i=0; p_i<myChart.data.datasets[ds_i].data.length; p_i++){
+				if (myChart.data.datasets[ds_i].data[p_i].present){
+					bgArr.push(legendColors[ds_i][1]);
+					//myChart.data.datasets[ds_i].data[p_i]
+				} else {
+					bgArr.push('rgb(255, 255, 255, 1)')
+				}
+			}
+		}
+	} else { // everyone gets default bg if not srank
+		bgArr = srankBgs[0]
+		for (p_i=0; p_i<myChart.data.datasets[0].data.length; p_i++){
+			if (myChart.data.datasets[0].data[p_i].present){
+				bgArr.push(legendColors[0][1]);
+				//myChart.data.datasets[0].data[p_i]
+			} else {
+				bgArr.push('rgb(255, 255, 255, 1)')
+			}
+		}
+	}
 	return myChart;
 }
 

@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
 {% seo %}
+    <link rel="icon" href="/assets/images/site_icons/sr_logo_minimal.png">
+    <link rel="apple-touch-icon" sizes="128x128" href="/assets/images/site_icons/sr_logo_touch_icon.png">
     <link rel="stylesheet" href="{{ "/assets/css/style.css?v=" | append: site.github.build_revision | relative_url }}">
     {% include bootstrap_css.html %}
     {% include bootstrap_scripts.html %}
@@ -14,7 +16,7 @@
     <![endif]-->
   </head>
   <body>
-    <div class="wrapper">
+    <div class="container" style="width:65vw;">
       <header>
         {% include navigation.html %}
         <!--

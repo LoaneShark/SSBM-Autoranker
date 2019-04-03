@@ -1,20 +1,54 @@
 <footer class="site-footer h-card">
   <data class="u-url" href="/"></data>
 
-  <div class="wrapper">
+  <div class="container wrapper">
 
     <h2 class="footer-heading">Contact me!</h2>
 
-    <div class="footer-col-wrapper">
-      <div class="footer-col footer-col-1">
+    <div class="row">
+      <div class="col">
         <ul class="contact-list">
-          <li class="p-name">Report issues to: </li><li><a class="u-email" href="mailto:{{ site.email }}">{{ site.email }}</a></li></ul>
+          <li class="p-name">Report issues to: </li><li><a class="u-email" href="mailto:{{ site.support_email }}">{{ site.support_email }}</a></li>
+          <li class="p-name">For business inquiries: </li><li><a class="u-email" href="mailto:{{ site.email }}">{{ site.email }}</a></li></ul>
       </div>
 
-      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/LoaneShark"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">LoaneShark</span></a></li><li><a href="https://www.twitter.com/TheLoaneRanger"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg> <span class="username">TheLoaneRanger</span></a></li></ul></div>
-
-      <div class="footer-col footer-col-3">
-        <p>SmashRanks.com is in no way affiliated with Nintendo, smash.gg, or other regulatory bodies. Super Smash Bros. is a registered trademark of Nintendo of America Inc.</p>
+      <div class="col"><ul class="social-media-list">
+        <li>
+          <a href="https://github.com/LoaneShark">
+            <i class="fab fa-fw fa-github"></i>
+            <span class="username">LoaneShark</span>
+          </a></li>
+        <li>
+          <a href="https://www.twitter.com/TheLoaneRanger">
+            <i class="fab fa-fw fa-twitter"></i>
+            <span class="username">TheLoaneRanger</span>
+          </a></li>
+        <li>
+          <a href="">
+            <i class="fab fa-fw fa-paypal"></i>
+            <span class="username">Paypal [Coming Soon]</span>
+          </a></li>
+        <li>
+          <a href="">
+            <i class="fab fa-fw fa-patreon"></i>
+            <span class="username">Patreon [Coming Soon]</span>
+          </a></li>
+        <li>
+          <a href="https://ko-fi.com/iago27">
+            <!--<i class="fab fa-kofi"></i>-->
+            <!--<img height="20" width="20" color="111111" src="https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/ko-fi.svg" />-->
+            <div class="fa-stack fa-fw fa-xs">
+              <i class="fas fa-coffee fa-stack-2x" data-fa-transform="shrink-2"></i>
+              <i class="fas fa-heart fa-stack-1x" data-fa-transform="shrink-5 up-2 left-1" style="color:white"></i>
+            </div>
+            <span class="username">Ko-Fi [Coming Soon]</span>
+          </a></li>
+        </ul></div>
+    </div>
+    <div class="row">
+      <div class="col">
+        <p class="text-muted">SmashRanks.com is in no way affiliated with Nintendo, smash.gg, or other regulatory bodies or corporations.
+          <br>Super Smash Bros. is a registered trademark of Nintendo of America Inc.</p>
       </div>
     </div>
   </div>

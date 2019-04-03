@@ -1,8 +1,4 @@
----
-layout: pretty
-title: About
-permalink: /about/
----
+
 
 About
 ======

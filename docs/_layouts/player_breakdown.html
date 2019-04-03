@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{{ "/assets/css/style.css?v=" | append: site.github.build_revision | relative_url }}">
     {% include bootstrap_css.html %}
     {% include bootstrap_scripts.html %}
 <style type="text/css">
@@ -21,23 +22,44 @@
 }
 .jumbotron .container {
   position: relative;
-  padding:35px;
+  padding:30px;
   /*display: flex;*/
 }
 .card-img-top {
   height:5vw;
   object-fit:cover;
 }
+.card-title {
+
+}
+.display-4 {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.p-2 .propic {
+
+}
+
+/*
+.custom-switch:before {
+  content: "Scores";
+}
+.custom-switch:after {
+  content: "Ranks";
+}*/
 </style>
+<link rel="icon" href="/assets/images/site_icons/sr_logo_minimal.png">
+<link rel="apple-touch-icon" sizes="128x128" href="/assets/images/site_icons/sr_logo_touch_icon.png">
 <link href="/assets/css/flags.css" rel=stylesheet type="text/css">
+<link href="/assets/css/typeahead_bootstrap.css" rel="stylesheet" type="text/css">
 {% seo %}
-    <link rel="stylesheet" href="{{ "/assets/css/style.css?v=" | append: site.github.build_revision | relative_url }}">
     <!--[if lt IE 9]>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
     <![endif]-->
   </head>
   <body>
-    <div class="wrapper">
+    <div class="container" style="width:65vw">
       <header>
         {% include navigation.html %}
         {% if page.url == "/" %}
@@ -55,7 +77,10 @@
       </section>
 
       {% include player_search.html %}
-      <div class="jumbotron shadow rounded" id="player_card">
+      <div class="invisible" id="warning_div">
+        <p class="h5" id="warning_div_text"></p>
+      </div>
+      <div class="jumbotron shadow rounded invisible" id="player_card">
       </div>
       {% include footer.html %}
     </div>
@@ -75,6 +100,7 @@
         //console.log('Selection: ' + suggestion.id);
         Finch.navigate(''+suggestion.id)
       });
+
       var gameId = getGameId('{{page.game}}')
       //var searchbar_ref = firebase.database().ref("/"+gameId+"_2018_1/p_info");
       var searchbar_ref = firebase.database().ref("/"+gameId+"_2016_3_c/p_info");
@@ -99,7 +125,7 @@
             identify: function(obj) {return obj.id},
             local: searchbar_players
           });
-          $('#player_searchbar .typeahead').typeahead({
+          searchbarTypeahead = $('#player_searchbar .typeahead').typeahead({
             hint: true,
             highlight: true,
             minLength: 1
@@ -114,8 +140,15 @@
               empty: ['<div><p class="text-muted">Search...</p></div>']
             }
           });
-        }
-      });
+
+          searchbarTypeahead.on('typeahead:initialized', function (event, data) {
+             // After initializing, hide the progress icon.
+             $('.tt-hint').css('background-image', '');
+          });
+          // Show progress icon while loading.
+          $('.tt-hint').css('background-image', 'url("/assets/images/social_icons/pizza-600px.png")');
+            }
+          });
     </script>
     <script>
 
@@ -143,7 +176,8 @@
         }
         var player_ref = firebase.database().ref(player_ref_str);
         var player_query = player_ref.once('value').then(function(PlayerSnapshot) {
-          if (PlayerSnapshot.exists()){
+          if (PlayerSnapshot.exists()) {
+            $('#warning_div').addClass('invisible');
             //var player_tuple = 
             var p_tag = PlayerSnapshot.child('tag').val();
             $('#player_tag').html(p_tag);
@@ -156,6 +190,8 @@
               // draw country flag in region box
               if (p_region[1] == 'Europe' || p_region[1] == 'America'){
                 var c_code = countryNameToCC(p_region[2])
+              } else if (p_region[1] == 'USA'){
+                var c_code = countryNameToCC('United States')
               } else {
                 var c_code = countryNameToCC(p_region[1]);
               }
@@ -163,6 +199,9 @@
                 $('#player_region_flag').addClass('flag-'+c_code.toLowerCase());
               } else {
                 $('#player_region_flag').addClass('invisible');
+              }
+              if (p_region[2] == 'MD/VA'){
+                $('#player_region_map').attr('src','/assets/images/region_maps/map_mdva.png')
               }
             }
             var propic_url = PlayerSnapshot.child('propic').val();
@@ -195,9 +234,15 @@
             acctStubs = ['twitter.com/','twitch.tv/','smashboards.com/members/','ssbwiki.com/Smasher:','youtube.com/channel/','','reddit.com/u/']
             for (i=0;i<acctNames.length;i++){
               if (PlayerSnapshot.child(acctNames[i]).exists()){
-                $('#player_social').append('<a href="https://'+acctStubs[i]+PlayerSnapshot.child(acctNames[i]).val()+'"><img src="/assets/images/social_icons/'+acctIcons[i]+'" alt="'+PlayerSnapshot.child(acctNames[i]).val()+'" style="width:32px;height:32px;padding:1px;" class="rounded"></a>');
+                $('#player_social').append('<a href="https://'+acctStubs[i]+PlayerSnapshot.child(acctNames[i]).val()+'" target="_blank"><img src="/assets/images/social_icons/'+acctIcons[i]+'" alt="'+PlayerSnapshot.child(acctNames[i]).val()+'" style="width:32px;height:32px;padding:1px;" class="rounded"></a>');
+                // show social media links section
                 $('#player_social_div').removeClass('invisible')
               }
+            }
+            // easter egg :3
+            if (playerId == 16342){
+              var showPizza = true;
+              $('#player_social').append('<a href="//axe.pizza" target="_blank"><img src="/assets/images/social_icons/pizza-600px.png" alt="axe.pizza" style="width:32px;height:32px;padding:1px;" class="rounded img-fluid"></a>')
             }
             var player_otherGamesPromise = otherGameActivity(playerId,gameId);
             //console.log(player_otherGamesPromise);
@@ -237,24 +282,42 @@
               // draw icons
               if (p_used_characters.length > 0){
                 for (i=0;i<p_used_characters.length;i++){
-                  $('#player_characters').append('<img src="'+getStockIconPath(gameId,p_used_characters[i][0])+'" alt="'+p_used_characters[i][0]+'" style="width:26px;height:26px;padding:1px;">');
+                  $('#player_characters').append('<img id="char_'+p_used_characters[i][0]+'_img" src="'+getStockIconPath(gameId,p_used_characters[i][0])+'" alt="'+p_used_characters[i][0]+'" style="width:26px;height:26px;padding:1px;">');
                   if (i > 0){
                     var newLine = '\n';
                   } else {
                     var newLine = '';
                   }
                   usagePct = Math.round(p_used_characters[i][1]*10000.0/totalSets)/100.0;
-                  $('#player_characters_div').attr('title',$('#player_characters_div').attr('title')+newLine+usagePct+'%')
+                  // assign usage percents as tooltips
+                  $('#char_'+p_used_characters[i][0]+'_img').attr('title',''+usagePct+'%')
+                  //$('#player_characters_div').attr('title',$('#player_characters_div').attr('title')+newLine+usagePct+'%')
                 }
                 $('#player_characters_div').removeClass('invisible');
               }
             }
 
             // populate skills
-            $('#player_elo').html(Math.round(PlayerSnapshot.child('elo').val()));
-            $('#player_glicko').html(Math.round(PlayerSnapshot.child('glicko').val()[0]));
-            $('#player_srank').html(Math.round(PlayerSnapshot.child('srank').val()*1000.)/1000.);
-            $('#player_mainrank').html(PlayerSnapshot.child('mainrank').val());
+            var eloVal = Math.round(PlayerSnapshot.child('elo').val());
+            var glickoVal = Math.round(PlayerSnapshot.child('glicko').val()[0]);
+            var srankVal = Math.round(PlayerSnapshot.child('srank').val()*1000.)/1000.;
+
+            var eloRnkVal = PlayerSnapshot.child('elo-rnk').val();
+            eloRnkVal = ''+eloRnkVal+'<sup>'+ordinalSuffixOf(eloRnkVal)+'</sup>';
+            var glickoRnkVal = PlayerSnapshot.child('glicko-rnk').val();
+            glickoRnkVal = ''+glickoRnkVal+'<sup>'+ordinalSuffixOf(glickoRnkVal)+'</sup>';
+            var srankRnkVal = PlayerSnapshot.child('srank-rnk').val();
+            srankRnkVal = ''+srankRnkVal+'<sup>'+ordinalSuffixOf(srankRnkVal)+'</sup>';
+
+            if (PlayerSnapshot.child('mainrank').exists()){
+              var mainrankVal = PlayerSnapshot.child('mainrank').val();
+            } else {
+              var mainrankVal = 'N/A'
+            }
+            $('#player_elo').html(eloVal);
+            $('#player_glicko').html(glickoVal);
+            $('#player_srank').html(srankVal);
+            $('#player_mainrank').html(mainrankVal);
             //$('#player_trueskill').html(Math.round(PlayerSnapshot.child('trueskill').val()));
 
             // add today's date/watermark
@@ -299,6 +362,7 @@
                       $('#event_card_image_'+i).attr('alt',eventId);
                       $('#event_card_image_link_'+i).attr('href',smashggUrl);
                       eventDate = new Date(eventInfo[1]).toJSON().slice(0,10).replace(/-/g,'/');
+                      eventDate = eventDate.slice(5,10)+'/'+eventDate.slice(0,4);
                       $('#event_card_footer_text_'+i).html(eventDate);
                       if (!eventInfo[3]){
                         $('#event_card_footer_text_'+i).addClass('text-danger');
@@ -328,15 +392,21 @@
                   var skillPromises = snapshotToSkillHistory(skillRefStr,playerId,skillTypes)
                   Promise.all(skillPromises).then(function(PlayerSkills){
                     for (i=0;i<skillPromises.length;i++){
-                      SkillHistory = PlayerSkills[i];
-                      if (SkillHistory != null){
-                        var timeChart = skillChart(SkillHistory,TourneySnapshot,PlacementSnapshot,gameId,skillTypes[i]);
-                        timeChart.update();
+                      skillHistory = PlayerSkills[i];
+                      if (skillHistory != null){
+                        var timeChart = skillChart(skillHistory,TourneySnapshot,PlacementSnapshot,gameId,skillTypes[i]);
+                        if (timeChart != null){
+                          timeChart.update();
+                        } else {
+                          // disable buttons/charts if they are inactive
+                          $('#player_'+skillTypes[i]+'_button').addClass('disabled');
+                          $('#'+skillTypes[i]+'_chart_container').addClass('invisible');
+                        }
                       } else {
                         $('#player_'+skillTypes[i]+'_button').addClass('disabled');
                         $('#player_'+skillTypes[i]).html('N/A');
                         $('#'+skillTypes[i]+'_chart_container').addClass('invisible');
-                        console.log(skillTypes[i]+'SkillHistory does not exist!');
+                        console.log(skillTypes[i]+' skillHistory does not exist!');
                       }
                     }//endfor
 
@@ -345,9 +415,36 @@
                   console.log('TourneySnapshot does not exist!');
                 }
               });
+              // checkbox functionality
+              $('#checkbox_status').html($('#customSwitch1').attr('value'))
+
+              $('input:checkbox').change(function() {
+                //$('#checkbox_status').html('Toggle: ' + $(this).prop('checked'));
+                if (this.id == 'skill_switch'){
+                  if ($(this).prop('checked')){
+                    $('#player_elo').html(eloRnkVal);
+                    $('#player_glicko').html(glickoRnkVal);
+                    $('#player_srank').html(srankRnkVal);
+                  } else {
+                    //var eloVal = Math.round(PlayerSnapshot.child('elo').val());
+                    //var glickoVal = Math.round(PlayerSnapshot.child('glicko').val()[0]);
+                    //var srankVal = Math.round(PlayerSnapshot.child('srank').val()*1000.)/1000.;
+                    $('#player_elo').html(eloVal);
+                    $('#player_glicko').html(glickoVal);
+                    $('#player_srank').html(srankVal);
+                  }
+                  //$('#player_elo').html(eloVal);
+                  //$('#player_glicko').html(glickoVal);
+                  //$('#player_srank').html(srankVal);
+                }
+              });
             });
+            // make jumbotron visible (now that it's loaded)
+            $('player_card').removeClass('invisible');
           } else {
-            $('#player_div').html('Player ID not in database: '+bindings.p_id)
+            $('#warning_div_text').html('Player ID not in [{{page.game}}] database: '+bindings.p_id);
+            $('#warning_div').removeClass('invisible');
+            $('#player_card').addClass('invisible');
           }
         });
         //$('#player_id').html(bindings.p_id);

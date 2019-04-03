@@ -14,53 +14,63 @@
 	<div class="container">
 		<!-- header -->
 		<div class="d-flex flex-column" id="player_info_div">
+			<!-- primary info -->
 			<div class="d-flex flex-row justify-content-between" id="player_header_div">
-				<div class="p-2" id="player_propic_div">
+				<div class="p-2 propic" id="player_propic_div">
 				</div>
 				<div class="p-2 d-flex flex-grow-1 flex-row justify-content-center" id="player_tag_div">
 					<h1 id="player_team"></h1>
 					<h1 class="display-4" id="player_tag"></h1>
 				</div>	
-				<div class="p-4 d-flex flex-column justify-content-end shadow invisible" id="player_region_div">
-					<p class="text-muted small font-italic">Region</p>
-					<p id="player_region"></p>
-					<img id="player_region_flag" src="/assets/images/blank.gif" class="flag"></img>
+				<div class="p-4 d-flex flex-column col-2 justify-content-end shadow invisible" id="player_region_div">
+					<p class="text-muted text-center small font-italic">Region</p>
+					<p class="text-center" id="player_region"></p>
+					<div class="d-flex flex-row justify-content-center">
+						<img id="player_region_flag" src="/assets/images/blank.gif" class="flag"></img>
+						<!--<img id="player_region_map" src="/assets/images/blank.gif" height="30" width="30"></img>-->
+					</div>
 				</div>
 			</div>
 			<!-- secondary info -->
 			<div class="d-flex flex-row justify-content-between" id="player_secondary_div">
-				<div class="p-2 justify-content-start" id="player_name_div">
+				<div class="p-2 col-4 justify-content-start" id="player_name_div">
 					<p class="text-muted small font-italic">Name</p>
 					<p class="lead" id="player_name"></p>
 				</div>
-				<div class="p-2 justify-content-center invisible" id="player_aliases_div">
+				<div class="p-2 col-5 justify-content-center invisible" id="player_aliases_div">
 					<p class="text-muted small font-italic">AKA</p>
 					<p id="player_aliases"></p>
 				</div>
-				<div class="p-2 justify-content-end" id="player_status_div">
-					<p class="text-muted small font-italic">Status</p>
-					<p id="player_status"></p>
+				<div class="p-2 col-3 justify-content-end" id="player_status_div">
+					<p class="text-right text-muted small font-italic">Status</p>
+					<p class="float-right" id="player_status"></p>
 				</div>
 			</div>
 			<!-- tertiary info -->
 			<div class="d-flex flex-row justify-content-between" id="player_tertiary_div">
-				<div class="p-2 justify-content-start invisible" id="player_characters_div" data-toggle="tooltip" data-placement="right" title="">
+				<div class="p-2 col-4 justify-content-start invisible" id="player_characters_div" data-toggle="tooltip" data-placement="right" title="">
 					<p class="text-muted small font-italic">Characters</p>
 					<p id="player_characters"></p>
 				</div>
-				<div class="p-2 justify-content-center invisible" id="player_games_div">
+				<div class="p-2 col-5 justify-content-center invisible" id="player_games_div">
 					<p class="text-muted small font-italic">Other Games</p>
 					<div id="player_games"></div>
 				</div>
-				<div class="p-2 justify-content-end invisible" id="player_social_div">
-					<p class="text-muted small font-italic">Social</p>
-					<div id="player_social"></div>
+				<div class="p-2 col-3 justify-content-end invisible" id="player_social_div">
+					<p class="text-right text-muted small font-italic">Social</p>
+					<div class="float-right" id="player_social"></div>
 				</div>
 			</div>
 		</div><!-- header -->
 		<!-- line break -->
 		<hr class="my-4" style="padding:0px;">
 		<!-- skills at a glance -->
+		<!--<p class="text-left">Scores</p>-->
+		<div class="custom-control custom-switch">
+		  <input type="checkbox" class="custom-control-input" id="skill_switch">
+		  <label class="custom-control-label ranks-switch" for="skill_switch"><p class="text-muted small">Toggle Ranks</p></label>
+		</div>
+		<div id="checkbox_status"></div>
 		<!--<div class="d-flex flex-row justify-content-around" id="player_skills_div" style="padding:0px;">-->
 		<div class="btn-group" role="group" aria-label="Skills" id="player_skills_div">
 			<a class="btn" data-toggle="collapse" href="#mainrank_chart_container" role="button" aria-expanded="false" aria-controls="mainrank-button" id="player_mainrank_button">
@@ -146,11 +156,12 @@
 		<!-- line break -->
 		<hr class="my-4" style="padding:0px;">
 		<!-- event cards -->
+		<p class="text-left text-muted small font-italic">Recent Events</p>
 		<div class="card-deck" id="player_events_deck">
 			{% for i in (0..3) %}
 			<div class="card invisible" id="event_card_{{i}}">
 				<a id="event_card_image_link_{{i}}" href="">
-					<img class="card-img-top" id="event_card_image_{{i}}">
+					<img class="card-img-top img-fluid" id="event_card_image_{{i}}" style="width: 100% \9;">
 				</a>
 				<div class="card-body" id="event_card_body_{{i}}">
 					<h6 class="card-title" id="event_card_title_{{i}}"></h6>

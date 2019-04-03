@@ -11,8 +11,8 @@
   <div class="wrapper">
     <div class="home">
     	<div class="container">
-    		<div class="row">
-    			<div class="card border-info" style="width:100%;height:10vw;">
+    		<div class="row justify-content-around">
+    			<div class="card border-dark" style="width:100%;height:10vw;">
     				<p class="text-center display-2" id="game_title">{{page.game}}</p>
     			</div>
     		</div>
@@ -34,25 +34,25 @@
 	        			</div>
     				</div>-->
     				<a href="ranks/" class="text-decoration-none">
-	    				<div class="btn-group" role="group">
-	        				<button type="button" class="btn btn btn-dark">
+	    				<div class="btn-group" role="group" id="rank_button_group">
+	        				<button type="button" class="btn btn-sr-dark btn-dark" id="rank_icon_button">
 	        					<span class="fa-stack fa-1x">
 	        						<i class="fas fa-chart-line"></i>
 	        					</span>
 	        				</button>
-	        				<button type="button" class="btn btn-lg btn-info">Ranks</button>
+	        				<button type="button" class="btn btn-lg btn-sr-primary btn-info" id="rank_button">Ranks</button>
 	        			</div>
 	        		</a>
     			</div>
     			<div class="col">
     				<a href="players/" class="text-decoration-none">
-	    				<div class="btn-group" role="group">
-	        				<button type="button" class="btn btn btn-dark">
+	    				<div class="btn-group" role="group" id="player_button_group">
+	        				<button type="button" class="btn btn-sr-dark btn-dark" id="player_icon_button">
 	        					<span class="fa-stack fa-1x">
 	        						<i class="fas fa-gamepad"></i>
 	        					</span>
 	        				</button>
-	        				<button type="button" class="btn btn-lg btn-info">Players</button>
+	        				<button type="button" class="btn btn-lg btn-sr-primary btn-info" id="player_button">Players</button>
 	        			</div>
 	        		</a>
     			</div>
@@ -65,26 +65,26 @@
     		<div class="row">
     			<div class="col">
     				<!--<a href="characters/" class="text-decoration-none">-->
-	    				<div class="btn-group" role="group">
-	        				<button type="button" class="btn btn btn-dark" disabled>
+	    				<div class="btn-group" role="group" id="character_button_group">
+	        				<button type="button" class="btn btn-sr-dark btn-dark" id="character_icon_button" disabled>
 	        					<span class="fa-stack fa-1x">
 		        					<i class="fab fa-uikit fa-stack-1x" data-fa-transform="flip-v flip-h"></i>
 		        					<i class="fab fa-uikit fa-stack-1x"></i>
 		        				</span>
 	        				</button>
-	        				<button type="button" class="btn btn-lg btn-info" disabled>Characters <p class="text-light font-weight-light"> [Coming Soon]</p></button>
+	        				<button type="button" class="btn btn-lg btn-sr-primary btn-info" id="character_button" disabled>Characters <p class="text-light font-weight-light"> [Coming Soon]</p></button>
 	        			</div>
 	        		<!--</a>-->
     			</div>
     			<div class="col">
     				<!--<a href="tourneys/" class="text-decoration-none">-->
-	    				<div class="btn-group" role="group">
-	        				<button type="button" class="btn btn btn-dark" disabled>
+	    				<div class="btn-group" role="group" id="event_button_group">
+	        				<button type="button" class="btn btn-dark btn-sr-dark" id="event_icon_button" disabled>
 	        					<span class="fa-stack fa-1x">
 	        						<i class="fas fa-calendar"></i>
 	        					</span>
 	        				</button>
-	        				<button type="button" class="btn btn-lg btn-info" disabled>Events<p class="text-light font-weight-light"> [Coming Soon]</p></button>
+	        				<button type="button" class="btn btn-lg btn-sr-primary btn-info" id="event_button" disabled>Events<p class="text-light font-weight-light"> [Coming Soon]</p></button>
 	        			</div>
         			<!--</a>-->
     			</div>
@@ -92,3 +92,11 @@
     	</div>
   </div>
 </main>
+
+<script>
+	// Brawl has no character data support
+	if ({{site.game}} == 'Brawl'){
+		$('#character_icon_button').prop('disabled',true);
+		$('#character_button').prop('disabled',true);
+	}
+</script>
