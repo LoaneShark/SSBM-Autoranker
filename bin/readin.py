@@ -40,6 +40,7 @@ parser.add_argument('-ar','--use_arcadians',help='count arcadian events (default
 parser.add_argument('-gt','--glicko_tau',help='tau value to be used by Glicko-2 algorithm (default 0.5)',default=0.5)
 parser.add_argument('-ma','--min_activity',help='minimum number of tournament appearances in order to be ranked. ELO etc still calculated.',default=3)
 parser.add_argument('-c','--current_db',help='keep the database "current" i.e. delete tourney records over 1 year old (default False)',default=False)
+parser.add_argument('-cs','--season_db',help='keep the database as the "current season" i.e. delete tourney records not in current (realtime) year (default False)',default=False)
 args = parser.parse_args()
 
 v = int(args.verbosity)
@@ -96,13 +97,13 @@ def readin(tourney,t_type='slug'):
 
 	if out:
 		t,ps,pdata = out
-		t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_images = t
+		t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_images,t_coords = t
 		es,ws,ls,rs,ns,ms = read_groups(t_id,ps,pdata)
 
 		if v >= 2 and v < 4:
 			print('{:.3f}'.format(timer()-start) + ' s')
 
-		t = (t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,len(es.keys()),t_images)
+		t = (t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,len(es.keys()),t_images,t_coords)
 		if print_res:
 			print_results(rs,ns,es,ls,ms,game=game,max_place=disp_num)
 		return t,es,ns,rs,ws,ls,ms
@@ -297,29 +298,33 @@ def read_names(x,translate_cjk=False):
 		team_name = None
 
 	continfos = [x['mutations']['participants'][str(part_id)]['contactInfo'] for part_id in part_ids]
-	metainfo = [[0,0,0,0,0]]
+	metainfo = [[0,0,0,0,0,0]]
 	for continfo in continfos:
 		if 'nameFirst' in continfo:
 			f_name = continfo['nameFirst']
 		else:
-			f_name = "N/A"
+			f_name = None
 		if 'nameLast' in continfo:
 			l_name = continfo['nameLast']
 		else:
-			l_name = "N/A"
+			l_name = None
 		if 'state' in continfo:
 			state = continfo['state']
 		else:
-			state = "N/A"
+			state = None
 		if 'country' in continfo:
 			country = continfo['country']
 		else:
-			country = 'N/A'
+			country = None
 		if 'city' in continfo:
 			city = continfo['city']
 		else:
-			city = 'N/A'
-		metainfo.extend([[f_name,l_name,state,country,city]])
+			city = None
+		if 'region' in continfo:
+			declared_region = continfo['region']
+		else:
+			declared_region = None
+		metainfo.extend([[f_name,l_name,state,country,city,declared_region]])
 	metainfo = metainfo[1:]
 
 	#if len(part_ids) == 1:
@@ -492,6 +497,7 @@ def read_phases(tourney):
 		t_region = (tdata['entities']['tournament']['addrState'],tdata['entities']['tournament']['countryCode'])
 		# 2-length list with the urls for the first profile image and banner images found (for the tourney)
 		t_propic = [img['url'] for img in tdata['entities']['tournament']['images'] if img['type'] == 'profile']
+		t_coords = [tdata['entities']['tournament']['lat'],tdata['entities']['tournament']['lng']]
 		if len(t_propic)>0:
 			t_propic = t_propic[0]
 		else:
@@ -502,7 +508,7 @@ def read_phases(tourney):
 		else:
 			t_bannerpic = None
 		t_images = [t_propic,t_bannerpic]
-		t_info = (t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_images)
+		t_info = (t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_images,t_coords)
 
 		if v >= 1:
 			print('Reading tournament: %s | %d'%(t_name,t_id))

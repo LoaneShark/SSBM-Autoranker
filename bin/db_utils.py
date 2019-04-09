@@ -37,6 +37,7 @@ parser.add_argument('-ar','--use_arcadians',help='count arcadian events (default
 parser.add_argument('-gt','--glicko_tau',help='tau value to be used by Glicko-2 algorithm (default 0.5)',default=0.5)
 parser.add_argument('-ma','--min_activity',help='minimum number of tournament appearances in order to be ranked. ELO etc still calculated.',default=3)
 parser.add_argument('-c','--current_db',help='keep the database "current" i.e. delete tourney records over 1 year old (default False)',default=False)
+parser.add_argument('-cs','--season_db',help='keep the database as the "current season" i.e. delete tourney records not in current (realtime) year (default False)',default=False)
 args = parser.parse_args()
 
 collect = args.collect_garbage
@@ -213,7 +214,7 @@ def store_data(readins,dicts,slug):
 # and name = (sponsor, tag, teamname (or None))
 # and metainfo = [firstname, lastname, state, country, city]
 def store_players(entrants,names,t_info,dicts,translate_cjk=True):
-	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size,t_images = t_info
+	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size,t_images,t_coords = t_info
 	tourneys,ids,p_info,records,skills = dicts
 	if t_id not in tourneys:
 		# store teams/crews instead if this is a teams competition
@@ -263,7 +264,7 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 					p_info[abs_id]['tag'] = trans_tag
 				else:
 					p_info[abs_id]['tag'] = p_tag
-				for key,info in zip(['firstname','lastname','state','country','city'],entrants[e_id][3][idx]):
+				for key,info in zip(['firstname','lastname','state','country','city','decl_region'],entrants[e_id][3][idx]):
 					if key in p_info[abs_id]:
 						if not (info == 'N/A' or info == '' or info == "" or info == None):
 							p_info[abs_id][key] = info
@@ -272,13 +273,13 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 				if 'region' not in p_info[abs_id] or p_info[abs_id]['region'] == None:
 					#p_info[abs_id]['region'] = get_region(dicts,abs_id,granularity=2,to_calc=True)
 					p_info[abs_id]['region'] = {}
-					for r_i in range(1,6):
+					for r_i in range(0,6):
 						p_info[abs_id]['region'][r_i] = get_region(dicts,abs_id,granularity=r_i,to_calc=True)
 				else:
 					#print(p_info[abs_id]['region'])
-					if any([p_info[abs_id]['region'][r_idx] == 'N/A' for r_idx in range(1,6)]) or p_info[abs_id]['region'] == {}:
+					if p_info[abs_id]['region'] == {} or any([r_idx not in p_info[abs_id]['region'] for r_idx in range(0,6)]) or any([p_info[abs_id]['region'][r_idx] == 'N/A' for r_idx in range(0,6)]):
 						#p_info[abs_id]['region'] = get_region(dicts,abs_id,granularity=2,to_calc=True)
-						for r_i in range(1,6):
+						for r_i in range(0,6):
 							p_info[abs_id]['region'][r_i] = get_region(dicts,abs_id,granularity=r_i,to_calc=True)
 
 				# store smash.gg profile picture url
@@ -338,7 +339,7 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 # stores win/loss records, updates player skills/rankings if enabled
 # ranking period in months (only used by sigmoid ranking)
 def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_update_sigmoids=True,ranking_period=2):
-	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size,t_images = t_info
+	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size,t_images,t_coords = t_info
 	tourneys,ids,p_info,records,skills = dicts
 	old_p_info = dcopy(p_info)
 	glicko_matches = {}
@@ -482,7 +483,7 @@ def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_up
 
 # stores tourney meta info and marks tournament as imported
 def store_tourney(slug,t_info,group_names,dicts):
-	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size,t_images = t_info
+	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size,t_images,t_coords = t_info
 	tourneys,ids,p_info,records,skills = dicts
 	tourneys[t_id] = {}
 	tourneys[t_id]['name'] = t_name
@@ -503,6 +504,7 @@ def store_tourney(slug,t_info,group_names,dicts):
 	tourneys['slugs'][slug] = t_id
 	if 'groups' not in tourneys[t_id]:
 		tourneys[t_id]['groups'] = {}
+	group_names = {group_key:{'name':group_name} for group_key,group_name in group_names.items()}
 	tourneys[t_id]['groups'] = group_names
 		
 	return True
@@ -610,7 +612,7 @@ def delete_tourney(dicts,t_id,slug=None,clean_slugs=False,clean_tourneys=True):
 # cleans out tourneys over a year out from the currently importing one
 def clean_old_tourneys(dicts,t_info,rank_period=12,delete_data=False):
 	tourneys,ids,p_info,records,skills = dicts
-	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size,t_images = t_info
+	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size,t_images,t_coords = t_info
 	if v >= 6:
 		print('Cleaning tourneys over: %d months out from %s'%(rank_period,t_date))
 

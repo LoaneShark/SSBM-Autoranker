@@ -13,7 +13,7 @@ def main():
 	return True
 
 # update firebase db by setting all values to local db, for a given game/year/count
-def update_db(dicts,db_key,force_update=False):
+def update_db(dicts,db_key,force_update=False,new_db=False):
 	print('----------------------')
 	tourneys,ids,p_info,records,skills = dicts
 	# load sets from db and add them to 'dicts'
@@ -27,36 +27,39 @@ def update_db(dicts,db_key,force_update=False):
 	# open db
 	db = get_db_reference()
 	game_db = db.child(db_key)
-	# if db doesn't exist, create it
-	if db.get() is None:
-		#game_db.set('')
-		#db.push(db_key)
-		#print(db_key)
-		#print('pushed')
-		print('no db found')
-	# if game not in db or game is blank, add it
-	if game_db.get() is None or (type(game_db.get()) is str and game_db.get() == '') or force_update or True:
-		#game_db.set('')
-		# add directories for all the major information dicts
-		for dictname,dictdata in zip(['tourneys','ids','p_info','records','skills','sets'],dicts):
-			sub_db = game_db.child(dictname)
-			# import dict data to firebase db
-			if sub_db.get() is None or force_update:
-				try:
-					sub_db.set(dictdata)
-				# if dict is too big to upload at once
-				except ApiCallError as e:
-					print('ApiCallError pushing \'%s\': attempting batch upload...'%dictname)
-					if dictname == 'skills':
-						for skill_key in dictdata.keys():
-							skill_db_ref = sub_db.child(skill_key)
-							try:
-								skill_db_ref.set(dictdata[skill_key])
-							except ApiCallError as e2:
-								batch_upload(dictdata[skill_key],skill_db_ref)
-					else:
-						batch_upload(dictdata,sub_db)
-		print('%s pushed'%db_key)
+	# assume db exists -- this was using too much data and pulling the ENTIRE database
+	if new_db:
+		# if db doesn't exist, create it
+		if db.get() is None:
+			game_db.set('')
+			#db.push(db_key)
+			#print(db_key)
+			#print('pushed')
+			print('no db found')
+		# if game not in db or game is blank, add it
+		if game_db.get() is None or (type(game_db.get()) is str and game_db.get() == '') or force_update:
+			game_db.set('')
+	# add directories for all the major information dicts
+	for dictname,dictdata in zip(['tourneys','ids','p_info','records','skills','sets'],dicts):
+		print('pushing...',dictname)
+		sub_db = game_db.child(dictname)
+		# import dict data to firebase db
+		if sub_db.get() is None or force_update:
+			try:
+				sub_db.set(dictdata)
+			# if dict is too big to upload at once
+			except ApiCallError as e:
+				print('ApiCallError pushing \'%s\': attempting batch upload...'%dictname)
+				if dictname == 'skills':
+					for skill_key in dictdata.keys():
+						skill_db_ref = sub_db.child(skill_key)
+						try:
+							skill_db_ref.set(dictdata[skill_key])
+						except ApiCallError as e2:
+							batch_upload(dictdata[skill_key],skill_db_ref)
+				else:
+					batch_upload(dictdata,sub_db)
+	print('%s pushed'%db_key)
 
 # update all games for the given year/count [WIP]
 def update_all(dicts,year,year_count,is_current=False):

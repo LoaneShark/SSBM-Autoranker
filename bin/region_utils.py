@@ -15,6 +15,8 @@ import glob
 def calc_region(country,state=None,city=None,granularity=2,force_new=False):
 	cc = coco.CountryConverter()
 
+	print(country,state,city,granularity)
+
 	# handle empty/invalid inputs
 	if city in ['N/A','n/a','',' ','  ','None']:
 		city == None
@@ -137,7 +139,7 @@ def calc_region(country,state=None,city=None,granularity=2,force_new=False):
 			loc = geoloc.geocode(temp_locstr,language='en',addressdetails=True)
 			if loc == None:
 				#print('Location not found: %s'%locstr)
-				locdict[locstr] = [city,state,None,country,cc.convert(names=[country],to='continent')]
+				locdict[locstr] = [city,state,None,country,cc.convert(names=[country],to='continent'),None]
 				save_city_dict(dictstr,locdict)
 				return 'N/A'
 		loc = loc.raw['address']
@@ -173,12 +175,19 @@ def calc_region(country,state=None,city=None,granularity=2,force_new=False):
 		if l_country == 'America':
 			l_country = 'United States'
 		l_continent = cc.convert(names=[l_country],to='continent')
-		locdict[locstr] = [l_city,l_state,l_county,l_country,l_continent]
+		if 'latitude' in loc and 'longitude' in loc:
+			l_coords = (loc['latitude'],loc['longitude'])
+		else:
+			l_coords = None
+		locdict[locstr] = [l_city,l_state,l_county,l_country,l_continent,l_coords]
 		# save new location
 		save_city_dict(dictstr,locdict)
 	else:
-		[l_city,l_state,l_county,l_country,l_continent] = locdict[locstr]
+		[l_city,l_state,l_county,l_country,l_continent,l_coords] = locdict[locstr]
 
+	# return latitude and longitude
+	if granularity == 0:
+		return l_coords
 	# return continent (or country for US/CA)
 	if granularity == 1:
 		if l_country in ['United States','USA','U.S.A.','United States of America','Canada','Japan']:
@@ -230,7 +239,7 @@ def calc_region(country,state=None,city=None,granularity=2,force_new=False):
 			elif state in ['WY','CO','UT','NV','MT','ID'] or \
 						l_state in ['Wyoming','Colorado','Utah','Nevada','Montana','Idaho']:
 				return 'Rockies'
-			elif state in ['WA','OR','BC','AB','ID'] or \
+			elif state in ['WA','OR','BC','AB'] or \
 						l_state in ['Washington','Oregon','British Columbia','Alberta']:
 				return 'Pacific Northwest'
 			elif state in ['AZ','NM','TX'] or \

@@ -67,7 +67,7 @@ from webdb import *
 ## 	- fit Glicko-2 (?)
 
 ## SIMRANK TODO:
-##  - make it work lmao
+##  - make it work (lmao)
 ##	- Fourier analysis ??????
 
 ## TOURNEY SHITLIST:
@@ -98,6 +98,7 @@ parser.add_argument('-ar','--use_arcadians',help='count arcadian events (default
 parser.add_argument('-gt','--glicko_tau',help='tau value to be used by Glicko-2 algorithm (default 0.5)',default=0.5)
 parser.add_argument('-ma','--min_activity',help='minimum number of tournament appearances in order to be ranked. ELO etc still calculated.',default=3)
 parser.add_argument('-c','--current_db',help='keep the database "current" i.e. delete tourney records over 1 year old (default False)',default=False)
+parser.add_argument('-cs','--season_db',help='keep the database as the "current season" i.e. delete tourney records not in current (realtime) year (default False)',default=False)
 args = parser.parse_args()
 
 game_idx = int(args.game)
@@ -286,7 +287,7 @@ def main():
 
 
 	#if (game_idx == 3 or game_idx == 1386):
-	if game_idx == 1386:
+	if game_idx == 1386 and False:
 		#running_winprobs(iagoranks,winprobs,7648)
 		#running_winprobs(iagoranks,winprobs,15768)
 		#running_winprobs(iagoranks,winprobs,57924)
@@ -330,8 +331,8 @@ def main():
 	db_str_key = str(game_idx)+'_'+str(year)+'_'+str(year_count)
 	if args.current_db:
 		db_str_key += '_c'
-	#update_db(dicts,db_str_key,force_update=True)
-	update_db(dicts,db_str_key,force_update=False)
+	update_db(dicts,db_str_key,force_update=True)
+	#update_db(dicts,db_str_key,force_update=False)
 
 	#generate_matchup_chart(dicts,game_idx,year,year_count,id_list=id_list,label_mode='ones',v=int(args.verbosity),infer_characters=True,n_bins=10000)
 	'''

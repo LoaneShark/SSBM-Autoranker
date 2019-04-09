@@ -153,8 +153,8 @@ def get_rank_name(game,year,yr_half=-1):
 		rank_name = 'PGR'
 		if yr_half < 0:
 			yr_half = 1
-		pgr_map = {2016:{0:'v1',1:'v2'},2017:{0:'v3',1:'v4'},2018:{0:'v5',1:'100'}}
-		if year > 2018 or year < 2016:
+		pgr_map = {2016:{1:'v1'},2017:{0:'v2',1:'v3'},2018:{0:'v5',1:'v5'},2019:{0:'100'}}
+		if year > 2018 or year < 2016 or yr_half not in pgr_map[year]:
 			yearstr = '_'+str(year)
 		else:
 			yearstr = '_'+pgr_map[year][yr_half]
@@ -198,7 +198,7 @@ def scrape_ranks(game,year,yr_half=-1):
 		page = page.decode('UTF-8')
 		doc = BeautifulSoup(page,features='lxml')
 	except HTTPError:
-		if year <= 2015:
+		if year < 2015:
 			return False
 		else:
 			print('No ranks found for: %s, %d'%(rank_name,year))

@@ -338,6 +338,7 @@ def update_official_ranks(dicts,game,year,year_half=1,lookback=False):
 	# update the previous year if it wasn't already there (for first import)
 	if lookback:
 		update_official_ranks(dicts,game,year-1,lookback=False)
+	# don't skip over winter-spring PGR
 	if game == 3 and year_half == 1:
 		update_official_ranks(dicts,game,year,year_half=0)
 	# scrape ranks if available
@@ -398,14 +399,17 @@ def update_percentiles(dicts):
 		# p_rank_data = [rank,p_id,skill]
 
 		print('min/max ranks:',skill_key)
-		print(p_rank_data[0],p_info[p_rank_data[0][1]])
-		print(p_rank_data[-1],p_info[p_rank_data[-1][1]])
+		print(p_rank_data[0],p_info[p_rank_data[0][1]]['tag'])
+		print(p_rank_data[-1],p_info[p_rank_data[-1][1]]['tag'])
 		skillmax = float(p_rank_data[0][2])
 		skillmin = float(p_rank_data[-1][2])
 
 		for p_line in p_rank_data:
 			p_info[int(p_line[1])][skill_key+'-rnk'] = p_line[0]
-			p_info[int(p_line[1])][skill_key+'-pct'] = int(((float(p_line[2])-skillmin)/(skillmax-skillmin))*100)
+			if (skillmax-skillmin) == 0: # if there is no skill range (e.g. srank for first few events of db), hardcode to 0th percentile
+				p_info[int(p_line[1])][skill_key+'-pct'] = 0
+			else:
+				p_info[int(p_line[1])][skill_key+'-pct'] = int(((float(p_line[2])-skillmin)/(skillmax-skillmin))*100)
 
 
 # returns the number of times a player [p] used a given character [c] 
