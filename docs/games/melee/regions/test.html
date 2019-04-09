@@ -1,0 +1,561 @@
+---
+title: Regions
+game: Melee
+layout: pretty
+---
+<style>
+	#legend_wrapper{
+		max-height: 600px;
+		max-width: 500px;
+		overflow-y:auto;
+		overflow-x:auto;
+		width: 100%;
+	}
+</style>
+
+
+<div class="d-flex flex-column container" style="width:100%">
+	<div class="d-flex flex-row" style="width:100%">
+		<div class="d-flex flex-column col-9 border border-secondary">
+			<div id="chart_div" style="height:600px; width:100%;"></div>
+		</div>
+		<div class="d-flex flex-column col-3">
+		<div id="legend_wrapper">
+			<div id="legend_div" style="height:600px; width:100%;"></div>
+		</div>
+		</div>
+	</div>
+	<div class="d-flex flex-row">
+	</div>
+</div>
+<div id="piechartdiv" style="height:500px; width:100%;"></div>
+
+<script src="https://www.amcharts.com/lib/4/core.js"></script>
+<script src="https://www.amcharts.com/lib/4/charts.js"></script>
+<script src="https://www.amcharts.com/lib/4/maps.js"></script>
+<script src="https://www.amcharts.com/lib/4/themes/animated.js"></script>
+<script src="https://www.amcharts.com/lib/4/themes/material.js"></script>
+
+<!--<script src="https://www.amcharts.com/lib/4/geodata/worldLow.js"></script>
+<script src="https://www.amcharts.com/lib/4/geodata/usaLow.js"></script>
+<script src="https://www.amcharts.com/lib/4/geodata/canadaLow.js"></script>
+<script src="https://www.amcharts.com/lib/4/geodata/worldHigh.js"></script>-->
+<script src="/assets/js/na_map.js"></script>
+<script>
+	am4core.useTheme(am4themes_animated);
+	am4core.useTheme(am4themes_material);
+
+	var chart = am4core.create("chart_div",am4maps.MapChart);
+	//chart.geodata = am4geodata_usaLow;
+	chart.geodata = am4geodata_usacanLow;
+	chart.projection = new am4maps.projections.Mercator();
+	//chart.exporting.menu = new am4core.ExportMenu();
+	chart.zoomControl = new am4maps.ZoomControl();
+
+	var homeButton = new am4core.Button();
+	homeButton.events.on("hit", function(){
+	  chart.goHome();
+	});
+
+	homeButton.icon = new am4core.Sprite();
+	homeButton.padding(7, 5, 7, 5);
+	homeButton.width = 30;
+	homeButton.icon.path = "M16,8 L14,8 L14,16 L10,16 L10,10 L6,10 L6,16 L2,16 L2,8 L0,8 L8,0 L16,8 Z M16,8";
+	homeButton.marginBottom = 10;
+	homeButton.parent = chart.zoomControl;
+	homeButton.insertBefore(chart.zoomControl.plusButton);
+
+	// Center on the groups by default
+	chart.homeZoomLevel = 1.5;
+	chart.homeGeoPoint = { longitude: -109, latitude: 49 };
+
+	var groupData = [
+	  {
+	    "name": "New England",
+	    "color": chart.colors.getIndex(0),
+	    "data": [
+	      {
+	        "title": "Massachusetts",
+	        "id": "US-MA", // With MapPolygonSeries.useGeodata = true, it will try and match this id, then apply the other properties as custom data
+	        "customData": ""
+	      }, {
+	        "title": "Maine",
+	        "id": "US-ME",
+	        "customData": ""
+	      }, {
+	        "title": "Vermont",
+	        "id": "US-VT",
+	        "customData": ""
+	      }, {
+	        "title": "New Hampshire",
+	        "id": "US-NH",
+	        "customData": ""
+	      }, {
+	        "title": "Rhode Island",
+	        "id": "US-RI",
+	        "customData": ""
+	      }, {
+	        "title": "Connecticut",
+	        "id": "US-CT",
+	        "customData": ""
+	      }
+	    ]
+	  },{
+	    "name": "Tristate",
+	    "color": chart.colors.getIndex(1),
+	    "data": [
+	      {
+	        "title": "New York",
+	        "id": "US-NY", 
+	        "customData": ""
+	      }, {
+	        "title": "Pennsylvania",
+	        "id": "US-PA",
+	        "customData": ""
+	      }, {
+	        "title": "New Jersey",
+	        "id": "US-NJ",
+	        "customData": ""
+	      }
+	    ]
+	  },{
+	    "name": "MD/VA",
+	    "color": chart.colors.getIndex(2),
+	    "data": [
+	      {
+	        "title": "Maryland",
+	        "id": "US-MD", 
+	        "customData": ""
+	      }, {
+	        "title": "Virginia",
+	        "id": "US-VA",
+	        "customData": ""
+	      }, {
+	        "title": "West Virginia",
+	        "id": "US-WV",
+	        "customData": ""
+	      }, {
+	        "title": "Delaware",
+	        "id": "US-DE",
+	        "customData": ""
+	      }
+	    ]
+	  },{
+	    "name": "South Atlantic",
+	    "color": chart.colors.getIndex(3),
+	    "data": [
+	      {
+	        "title": "North Carolina",
+	        "id": "US-NC", 
+	        "customData": ""
+	      }, {
+	        "title": "South Carolina",
+	        "id": "US-SC",
+	        "customData": ""
+	      }, {
+	        "title": "Georgia",
+	        "id": "US-GA",
+	        "customData": ""
+	      }
+	    ]
+	  },{
+	    "name": "Mideast",
+	    "color": chart.colors.getIndex(4),
+	    "data": [
+	      {
+	        "title": "Ohio",
+	        "id": "US-OH", 
+	        "customData": ""
+	      }, {
+	        "title": "Kentucky",
+	        "id": "US-KY",
+	        "customData": ""
+	      }, {
+	        "title": "Tennessee",
+	        "id": "US-TN",
+	        "customData": ""
+	      }, {
+	        "title": "Alabama",
+	        "id": "US-AL",
+	        "customData": ""
+	      }, {
+	        "title": "Mississippi",
+	        "id": "US-MS",
+	        "customData": ""
+	      }, {
+	        "title": "Indiana",
+	        "id": "US-IN",
+	        "customData": ""
+	      }, {
+	        "title": "Illinois",
+	        "id": "US-IL",
+	        "customData": ""
+	      }, {
+	        "title": "Michigan",
+	        "id": "US-MI",
+	        "customData": ""
+	      }, {
+	        "title": "Wisconsin",
+	        "id": "US-WI",
+	        "customData": ""
+	      }
+	    ]
+	  },{
+	    "name": "Midwest",
+	    "color": chart.colors.getIndex(5),
+	    "data": [
+	      {
+	        "title": "North Dakota",
+	        "id": "US-ND", 
+	        "customData": ""
+	      }, {
+	        "title": "South Dakota",
+	        "id": "US-SD",
+	        "customData": ""
+	      }, {
+	        "title": "Minnesota",
+	        "id": "US-MN",
+	        "customData": ""
+	      }, {
+	        "title": "Iowa",
+	        "id": "US-IA",
+	        "customData": ""
+	      }, {
+	        "title": "Missouri",
+	        "id": "US-MO",
+	        "customData": ""
+	      }, {
+	        "title": "Arkansas",
+	        "id": "US-AR",
+	        "customData": ""
+	      }, {
+	        "title": "Louisiana",
+	        "id": "US-LA",
+	        "customData": ""
+	      }, {
+	        "title": "Nebraska",
+	        "id": "US-NE",
+	        "customData": ""
+	      }, {
+	        "title": "Kansas",
+	        "id": "US-KS",
+	        "customData": ""
+	      }, {
+	        "title": "Oklahoma",
+	        "id": "US-OK",
+	        "customData": ""
+	      }
+	    ]
+	  },{
+	    "name": "Rockies",
+	    "color": chart.colors.getIndex(6),
+	    "data": [
+	      {
+	        "title": "Wyoming",
+	        "id": "US-WY", 
+	        "customData": ""
+	      }, {
+	        "title": "Colorado",
+	        "id": "US-CO",
+	        "customData": ""
+	      }, {
+	        "title": "Utah",
+	        "id": "US-UT",
+	        "customData": ""
+	      }, {
+	        "title": "Nevada",
+	        "id": "US-NV",
+	        "customData": ""
+	      }, {
+	        "title": "Montana",
+	        "id": "US-MT",
+	        "customData": ""
+	      }, {
+	        "title": "Idaho",
+	        "id": "US-ID",
+	        "customData": ""
+	      }
+	    ]
+	  },{
+	    "name": "Pacific Northwest",
+	    "color": chart.colors.getIndex(7),
+	    "data": [
+	      {
+	        "title": "Washington",
+	        "id": "US-WA", 
+	        "customData": ""
+	      }, {
+	        "title": "Oregon",
+	        "id": "US-OR",
+	        "customData": ""
+	      }, {
+	        "title": "British Columbia",
+	        "id": "CA-BC",
+	        "customData": ""
+	      }, {
+	        "title": "Alberta",
+	        "id": "CA-AB",
+	        "customData": ""
+	      }
+	    ]
+	  },{
+	    "name": "Southwest",
+	    "color": chart.colors.getIndex(8),
+	    "data": [
+	      {
+	        "title": "Arizona",
+	        "id": "US-AZ", 
+	        "customData": ""
+	      }, {
+	        "title": "New Mexico",
+	        "id": "US-NM",
+	        "customData": ""
+	      }, {
+	        "title": "Texas",
+	        "id": "US-TX",
+	        "customData": ""
+	      }
+	    ]
+	  },{
+	    "name": "Arctic Circle",
+	    "color": chart.colors.getIndex(9),
+	    "data": [
+	      {
+	        "title": "Alaska",
+	        "id": "US-AK", 
+	        "customData": ""
+	      }, {
+	        "title": "Yukon Territory",
+	        "id": "CA-YT",
+	        "customData": ""
+	      }, {
+	        "title": "Northwest Territories",
+	        "id": "CA-NT",
+	        "customData": ""
+	      }, {
+	        "title": "Nunavut",
+	        "id": "CA-NU",
+	        "customData": ""
+	      }
+	    ]
+	  },{
+	    "name": "Central Canada",
+	    "color": chart.colors.getIndex(10),
+	    "data": [
+	      {
+	        "title": "Saskatchewan",
+	        "id": "CA-SK", 
+	        "customData": ""
+	      }, {
+	        "title": "Manitoba",
+	        "id": "CA-MB",
+	        "customData": ""
+	      }, {
+	        "title": "Ontario",
+	        "id": "CA-ON",
+	        "customData": ""
+	      }
+	    ]
+	  },{
+	    "name": "Atlantic Canada",
+	    "color": chart.colors.getIndex(11),
+	    "data": [
+	      {
+	        "title": "Québec",
+	        "id": "CA-QC", 
+	        "customData": ""
+	      }, {
+	        "title": "New Brunswick",
+	        "id": "CA-NB",
+	        "customData": ""
+	      }, {
+	        "title": "Nova Scotia",
+	        "id": "CA-NS",
+	        "customData": ""
+	      }, {
+	        "title": "Prince Edward Island",
+	        "id": "CA-PE",
+	        "customData": ""
+	      }, {
+	        "title": "Newfoundland & Labrador",
+	        "id": "CA-NL",
+	        "customData": ""
+	      }
+	    ]
+	  },{
+	    "name": "U.S. Caribbean Islands",
+	    "color": chart.colors.getIndex(12),
+	    "data": [
+	      {
+	        "title": "Puerto Rico",
+	        "id": "US-PR", 
+	        "customData": ""
+	      }, {
+	        "title": "Virgin Islands",
+	        "id": "US-VI",
+	        "customData": ""
+	      }
+	    ]
+	  },{
+	    "name": "U.S. Pacific Islands",
+	    "color": chart.colors.getIndex(13),
+	    "data": [
+	      {
+	        "title": "Hawai'i",
+	        "id": "US-HI", 
+	        "customData": ""
+	      }, {
+	        "title": "Guam",
+	        "id": "US-GU",
+	        "customData": ""
+	      }, {
+	        "title": "Northern Marianas",
+	        "id": "US-MP",
+	        "customData": ""
+	      }, {
+	        "title": "American Samoa",
+	        "id": "US-AS",
+	        "customData": ""
+	      }, {
+	        "title": "Marshall Islands",
+	        "id": "US-MH",
+	        "customData": ""
+	      }, {
+	        "title": "Micronesia",
+	        "id": "US-FM",
+	        "customData": ""
+	      }, {
+	        "title": "Palau",
+	        "id": "US-PW",
+	        "customData": ""
+	      }
+	    ]
+	  }
+	];
+
+	// This array will be populated with country IDs to exclude from the world series
+	var excludedCountries = ["AQ"];
+
+	// Create a series for each group, and populate the above array
+	groupData.forEach(function(group) {
+	  var series = chart.series.push(new am4maps.MapPolygonSeries());
+	  series.name = group.name;
+	  series.useGeodata = true;
+	  var includedCountries = [];
+	  group.data.forEach(function(country){
+	    includedCountries.push(country.id);
+	    excludedCountries.push(country.id);
+	  });
+	  series.include = includedCountries;
+
+	  series.fill = am4core.color(group.color);
+	  
+	  // By creating a hover state and setting setStateOnChildren to true, when we
+	  // hover over the series itself, it will trigger the hover SpriteState of all
+	  // its countries (provided those countries have a hover SpriteState, too!).
+	  series.setStateOnChildren = true;
+	  var seriesHoverState = series.states.create("hover");  
+	  
+	  // Country shape properties & behaviors
+	  var mapPolygonTemplate = series.mapPolygons.template;
+	  // Instead of our custom title, we could also use {name} which comes from geodata  
+	  mapPolygonTemplate.fill = am4core.color(group.color);
+	  mapPolygonTemplate.fillOpacity = 0.8;
+	  mapPolygonTemplate.nonScalingStroke = true;
+	  
+	  // States  
+	  var hoverState = mapPolygonTemplate.states.create("hover");
+	  hoverState.properties.fill = am4core.color("#CC0000");
+	  
+	  // Tooltip
+	  mapPolygonTemplate.tooltipText = "{name}"; // enables tooltip
+	  // series.tooltip.getFillFromObject = false; // prevents default colorization, which would make all tooltips red on hover
+	  // series.tooltip.background.fill = am4core.color(group.color);
+	  
+	  // MapPolygonSeries will mutate the data assigned to it, 
+	  // we make and provide a copy of the original data array to leave it untouched.
+	  // (This method of copying works only for simple objects, e.g. it will not work
+	  //  as predictably for deep copying custom Classes.)
+	  series.data = JSON.parse(JSON.stringify(group.data));
+	});
+
+	// The rest of the world.
+	var worldSeries = chart.series.push(new am4maps.MapPolygonSeries());
+	var worldSeriesName = "world";
+	worldSeries.name = worldSeriesName;
+	worldSeries.useGeodata = true;
+	worldSeries.exclude = excludedCountries;
+	worldSeries.fillOpacity = 0.8;
+	worldSeries.hiddenInLegend = true;
+	worldSeries.mapPolygons.template.nonScalingStroke = true;
+
+	// This auto-generates a legend according to each series' name and fill
+	var legendContainer = am4core.create("legend_div",am4core.Container);
+	legendContainer.width = am4core.percent(100);
+	legendContainer.height = am4core.percent(100);
+	chart.legend = new am4maps.Legend();
+
+	// Legend styles
+	chart.legend.parent = legendContainer;
+	chart.legend.paddingLeft = 0;
+	chart.legend.paddingRight = 0;
+	chart.legend.marginBottom = 0;
+	chart.legend.marginTop = 0;
+	legendContainer.layout = "vertical";
+	//chart.legend.maxColumns = 1;
+	//chart.legend.width = am4core.percent(90);
+	chart.legend.valign = "bottom";
+	chart.legend.contentAlign = "left";
+	//chart.legend.responsive = true;
+
+	// Legend items
+	//chart.legend.itemContainers.template.interactionsEnabled = false;
+</script>
+<!--
+<script>
+// Create chart instance
+var chart = am4core.create("piechartdiv", am4charts.PieChart);
+
+// Create pie series
+var series = chart.series.push(new am4charts.PieSeries());
+series.dataFields.value = "litres";
+series.dataFields.category = "country";
+
+// Add data
+chart.data = [{
+  "country": "Lithuania",
+  "litres": 501.9
+}, {
+  "country": "Czech Republic",
+  "litres": 301.9
+}, {
+  "country": "Ireland",
+  "litres": 201.1
+}, {
+  "country": "Germany",
+  "litres": 165.8
+}, {
+  "country": "Australia",
+  "litres": 139.9
+}, {
+  "country": "Austria",
+  "litres": 128.3
+}, {
+  "country": "UK",
+  "litres": 99
+}, {
+  "country": "Belgium",
+  "litres": 60
+}, {
+  "country": "The Netherlands",
+  "litres": 50
+}];
+
+// And, for a good measure, let's add a legend
+chart.legend = new am4charts.Legend();
+</script>-->
+<!--<script> 
+	var map = am4core.create("chartdiv", am4maps.MapChart);
+	map.geodata = am4geodata_worldLow;
+	map.projection = new am4maps.projections.Miller();
+</script>-->

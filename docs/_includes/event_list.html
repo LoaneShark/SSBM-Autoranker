@@ -1,0 +1,113 @@
+<style>
+	.btn[aria-expanded="true"]{
+		font-weight: 600;
+	}
+</style>
+
+<div class="accordion" id="current_event_accordion">
+	<div class="card border"><div class="card-header font-weight-bold">CURRENT EVENTS</div></div>
+</div>
+<hr>
+<div class="accordion invisible" id="old_event_accordion">
+	<div class="card border"><div class="card-header font-weight-bold">INACTIVE EVENTS</div></div>
+</div>
+
+{% include firebase_scripts.html %}
+<script class="text/javascript" src="/assets/js/misc_utils.js"></script>
+<script>
+	gameId = getGameId('{{page.game}}');
+	tourneyRef = firebase.database().ref('/'+gameId+'_2016_3_c/tourneys/');
+	//tourneyRef = firebase.database().ref('/1386_2016_3_c/tourneys/').orderByChild('date/0');
+	tourneyQuery = tourneyRef.once('value').then(function(TourneySnapshot){
+		if (TourneySnapshot.exists()){
+			var i = 0;
+			var firstDate = null;
+			var lastDate = null;
+			TourneySnapshot.forEach(function(EventSnapshot){
+				if (EventSnapshot.exists() && EventSnapshot.key != 'slugs'){
+					if (EventSnapshot.child('active').val()) {
+						var acc_name = 'current_event_accordion';
+					} else {
+						var acc_name = 'old_event_accordion'
+						$('#old_event_accordion').removeClass('invisible')
+					}
+
+					var eventPropicUrl = EventSnapshot.child('url_prof').val();
+					var eventBannerUrl = EventSnapshot.child('url_banner').val();
+		            if (eventPropicUrl == null){
+		              eventPropicUrl = "https://via.placeholder.com/100/81daea/6A5ACD?text="+EventSnapshot.child('name').val().slice(0,1);
+		            }
+
+					$('#'+acc_name).append(
+						'<div class="card border">' +
+						  '<div class="card-header" style="background-color:whitesmoke;">' +
+						    '<img src="'+eventPropicUrl+'" alt="img" class="rounded" style="height:5vw;">' +
+						    '<button class="btn text-sr-dark collapsed" type="button" data-toggle="collapse" aria-expanded="false"' +
+							    'data-target="#event_collapse_'+i+'" aria-controls="event_collapse_'+i+'" ' +
+							    'id="#event_header_'+i+'" style="box-shadow:none;">' +
+						           EventSnapshot.child('name').val() +
+						    '</button>' +
+						  '</div>' +
+
+						  '<div id="event_collapse_'+i+'" class="collapse" aria-labelledby="event_header_'+i+'" data-parent="#'+acc_name+'">' + 
+						    //'<div id="event_header_'+i+'" class="card-header">' +
+						    //'</div>' + 
+						    '<div id="event_body_'+i+'" class="card-body">' +
+						    '</div>' +
+						    '<div class="card-footer" id="event_date_'+i+'">'+
+						    '</div>' +
+						  '</div>' + 
+						'</div>'
+						);
+
+					
+					var eventDate = new Date(EventSnapshot.child('date').val()).toJSON().slice(0,10).replace(/-/g,'/');
+					var eventDateText = eventDate.slice(5,10)+'/'+eventDate.slice(0,4);
+					if (acc_name == 'current_event_accordion'){
+						if (firstDate == null){
+							firstDate = new Date(eventDate);
+						}
+						lastDate = new Date(eventDate);
+					}
+
+					var eventShortSlug = EventSnapshot.child('shortSlug').val();
+					var eventSlug = EventSnapshot.child('slug').val();
+					if (eventShortSlug == null){
+						eventShortSlug = eventSlug;
+					}
+
+					$('#event_body_'+i).append(
+						'<h5 class="card-title">' +
+						  EventSnapshot.child('name').val() +
+						'</h5>' +
+						'<h6 class="card-subtitle text-muted">' +
+						  EventSnapshot.child('numEntrants').val()+' Entrants   •   '+EventSnapshot.child('region').val() +
+						'</h6>' +
+						'<p class="card-text">' +
+						'</p>'
+						);
+					$('#event_date_'+i).html(
+						'<span class="text-muted">' + 
+						  eventDateText + 
+						'   •</span>   ' +
+						'<a class="card-link" target="_blank" href="https://smash.gg/tournament/'+eventSlug+'">' +
+						  'smash.gg/tournament/'+ eventShortSlug +
+						'</a>')
+
+					i++;
+				}
+			});
+			var eventCountText = ''+i+' Event'
+			if (i >= 2){
+				eventCountText += 's'
+			}
+			$('#current_event_accordion').append(
+				'<div class="card border">' +
+				  '<div class="card-footer text-muted">' +
+				  eventCountText+'  •  '+(firstDate.getMonth()+1)+'/'+firstDate.getFullYear()+' - '+(lastDate.getMonth()+1)+'/'+lastDate.getFullYear() +
+				  '</div>' + 
+				'</div>'
+			);
+		}
+	});
+	</script>
