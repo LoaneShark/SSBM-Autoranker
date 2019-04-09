@@ -209,7 +209,7 @@
 		var curr_ref_str = "/" + game_id + "_2016_" + (curr_year-2016)+ "_c" + "/p_info";
 		//var curr_ref_str = "/" + game_id + "_" + (curr_year-1) + "_1/p_info";
 		var curr_ref = firebase.database().ref(curr_ref_str);
-		var curr_query = curr_ref.orderByChild('srank').limitToFirst(20)
+		var curr_query = curr_ref.orderByChild('srank').limitToFirst(100)
 		curr_query.once('value').then(function(PlayerSnapshot) {
 			if (PlayerSnapshot.exists()) {
 				var players = snapshotToTable(PlayerSnapshot);
@@ -218,9 +218,10 @@
 					data: players,
 					responsive: true,
 					ordering: true,
-					paging: false,        
+					paging: true,        
 					//"autoWidth": false, 	
-					"order": [[ 3, "asc" ]],
+					//"order": [[ 3, "asc" ],[4,"desc"]],
+					"order": [[ 5, "desc" ]],
 					"dom": '<"top"iflp<"clear">>rt<"bottom"iflp<"clear">>',
 					//scrollY: 200,
 					//scrollCollapse: true,
@@ -243,7 +244,7 @@
 		var past_ref_str = "/" + game_id + "_2016_" + (curr_year-2016)-1 + "_c/p_info";
 		//var curr_ref_str = "/" + game_id + "_2016_" + (curr_year-2016)-1+ "_c" + "/p_info";
 		var past_ref = firebase.database().ref(past_ref_str);
-		var past_query = past_ref.orderByChild('srank').limitToFirst(20)
+		var past_query = past_ref.orderByChild('srank').limitToFirst(100)
 		past_query.once('value').then(function(PlayerSnapshot) {
 			if (PlayerSnapshot.exists()) {
 				var players = snapshotToTable(PlayerSnapshot);
@@ -252,9 +253,9 @@
 					data: players,
 					responsive: true,
 					ordering: true,
-					paging: false,       
+					paging: true,       
 					//"autoWidth": false,  	
-					"order": [[ 3, "asc" ]],
+					"order": [[ 3, "asc" ],[4,"desc"]],
 					"dom": '<"top"iflp<"clear">>rt<"bottom"iflp<"clear">>',
 					//scrollY: 200,
 					//scrollCollapse: true,
@@ -272,7 +273,7 @@
 		// populate "all-time" table
 		var db_ref_str = "/" + game_id + "_2016_" + (curr_year-2016) + "/p_info";
 		var db_ref = firebase.database().ref(db_ref_str);
-		var db_query = db_ref.orderByChild('srank').limitToFirst(20);
+		var db_query = db_ref.orderByChild('srank').limitToFirst(100);
 		db_query.once('value').then(function(PlayerSnapshot) {
 			if (PlayerSnapshot.exists()) {
 				var players = snapshotToTable(PlayerSnapshot);
@@ -281,7 +282,7 @@
 					data: players,
 					responsive: true,
 					ordering: true,
-					paging: false,
+					paging: true,
 					//"autoWidth": false,      	
 					"order": [[ 3, "asc" ],[4,"desc"]],
 					"dom": '<"top"iflp<"clear">>rt<"bottom"iflp<"clear">>',
