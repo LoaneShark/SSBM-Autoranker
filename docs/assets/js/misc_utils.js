@@ -429,3 +429,613 @@ function countryNameToCC(countryName){
       }
   }
 }
+
+function getNAMap(){
+	return [
+			  {
+			    "name": "New England",
+			    "color": chart.colors.getIndex(0),
+			    "data": [
+			      {
+			        "title": "Massachusetts",
+			        "id": "US-MA", // With MapPolygonSeries.useGeodata = true, it will try and match this id, then apply the other properties as custom data
+			        "customData": "New England"
+			      }, {
+			        "title": "Maine",
+			        "id": "US-ME",
+			        "customData": "New England"
+			      }, {
+			        "title": "Vermont",
+			        "id": "US-VT",
+			        "customData": "New England"
+			      }, {
+			        "title": "New Hampshire",
+			        "id": "US-NH",
+			        "customData": "New England"
+			      }, {
+			        "title": "Rhode Island",
+			        "id": "US-RI",
+			        "customData": "New England"
+			      }, {
+			        "title": "Connecticut",
+			        "id": "US-CT",
+			        "customData": "New England"
+			      }
+			    ]
+			  },{
+			    "name": "Tristate",
+			    "color": chart.colors.getIndex(1),
+			    "data": [
+			      {
+			        "title": "New York",
+			        "id": "US-NY", 
+			        "customData": ""
+			      }, {
+			        "title": "Pennsylvania",
+			        "id": "US-PA",
+			        "customData": ""
+			      }, {
+			        "title": "New Jersey",
+			        "id": "US-NJ",
+			        "customData": ""
+			      }
+			    ]
+			  },{
+			    "name": "MD/VA",
+			    "color": chart.colors.getIndex(2),
+			    "data": [
+			      {
+			        "title": "Maryland",
+			        "id": "US-MD", 
+			        "customData": ""
+			      }, {
+			        "title": "Virginia",
+			        "id": "US-VA",
+			        "customData": ""
+			      }, {
+			        "title": "West Virginia",
+			        "id": "US-WV",
+			        "customData": ""
+			      }, {
+			        "title": "Delaware",
+			        "id": "US-DE",
+			        "customData": ""
+			      }
+			    ]
+			  },{
+			    "name": "South Atlantic",
+			    "color": chart.colors.getIndex(3),
+			    "data": [
+			      {
+			        "title": "North Carolina",
+			        "id": "US-NC", 
+			        "customData": ""
+			      }, {
+			        "title": "South Carolina",
+			        "id": "US-SC",
+			        "customData": ""
+			      }, {
+			        "title": "Georgia",
+			        "id": "US-GA",
+			        "customData": ""
+			      }
+			    ]
+			  },{
+			    "name": "Mideast",
+			    "color": chart.colors.getIndex(4),
+			    "data": [
+			      {
+			        "title": "Ohio",
+			        "id": "US-OH", 
+			        "customData": ""
+			      }, {
+			        "title": "Kentucky",
+			        "id": "US-KY",
+			        "customData": ""
+			      }, {
+			        "title": "Tennessee",
+			        "id": "US-TN",
+			        "customData": ""
+			      }, {
+			        "title": "Alabama",
+			        "id": "US-AL",
+			        "customData": ""
+			      }, {
+			        "title": "Mississippi",
+			        "id": "US-MS",
+			        "customData": ""
+			      }, {
+			        "title": "Indiana",
+			        "id": "US-IN",
+			        "customData": ""
+			      }, {
+			        "title": "Illinois",
+			        "id": "US-IL",
+			        "customData": ""
+			      }, {
+			        "title": "Michigan",
+			        "id": "US-MI",
+			        "customData": ""
+			      }, {
+			        "title": "Wisconsin",
+			        "id": "US-WI",
+			        "customData": ""
+			      }
+			    ]
+			  },{
+			    "name": "Midwest",
+			    "color": chart.colors.getIndex(5),
+			    "data": [
+			      {
+			        "title": "North Dakota",
+			        "id": "US-ND", 
+			        "customData": ""
+			      }, {
+			        "title": "South Dakota",
+			        "id": "US-SD",
+			        "customData": ""
+			      }, {
+			        "title": "Minnesota",
+			        "id": "US-MN",
+			        "customData": ""
+			      }, {
+			        "title": "Iowa",
+			        "id": "US-IA",
+			        "customData": ""
+			      }, {
+			        "title": "Missouri",
+			        "id": "US-MO",
+			        "customData": ""
+			      }, {
+			        "title": "Arkansas",
+			        "id": "US-AR",
+			        "customData": ""
+			      }, {
+			        "title": "Louisiana",
+			        "id": "US-LA",
+			        "customData": ""
+			      }, {
+			        "title": "Nebraska",
+			        "id": "US-NE",
+			        "customData": ""
+			      }, {
+			        "title": "Kansas",
+			        "id": "US-KS",
+			        "customData": ""
+			      }, {
+			        "title": "Oklahoma",
+			        "id": "US-OK",
+			        "customData": ""
+			      }
+			    ]
+			  },{
+			    "name": "Rockies",
+			    "color": chart.colors.getIndex(6),
+			    "data": [
+			      {
+			        "title": "Wyoming",
+			        "id": "US-WY", 
+			        "customData": ""
+			      }, {
+			        "title": "Colorado",
+			        "id": "US-CO",
+			        "customData": ""
+			      }, {
+			        "title": "Utah",
+			        "id": "US-UT",
+			        "customData": ""
+			      }, {
+			        "title": "Nevada",
+			        "id": "US-NV",
+			        "customData": ""
+			      }, {
+			        "title": "Montana",
+			        "id": "US-MT",
+			        "customData": ""
+			      }, {
+			        "title": "Idaho",
+			        "id": "US-ID",
+			        "customData": ""
+			      }
+			    ]
+			  },{
+			    "name": "Southwest",
+			    "color": chart.colors.getIndex(7),
+			    "data": [
+			      {
+			        "title": "Arizona",
+			        "id": "US-AZ", 
+			        "customData": ""
+			      }, {
+			        "title": "New Mexico",
+			        "id": "US-NM",
+			        "customData": ""
+			      }, {
+			        "title": "Texas",
+			        "id": "US-TX",
+			        "customData": ""
+			      }
+			    ]
+			  },{
+			    "name": "Pacific Northwest",
+			    "color": chart.colors.getIndex(8),
+			    "data": [
+			      {
+			        "title": "Washington",
+			        "id": "US-WA", 
+			        "customData": ""
+			      }, {
+			        "title": "Oregon",
+			        "id": "US-OR",
+			        "customData": ""
+			      }, {
+			        "title": "British Columbia",
+			        "id": "CA-BC",
+			        "customData": ""
+			      }, {
+			        "title": "Alberta",
+			        "id": "CA-AB",
+			        "customData": ""
+			      }
+			    ]
+			  },{
+			    "name": "Arctic Circle",
+			    "color": chart.colors.getIndex(9),
+			    "data": [
+			      {
+			        "title": "Alaska",
+			        "id": "US-AK", 
+			        "customData": ""
+			      }, {
+			        "title": "Yukon Territory",
+			        "id": "CA-YT",
+			        "customData": ""
+			      }, {
+			        "title": "Northwest Territories",
+			        "id": "CA-NT",
+			        "customData": ""
+			      }, {
+			        "title": "Nunavut",
+			        "id": "CA-NU",
+			        "customData": ""
+			      }
+			    ]
+			  },{
+			    "name": "Central Canada",
+			    "color": chart.colors.getIndex(10),
+			    "data": [
+			      {
+			        "title": "Saskatchewan",
+			        "id": "CA-SK", 
+			        "customData": ""
+			      }, {
+			        "title": "Manitoba",
+			        "id": "CA-MB",
+			        "customData": ""
+			      }, {
+			        "title": "Ontario",
+			        "id": "CA-ON",
+			        "customData": ""
+			      }
+			    ]
+			  },{
+			    "name": "Atlantic Canada",
+			    "color": chart.colors.getIndex(11),
+			    "data": [
+			      {
+			        "title": "Québec",
+			        "id": "CA-QC", 
+			        "customData": ""
+			      }, {
+			        "title": "New Brunswick",
+			        "id": "CA-NB",
+			        "customData": ""
+			      }, {
+			        "title": "Nova Scotia",
+			        "id": "CA-NS",
+			        "customData": ""
+			      }, {
+			        "title": "Prince Edward Island",
+			        "id": "CA-PE",
+			        "customData": ""
+			      }, {
+			        "title": "Newfoundland & Labrador",
+			        "id": "CA-NL",
+			        "customData": ""
+			      }
+			    ]
+			  },{
+			    "name": "U.S. Caribbean Islands",
+			    "color": chart.colors.getIndex(12),
+			    "data": [
+			      {
+			        "title": "Puerto Rico",
+			        "id": "US-PR", 
+			        "customData": ""
+			      }, {
+			        "title": "Virgin Islands",
+			        "id": "US-VI",
+			        "customData": ""
+			      }
+			    ]
+			  },{
+			    "name": "U.S. Pacific Islands",
+			    "color": chart.colors.getIndex(13),
+			    "data": [
+			      {
+			        "title": "Hawai'i",
+			        "id": "US-HI", 
+			        "customData": ""
+			      }, {
+			        "title": "Guam",
+			        "id": "US-GU",
+			        "customData": ""
+			      }, {
+			        "title": "Northern Mariana Islands",
+			        "id": "US-MP",
+			        "customData": ""
+			      }, {
+			        "title": "American Samoa",
+			        "id": "US-AS",
+			        "customData": ""
+			      }, {
+			        "title": "Marshall Islands",
+			        "id": "MH",
+			        "customData": ""
+			      }, {
+			        "title": "Federated States of Micronesia",
+			        "id": "FM",
+			        "customData": ""
+			      }, {
+			        "title": "Palau",
+			        "id": "PW",
+			        "customData": ""
+			      }
+			    ]
+			  },{
+			    "name": "SoCal",
+			    "color": chart.colors.getIndex(14),
+			    "data": [
+			      {
+			        "title": "Ventura",
+			        "id": "06111",
+			        "customData": ""
+			      }, {
+			        "title": "Santa Barbara",
+			        "id": "06083",
+			        "customData": ""
+			      }, {
+			        "title": "San Luis Obispo",
+			        "id": "06079",
+			        "customData": ""
+			      }, {
+			        "title": "San Diego",
+			        "id": "06073",
+			        "customData": ""
+			      }, {
+			        "title": "San Bernardino",
+			        "id": "06071",
+			        "customData": ""
+			      }, {
+			        "title": "Riverside",
+			        "id": "06065",
+			        "customData": ""
+			      }, {
+			        "title": "Orange",
+			        "id": "06059",
+			        "customData": ""
+			      }, {
+			        "title": "Los Angeles",
+			        "id": "06037",
+			        "customData": ""
+			      }, {
+			        "title": "Kern",
+			        "id": "06029",
+			        "customData": ""
+			      }, {
+			        "title": "Imperial",
+			        "id": "06025",
+			        "customData": ""
+			      }
+			    ]
+			  },{
+			    "name": "NorCal",
+			    "color": chart.colors.getIndex(15),
+			    "data": [
+			      {
+			        "title": "Yuba",
+			        "id": "06115", 
+			        "customData": ""
+			      }, {
+			        "title": "Yolo",
+			        "id": "06113",
+			        "customData": ""
+			      }, {
+			        "title": "Tuolumne",
+			        "id": "06109",
+			        "customData": ""
+			      }, {
+			        "title": "Tulare",
+			        "id": "06107",
+			        "customData": ""
+			      }, {
+			        "title": "Trinity",
+			        "id": "06105",
+			        "customData": ""
+			      }, {
+			        "title": "Tehama",
+			        "id": "06103",
+			        "customData": ""
+			      }, {
+			        "title": "Sutter",
+			        "id": "06101",
+			        "customData": ""
+			      }, {
+			        "title": "Stanislaus",
+			        "id": "06099",
+			        "customData": ""
+			      }, {
+			        "title": "Sonoma",
+			        "id": "06097",
+			        "customData": ""
+			      }, {
+			        "title": "Solano",
+			        "id": "06095",
+			        "customData": ""
+			      }, {
+			        "title": "Siskiyou",
+			        "id": "06093",
+			        "customData": ""
+			      }, {
+			        "title": "Sierra",
+			        "id": "06091",
+			        "customData": ""
+			      }, {
+			        "title": "Shasta",
+			        "id": "06089",
+			        "customData": ""
+			      }, {
+			        "title": "Santa Cruz",
+			        "id": "06087",
+			        "customData": ""
+			      }, {
+			        "title": "Santa Clara",
+			        "id": "06085",
+			        "customData": ""
+			      }, {
+			        "title": "San Mateo",
+			        "id": "06081",
+			        "customData": ""
+			      }, {
+			        "title": "San Joaquin",
+			        "id": "06077",
+			        "customData": ""
+			      }, {
+			        "title": "San Francisco",
+			        "id": "06075",
+			        "customData": ""
+			      }, {
+			        "title": "San Benito",
+			        "id": "06069",
+			        "customData": ""
+			      }, {
+			        "title": "Sacramento",
+			        "id": "06067",
+			        "customData": ""
+			      }, {
+			        "title": "Plumas",
+			        "id": "06063",
+			        "customData": ""
+			      }, {
+			        "title": "Placer",
+			        "id": "06061",
+			        "customData": ""
+			      }, {
+			        "title": "Nevada",
+			        "id": "06057",
+			        "customData": ""
+			      }, {
+			        "title": "Napa",
+			        "id": "06055",
+			        "customData": ""
+			      }, {
+			        "title": "Monterey",
+			        "id": "06053",
+			        "customData": ""
+			      }, {
+			        "title": "Mono",
+			        "id": "06051",
+			        "customData": ""
+			      }, {
+			        "title": "Modoc",
+			        "id": "06049",
+			        "customData": ""
+			      }, {
+			        "title": "Merced",
+			        "id": "06047",
+			        "customData": ""
+			      }, {
+			        "title": "Mendocino",
+			        "id": "06045",
+			        "customData": ""
+			      }, {
+			        "title": "Mariposa",
+			        "id": "06043",
+			        "customData": ""
+			      }, {
+			        "title": "Marin",
+			        "id": "06041",
+			        "customData": ""
+			      }, {
+			        "title": "Madera",
+			        "id": "06039",
+			        "customData": ""
+			      }, {
+			        "title": "Lassen",
+			        "id": "06035",
+			        "customData": ""
+			      }, {
+			        "title": "Lake",
+			        "id": "06033",
+			        "customData": ""
+			      }, {
+			        "title": "Kings",
+			        "id": "06031",
+			        "customData": ""
+			      }, {
+			        "title": "Inyo",
+			        "id": "06027",
+			        "customData": ""
+			      }, {
+			        "title": "Humboldt",
+			        "id": "06023",
+			        "customData": ""
+			      }, {
+			        "title": "Glenn",
+			        "id": "06021",
+			        "customData": ""
+			      }, {
+			        "title": "Fresno",
+			        "id": "06019",
+			        "customData": ""
+			      }, {
+			        "title": "El Dorado",
+			        "id": "06017",
+			        "customData": ""
+			      }, {
+			        "title": "Del Norte",
+			        "id": "06015",
+			        "customData": ""
+			      }, {
+			        "title": "Contra Costa",
+			        "id": "06013",
+			        "customData": ""
+			      }, {
+			        "title": "Colusa",
+			        "id": "06011",
+			        "customData": ""
+			      }, {
+			        "title": "Calaveras",
+			        "id": "06009",
+			        "customData": ""
+			      }, {
+			        "title": "Butte",
+			        "id": "06007",
+			        "customData": ""
+			      }, {
+			        "title": "Amador",
+			        "id": "06005",
+			        "customData": ""
+			      }, {
+			        "title": "Alpine",
+			        "id": "06003",
+			        "customData": ""
+			      }, {
+			        "title": "Alameda",
+			        "id": "06001",
+			        "customData": ""
+			      }
+			    ]
+			  }
+			];
+}

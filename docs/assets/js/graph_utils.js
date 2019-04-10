@@ -22,6 +22,30 @@ Chart.plugins.register({
     }
   }
 });
+// Custom plugin to plot a mathematical function (in our case sigmoid)
+var funcPlugin = {
+    beforeInit: function(chart) {
+        // We get the chart data
+        var data = chart.config.data;
+
+        // For every dataset after the first one...
+        for (var i = 1; i < data.datasets.length; i++) {
+
+            // For 1000 points between [0,1]
+            var numPts = 100;
+            var stepSize = 1/numPts;
+            for (var j = 0; j < 1+stepSize; j+=stepSize) {
+
+                // We get the dataset's function and calculate the value
+                var fct = data.datasets[i].function,
+                    x = j,
+                    y = fct(x);
+                // Then we add the value to the dataset data
+                data.datasets[i].data.push({'x':x,'y':y});
+            }
+        }
+    }
+};
 
 function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='elo'){
 	var ctx = $('#'+type+'_chart')[0].getContext('2d');
@@ -373,6 +397,111 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 	return myChart;
 }
 
+function sigmoidChart(PlayerSnapshot,infoRefStr,sigmoid,winprobs,pSkill){
+	// sigmoid = [x0,g,c,k]
+	var ctx = $('#srank_sigmoid')[0].getContext('2d');
+	if (pSkill==1 && sigmoid[0]==0.5 && sigmoid[1]==0 && sigmoid[2]==1 && sigmoid[3]==4){
+		var rankedSigmoid = false;
+		var sigmoidBorderDash = [5,5];
+	} else {
+		var rankedSigmoid = true;
+		var sigmoidBorderDash = [5,0];
+	}
+
+	var winprobPromises = winprobsToChartArray(infoRefStr,winprobs);
+
+	Promise.all(winprobPromises).then(function(winprobDataset){
+
+		winprobDataset.sort(function(a,b){
+			return a.x-b.x;
+		})
+
+		var myChart = new Chart(ctx, {
+			plugins: [funcPlugin],
+			type: 'mixed',
+			data: {
+				datasets: [{
+					label: 'H2H',
+					type: 'scatter',
+					//backgroundColor: legendColors[0][1],
+					//borderColor: legendColors[0][0],
+					pointBackgroundColor: 'rgb(0,0,240,1)',
+					pointBorderColor: 'rgb(0,0,240,1)',
+					fill: false,
+					//function: function(x){
+					//	return x
+					//},
+					showLine: false,
+					data: winprobDataset
+					//data: [{x:1,y:1},{x:0,y:0}]
+				},{
+					label: 'Sigmoid',
+					type: 'line',
+					backgroundColor: 'rgb(0,200,50,0.1)',
+					borderColor: 'rgb(0,200,50,1)',
+					borderDash: sigmoidBorderDash,
+					pointRadius: 0,
+					//pointBackgroundColor: srankBgs[0],
+					//pointBorderColor: srankBgs[0],
+					fill: rankedSigmoid,
+					function: function(x){
+						return (sigmoid[2] / (1 + Math.pow(Math.E,-sigmoid[3]*10*(x-sigmoid[0])))) + sigmoid[1]*(1-sigmoid[2]);
+					},
+					data: []
+				}]
+			},
+			options: {
+				responsive: true,
+				legend: false,
+				title: {
+					display: true,
+					text: 'S-Rank Win Probability'
+				},
+				tooltips: {
+					onlyShowForDatasetIndex: [0],
+					displayColors: false,
+					callbacks: {
+						title: function(tooltipItem,data){
+							return data.datasets[tooltipItem[0].datasetIndex].data[tooltipItem[0].index].label;
+						},
+						beforeLabel: function(tooltipItem,data){
+							return 'S-Rank: ' + Math.round(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].x*1000)/1000;
+						},
+						label: function(tooltipItem,data){
+							var winrate = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y;
+							var n = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].n;
+							return 'Record: ' + winrate*n + '-' + (n-(winrate*n));
+						}
+					}
+				},
+				//hover: {
+				//	mode: 'x'
+				//},
+				//tooltips: {
+
+				//},
+		        scales: {
+		            xAxes: [{
+		                type: 'linear',
+		            	ticks: {
+		            		suggestedMin: -0.1,
+		            		suggestedMax: 1.1
+		            	}
+		            }],
+		            yAxes: [{
+		            	type: 'linear',
+		            	ticks: {
+		            		suggestedMin: -0.1,
+		            		suggestedMax: 1.1
+		            	}
+		            }]
+		        }
+			}
+		});
+		return myChart;
+	});
+}
+
 function snapshotToSkillHistory(skillRefStr,playerId,skillTypes=['mainrank','elo','glicko','srank','trueskill']){
 	var returnArr = [];
 	for (j=0;j<skillTypes.length;j++){
@@ -497,4 +626,77 @@ function getYAxisBounds(gameId,skillType){
 	}
 
 	return [minVal,maxVal];
+}
+
+function winprobsFromH2H(h2h){
+	var winps = {};
+	var oppList = Object.keys(h2h)
+
+	for(i=0;i<oppList.length;i++){
+		var oppId = oppList[i];
+		var winCount = h2h[oppId][0];
+		var setCount = h2h[oppId][0]+h2h[oppId][1];
+		winps[oppId] = [winCount/setCount,setCount];
+	}
+	return winps;
+}
+
+function winprobsFromRecords(playerWins,playerLosses){
+  var h2hAll = {};
+
+  if (playerWins != null){
+  	var wOppIds = Object.keys(playerWins);
+  	for(j=0;j<wOppIds.length;j++){
+  	  var winOpp = wOppIds[j];
+      if (!(h2hAll.hasOwnProperty(winOpp))){
+        h2hAll[winOpp] = [0.0,0.0];
+      } 
+      h2hAll[winOpp][0] += playerWins[winOpp].length;
+  	}
+  }
+  if (playerLosses != null){
+  	var lOppIds = Object.keys(playerLosses);
+  	for(k=0;k<lOppIds.length;k++){
+  	  var lossOpp = lOppIds[k];
+      if (!(h2hAll.hasOwnProperty(lossOpp))){
+        h2hAll[lossOpp] = [0.0,0.0];
+      }
+      h2hAll[lossOpp][1] += playerLosses[lossOpp].length;
+  	}
+  }
+  return winprobsFromH2H(h2hAll);
+}
+
+function winprobsToChartArray(infoRefStr,winprobs){
+	var returnArr = [];
+	var oppIds = Object.keys(winprobs);
+	var testArr = [];
+
+	/*for(i=0;i<oppIds.length;i++){
+		var oppId = oppIds[i];
+		var oppInfoRefStr = infoRefStr + oppId;
+		var oppInfoRef = firebase.database().ref(oppInfoRefStr);
+		//returnArr.push({'y':winprobs[oppId][0],'p_id':oppId})
+		oppInfoQuery = oppInfoRef.once('value').then(function(oppSnapshot){
+			testArr.push(oppSnapshot);
+			//returnArr[i]['x'] = oppSnapshot.child('srank').val();
+			//returnArr[i]['label'] = oppSnapshot.child('tag').val();
+			//returnArr[i]['active'] = oppSnapshot.child('active').val();
+			returnArr.push({'x':oppSnapshot.child('srank').val(), 'y':winprobs[oppSnapshot.key][0], 'label':oppSnapshot.child('tag').val(), 'active':oppSnapshot.child('active').val(), 'p_id':oppSnapshot.key});
+		});
+	}*/
+
+	var datasetPromise = oppIds.map(oppId => {
+		var oppInfoRefStr = infoRefStr + oppId;
+		var oppInfoRef = firebase.database().ref(oppInfoRefStr);
+		var oppInfoQuery = oppInfoRef.once('value').then(function(oppSnapshot){
+			testArr.push(oppSnapshot);
+			//returnArr[i]['x'] = oppSnapshot.child('srank').val();
+			//returnArr[i]['label'] = oppSnapshot.child('tag').val();
+			//returnArr[i]['active'] = oppSnapshot.child('active').val();
+			return{'x':oppSnapshot.child('srank').val(), 'y':winprobs[oppSnapshot.key][0], 'n':winprobs[oppSnapshot.key][1], 'label':oppSnapshot.child('tag').val(), 'active':oppSnapshot.child('active').val(), 'p_id':oppSnapshot.key};
+		});
+		returnArr.push(oppInfoQuery);
+	});
+	return returnArr;
 }

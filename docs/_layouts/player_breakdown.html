@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="{{ "/assets/css/style.css?v=" | append: site.github.build_revision | relative_url }}">
     {% include bootstrap_css.html %}
     {% include bootstrap_scripts.html %}
+
 <style type="text/css">
 /*#player_searchbar .tt-dropdown-menu {
   max-height: 150px;
@@ -93,12 +94,10 @@
     <script type="text/javascript" src="/assets/js/misc_utils.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.bundle.min.js" async></script>
     <script type="text/javascript" src="/assets/js/graph_utils.js" async></script>
+    <!-- Searchbar -->
     <script>
       $('.typeahead').bind('typeahead:select', function(ev, suggestion) {
-        //console.log('Selection: ' + suggestion);
-        //console.log('Selection: ' + suggestion.name);
-        //console.log('Selection: ' + suggestion.id);
-        Finch.navigate(''+suggestion.id)
+        Finch.navigate(''+suggestion.id);
       });
 
       var gameId = getGameId('{{page.game}}')
@@ -150,8 +149,9 @@
             }
           });
     </script>
-    <script>
 
+    <!-- Player Profile -->
+    <script>
       var currentDB = true;
 
       Finch.route("/", function(bindings){
@@ -166,11 +166,12 @@
 
         var playerId = bindings.p_id;
         var gameId = getGameId('{{page.game}}');
+        var curr_year = new Date().getFullYear();
         $('#game_icon_div').html('<img src="'+getGameIconPath(gameId)+'" alt="'+gameId+'" style="width:20px;height:20px;">');
 
         // query db and populate profile
         if (currentDB){
-          var player_ref_str = "/"+gameId+"_2016_3_c/p_info/"+playerId;
+          var player_ref_str = "/"+gameId+"_2016_"+(curr_year-2016)+"_c/p_info/"+playerId;
         } else {
           var player_ref_str = "/"+gameId+"_2018_1/p_info/"+playerId;
         }
@@ -282,18 +283,21 @@
               // draw icons
               if (p_used_characters.length > 0){
                 for (i=0;i<p_used_characters.length;i++){
-                  $('#player_characters').append('<img id="char_'+p_used_characters[i][0]+'_img" src="'+getStockIconPath(gameId,p_used_characters[i][0])+'" alt="'+p_used_characters[i][0]+'" style="width:26px;height:26px;padding:1px;">');
+                  // assign usage percents as tooltips
+                  usagePct = Math.round(p_used_characters[i][1]*10000.0/totalSets)/100.0;
+                  $('#player_characters').append(
+                    '<span id="char_'+p_used_characters[i][0]+'_span" data-toggle="tooltip" title="'+usagePct+'%">' +
+                      '<img id="char_'+p_used_characters[i][0]+'_img" src="'+getStockIconPath(gameId,p_used_characters[i][0])+'" alt="'+p_used_characters[i][0]+'" style="width:26px;height:26px;padding:1px;">' +
+                    '</span>');
                   if (i > 0){
                     var newLine = '\n';
                   } else {
                     var newLine = '';
                   }
-                  usagePct = Math.round(p_used_characters[i][1]*10000.0/totalSets)/100.0;
-                  // assign usage percents as tooltips
-                  $('#char_'+p_used_characters[i][0]+'_img').attr('title',''+usagePct+'%')
                   //$('#player_characters_div').attr('title',$('#player_characters_div').attr('title')+newLine+usagePct+'%')
                 }
                 $('#player_characters_div').removeClass('invisible');
+                $('[data-toggle="tooltip"]').tooltip();
               }
             }
 
@@ -320,13 +324,82 @@
             $('#player_mainrank').html(mainrankVal);
             //$('#player_trueskill').html(Math.round(PlayerSnapshot.child('trueskill').val()));
 
+            // populate h2h-at-a-glance
+            var playerRecordStr = '/' + gameId + '_2016_' + (curr_year-2016)+ '_c' + '/records/'+playerId;
+            var playerRecordRef = firebase.database().ref(playerRecordStr);
+            var playerRecordQuery = playerRecordRef.once('value').then(function(RecordSnapshot){
+              if (RecordSnapshot.exists()){
+
+                var playerWins = RecordSnapshot.child('wins').val();
+                var playerLosses = RecordSnapshot.child('losses').val();
+                var h2h = {'top10w':0,'top10l':0,'top100w':0,'top100l':0,'top500w':0,'top500l':0};
+
+                if (playerWins != null || playerLosses != null){
+                  var topPlayerRefStr = '/' + gameId + '_2016_' + (curr_year-2016)+ '_c' + '/p_info';
+                  var topPlayerRef = firebase.database().ref(topPlayerRefStr);
+                  var topPlayerQuery = topPlayerRef.orderByChild('srank').limitToFirst(500).once('value').then(function(TopPlayerSnapshot){
+                    if (TopPlayerSnapshot.exists()){
+                      TopPlayerSnapshot.forEach(function(childSnapshot){
+                        oppId = childSnapshot.key;
+                        oppSkillRank = childSnapshot.child('srank-rnk').val();
+                        if (playerWins != null){
+                          if (oppId in playerWins){
+                            h2h['top500w'] += 1;
+                            if (oppSkillRank <= 100){
+                              h2h['top100w'] += 1;
+                              if (oppSkillRank <= 10){
+                                h2h['top10w'] += 1;
+                              }
+                            }
+                          }
+                        }
+                        if (playerLosses != null){
+                          if (oppId in playerLosses){
+                            h2h['top500l'] += 1;
+                            if (oppSkillRank <= 100){
+                              h2h['top100l'] += 1;
+                              if (oppSkillRank <= 10){
+                                h2h['top10l'] += 1;
+                              }
+                            }
+                          }
+                        }
+                      });
+                      $('#top500_h2h').html('<span class="text-success">'+h2h['top500w']+'</span>-<span class="text-danger">'+h2h['top500l']+'</span>');
+                      $('#top100_h2h').html('<span class="text-success">'+h2h['top100w']+'</span>-<span class="text-danger">'+h2h['top100l']+'</span>');
+                      $('#top10_h2h').html('<span class="text-success">'+h2h['top10w']+'</span>-<span class="text-danger">'+h2h['top10l']+'</span>');
+                    }
+                  });
+                } else {
+                  $('#top10_h2h').html('0-0')
+                  $('#top100_h2h').html('0-0')
+                  $('#top500_h2h').html('0-0')
+                  //$('#top10_h2h_div').addClass('invisible');
+                  //$('#top100_h2h_div').addClass('invisible');
+                }
+              }
+              // draw srank sigmoid skill chart
+              var sigmoidParams = PlayerSnapshot.child('srank_sig').val();
+              var infoRefStr = '/'+gameId+'_2016_'+(curr_year-2016)+'_c/p_info/';
+              winps = winprobsFromRecords(playerWins,playerLosses);
+
+              var sigChart = sigmoidChart(PlayerSnapshot,infoRefStr,sigmoidParams,winps,srankVal);
+              if (sigChart != null){
+                sigChart.update();
+              } else {
+                $('srank_sigmoid_container').addClass('invisible')
+                $('srank_switch').addClass('disabled')
+              }
+
+            });
+
             // add today's date/watermark
             var utc_date = new Date().toJSON().slice(0,10).replace(/-/g,'/');
             $('#today_date').html(utc_date);
 
             // get last events
             if (currentDB){
-              var placeRef = firebase.database().ref("/"+gameId+"_2016_3_c/records/"+playerId+"/placings");
+              var placeRef = firebase.database().ref("/"+gameId+"_2016_"+(curr_year-2016)+"_c/records/"+playerId+"/placings");
             } else {
               var placeRef = firebase.database().ref("/"+gameId+"_2018_1/records/"+playerId+"/placings");
             }
@@ -374,7 +447,7 @@
               });
               // draw skill graphs
               if (currentDB){
-                var tourneyRefStr = '/'+gameId+'_2016_3_c/tourneys/'
+                var tourneyRefStr = '/'+gameId+'_2016_'+(curr_year-2016)+'_c/tourneys/'
               } else {
                 var tourneyRefStr = '/'+gameId+'_2018_1/tourneys/'
               }
@@ -385,7 +458,7 @@
                   //skillTypes = ['elo'];
                   skillTypes = ['mainrank','elo','glicko','srank'];
                   if (currentDB){
-                    var skillRefStr = '/'+gameId+'_2016_3_c/skills/';
+                    var skillRefStr = '/'+gameId+'_2016_'+(curr_year-2016)+'_c/skills/';
                   } else {
                     var skillRefStr = '/'+gameId+'_2018_1/skills/';
                   }
@@ -408,15 +481,12 @@
                         $('#'+skillTypes[i]+'_chart_container').addClass('invisible');
                         console.log(skillTypes[i]+' skillHistory does not exist!');
                       }
-                    }//endfor
-
+                    }// endfor
                   });
                 } else {
                   console.log('TourneySnapshot does not exist!');
                 }
               });
-              // checkbox functionality
-              $('#checkbox_status').html($('#customSwitch1').attr('value'))
 
               $('input:checkbox').change(function() {
                 //$('#checkbox_status').html('Toggle: ' + $(this).prop('checked'));
@@ -436,6 +506,14 @@
                   //$('#player_elo').html(eloVal);
                   //$('#player_glicko').html(glickoVal);
                   //$('#player_srank').html(srankVal);
+                } else if (this.id == 'srank_switch'){
+                  if ($(this).prop('checked')){
+                    $('#srank_skill_container').removeClass('show');
+                    $('#srank_sigmoid_container').addClass('show');
+                  } else {
+                    $('#srank_skill_container').addClass('show');
+                    $('#srank_sigmoid_container').removeClass('show');
+                  }
                 }
               });
             });
@@ -457,6 +535,16 @@
       });*/
       Finch.listen();
     </script>
+
+    <!-- Initialize Tooltips -->
+    <script>
+      $(document).ready(function(){
+        $('[data-toggle="tooltip"]').tooltip({
+          animated: 'fade'
+        });
+      });
+    </script>
+
     <!-- Mobile scaling fix -->
     <script src="{{ "/assets/js/scale.fix.js" | relative_url }}"></script>
 

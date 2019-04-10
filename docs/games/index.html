@@ -59,32 +59,42 @@ title: Games
 <p class="display-3">{{page.title}}</p>
 
 <main class="page-content" aria-label="Content">
-      <div class="container wrapper">
-        <div class="home d-flex flex-column">
-          <div class="d-flex flex-row justify-content-center">
-            <a class="page-link btn btn-melee d-flex justify-content-center" title="Melee" aria-label="Melee" href="/{{page.title | downcase}}/melee">
-              <!--<img src="/assets/images/game_banners/melee_banner.jpg">-->
-              <!--<p class="game-text align-self-center bg-light border border-dark rounded">Melee</p>-->
-            </a>
-            <a class="page-link btn btn-ultimate d-flex justify-content-center" title="Ultimate" aria-label="Ultimate" href="/{{page.title | downcase}}/ultimate">
-              <!--<span class="align-self-center bg-light border border-dark rounded">Ultimate</span>-->
-            </a>
-          </div>
-          <div class="d-flex flex-row justify-content-center">
-            <a class="page-link btn btn-smash4 d-flex justify-content-center" title="Smash 4" aria-label="Smash 4" href="/{{page.title | downcase}}/smash4">
-              <!--<span class="align-self-center bg-light border border-dark rounded">Smash for Wii U</span>-->
-            </a>
-            <a class="page-link btn btn-64 d-flex justify-content-center" title="Smash 64" aria-label="Smash 64" href="/{{page.title | downcase}}/64">
-              <!--<span class="align-self-center bg-light border border-dark rounded">Smash 64</span>-->
-            </a>
-          </div>
-          <div class="d-flex flex-row justify-content-center">
-            <a class="page-link btn btn-brawl d-flex justify-content-center" title="Brawl" aria-label="Brawl" href="/{{page.title | downcase}}/brawl">
-              <!--<span class="align-self-center bg-light border border-dark rounded">Brawl</span>-->
-            </a>
-            <a class="page-link btn btn-pm d-flex justify-content-center" title="Project: M" aria-label="Project: M" href="/{{page.title | downcase}}/pm">
-              <!--<span class="align-self-center bg-light border border-dark rounded">Project: M</span>-->
-            </a>
-          </div>
+  <div class="container wrapper">
+    <div class="home d-flex flex-column">
+      <div class="d-flex flex-row justify-content-center">
+        <a class="page-link btn btn-melee d-flex justify-content-center" title="Melee" data-toggle="tooltip" data-placement="left" aria-label="Melee" href="/{{page.title | downcase}}/melee">
+          <!--<img src="/assets/images/game_banners/melee_banner.jpg">-->
+          <!--<p class="game-text align-self-center bg-light border border-dark rounded">Melee</p>-->
+        </a>
+        <a class="page-link btn btn-ultimate d-flex justify-content-center" title="Ultimate" data-toggle="tooltip" data-placement="right" aria-label="Ultimate" href="/{{page.title | downcase}}/ultimate">
+          <!--<span class="align-self-center bg-light border border-dark rounded">Ultimate</span>-->
+        </a>
       </div>
-    </main>
+      <div class="d-flex flex-row justify-content-center">
+        <a class="page-link btn btn-smash4 d-flex justify-content-center" title="Smash 4" data-toggle="tooltip" data-placement="left" aria-label="Smash 4" href="/{{page.title | downcase}}/smash4">
+          <!--<span class="align-self-center bg-light border border-dark rounded">Smash for Wii U</span>-->
+        </a>
+        <a class="page-link btn btn-64 d-flex justify-content-center" title="Smash 64" data-toggle="tooltip" data-placement="right" aria-label="Smash 64" href="/{{page.title | downcase}}/64">
+          <!--<span class="align-self-center bg-light border border-dark rounded">Smash 64</span>-->
+        </a>
+      </div>
+      <div class="d-flex flex-row justify-content-center">
+        <a class="page-link btn btn-brawl d-flex justify-content-center" title="Brawl" data-toggle="tooltip" data-placement="left" aria-label="Brawl" href="/{{page.title | downcase}}/brawl">
+          <!--<span class="align-self-center bg-light border border-dark rounded">Brawl</span>-->
+        </a>
+        <a class="page-link btn btn-pm d-flex justify-content-center" title="Project: M" data-toggle="tooltip" data-placement="right" aria-label="Project: M" href="/{{page.title | downcase}}/pm">
+          <!--<span class="align-self-center bg-light border border-dark rounded">Project: M</span>-->
+        </a>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Initialize Tooltips -->
+<script>
+  $(document).ready(function(){
+    $('[data-toggle="tooltip"]').tooltip({
+      animated: 'fade'
+    });
+  });
+</script>

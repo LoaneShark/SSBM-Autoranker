@@ -8,6 +8,7 @@
 <p class="lead" id="player_characters"></p>
 <hr class="my-4">
 -->
+
 	<!-- icon -->
 	<div id="game_icon_div" class="float-right">
 	</div>
@@ -48,7 +49,7 @@
 			</div>
 			<!-- tertiary info -->
 			<div class="d-flex flex-row justify-content-between" id="player_tertiary_div">
-				<div class="p-2 col-4 justify-content-start invisible" id="player_characters_div" data-toggle="tooltip" data-placement="right" title="">
+				<div class="p-2 col-4 justify-content-start invisible" id="player_characters_div">
 					<p class="text-muted small font-italic">Characters</p>
 					<p id="player_characters"></p>
 				</div>
@@ -65,65 +66,78 @@
 		<!-- line break -->
 		<hr class="my-4" style="padding:0px;">
 		<!-- skills at a glance -->
-		<!--<p class="text-left">Scores</p>-->
 		<div class="custom-control custom-switch">
 		  <input type="checkbox" class="custom-control-input" id="skill_switch">
 		  <label class="custom-control-label ranks-switch" for="skill_switch"><p class="text-muted small">Toggle Ranks</p></label>
 		</div>
-		<div id="checkbox_status"></div>
-		<!--<div class="d-flex flex-row justify-content-around" id="player_skills_div" style="padding:0px;">-->
-		<div class="btn-group" role="group" aria-label="Skills" id="player_skills_div">
-			<a class="btn" data-toggle="collapse" href="#mainrank_chart_container" role="button" aria-expanded="false" aria-controls="mainrank-button" id="player_mainrank_button">
-				<div class="p-2" id="player_mainrank_div">
-					<p class="text-muted font-italic">
-										{% if {{page.game}} == 'Ultimate'%}
-											PGRU
-										{% elsif {{page.game}} == 'Melee' %}
-											MPGR
-										{% elsif {{page.game}} == 'PM' %}
-											PMRank
-										{% elsif {{page.game}} == 'Smash4' %}
-											PGR
-										{% elsif {{page.game}} == 'Brawl' %}
-											SSBBRank
-										{% elsif {{page.game}} == '64' %}
-											64LR
-										{% else %}
-											Rank
-										{% endif %}</p>
-					<p class="lead" id="player_mainrank"></p>
-				</div>
-			</a>
-			<a class="btn" data-toggle="collapse" href="#elo_chart_container" role="button" aria-expanded="false" aria-controls="elo-button" id="player_elo_button">
-				<div class="p-2" id="player_elo_div">
-					<p class="text-muted font-italic">Elo</p>
-					<p class="lead" id="player_elo"></p>
-				</div>
-			</a>
-			<a class="btn" data-toggle="collapse" href="#glicko_chart_container" role="button" aria-expanded="false" aria-controls="glicko-button" id="player_glicko_button">
-				<div class="p-2" id="player_glicko_div">
-					<p class="text-muted font-italic">Glicko</p>
-					<p class="lead" id="player_glicko"></p>
-				</div>
-			</a>
-			<!--<div class="p-2" id="player_trueskill_div">
-				<p class="text-muted font-italic">TrueSkill</p>
-				<p class="lead" id="player_trueskill"></p>
-			</div>-->
-			<a class="btn" data-toggle="collapse" href="#srank_chart_container" role="button" aria-expanded="false" aria-controls="srank-button" id="player_srank_button">
-				<div class="p-2" id="player_srank_div">
-					<p class="text-muted font-italic">S-Rank
-					<span class="fa-layers fa-fw">
-						<i class="fas fa-square" data-fa-transform="shrink-3 up-3"></i>
-						<span class="fa-layers-text fa-inverse" data-fa-transform="shrink-8 up-4 left-0.5" style="font-weight:400">
-							&alpha;
+			<div class="d-flex flex-row justify-content-between" style="margin:0px;padding:0px;">
+				<div class="btn-group" role="group" aria-label="Skills" id="player_skills_div">
+				<a class="btn" data-toggle="collapse" href="#mainrank_chart_container" role="button" aria-expanded="false" aria-controls="mainrank-button" id="player_mainrank_button">
+					<div class="p-2" id="player_mainrank_div">
+						<p class="text-muted font-italic">
+											{% if {{page.game}} == 'Ultimate'%}
+												PGRU
+											{% elsif {{page.game}} == 'Melee' %}
+												MPGR
+											{% elsif {{page.game}} == 'PM' %}
+												PMRank
+											{% elsif {{page.game}} == 'Smash4' %}
+												PGR
+											{% elsif {{page.game}} == 'Brawl' %}
+												SSBBRank
+											{% elsif {{page.game}} == '64' %}
+												64LR
+											{% else %}
+												Rank
+											{% endif %}</p>
+						<p class="lead" id="player_mainrank"></p>
+					</div>
+				</a>
+				<a class="btn" data-toggle="collapse" href="#elo_chart_container" role="button" aria-expanded="false" aria-controls="elo-button" id="player_elo_button">
+					<div class="p-2" id="player_elo_div">
+						<p class="text-muted font-italic">Elo</p>
+						<p class="lead" id="player_elo"></p>
+					</div>
+				</a>
+				<a class="btn" data-toggle="collapse" href="#glicko_chart_container" role="button" aria-expanded="false" aria-controls="glicko-button" id="player_glicko_button">
+					<div class="p-2" id="player_glicko_div">
+						<p class="text-muted font-italic">Glicko</p>
+						<p class="lead" id="player_glicko"></p>
+					</div>
+				</a>
+				<!--<div class="p-2" id="player_trueskill_div">
+					<p class="text-muted font-italic">TrueSkill</p>
+					<p class="lead" id="player_trueskill"></p>
+				</div>-->
+				<a class="btn" data-toggle="collapse" href="#srank_chart_container" role="button" aria-expanded="false" aria-controls="srank-button" id="player_srank_button">
+					<div class="p-2" id="player_srank_div">
+						<p class="text-muted font-italic">S-Rank
+						<span class="fa-layers fa-fw">
+							<i class="fas fa-square" data-fa-transform="shrink-3 up-3"></i>
+							<span class="fa-layers-text fa-inverse" data-fa-transform="shrink-8 up-4 left-0.5" style="font-weight:400">
+								&alpha;
+							</span>
 						</span>
-					</span>
-					</p>
-					<p class="lead" id="player_srank"></p>
+						</p>
+						<p class="lead" id="player_srank"></p>
+					</div>
+				</a>
+			</div> <!-- skills -->
+			<div class="d-flex flex-row justify-content-end" id="h2h_div"> 
+				<div class="p-2" id="top10_h2h_div">
+					<p class="text-muted text-center font-italic">vs. Top 10 </p>
+					<p class="lead text-center" id="top10_h2h"></p>
 				</div>
-			</a>
-		</div> <!-- skills -->
+				<div class="p-2" id="top100_h2h_div">
+					<p class="text-muted text-center font-italic">vs. Top 100 </p>
+					<p class="lead text-center" id="top100_h2h"></p>
+				</div>
+				<div class="p-2" id="top500_h2h_div">
+					<p class="text-muted text-center font-italic">vs. Top 500 </p>
+					<p class="lead text-center" id="top500_h2h"></p>
+				</div>
+			</div> <!-- h2h at a glance -->
+		</div> 
 		<div class="d-flex flex-row justify-content-end" id="today_date_div" style="padding:0px;margin:0px;">
 			<p class="text-muted small font-italic font-weight-light" id="today_date" style="padding:0px;margin:0px;"></p>
 		</div>
@@ -144,8 +158,19 @@
 			</div>
 		</div>
 		<div id="srank_chart_container" class="chart-container collapse" style="position: relative;">
-			<div class="card">
-				<canvas id="srank_chart" class="p-3 chart" aria-label="srank-chart" width="400" height="200"></canvas>
+			<div class="custom-control custom-switch">
+			  <input type="checkbox" class="custom-control-input" id="srank_switch">
+			  <label class="custom-control-label ranks-switch" for="srank_switch"><p class="text-muted small">Toggle Sigmoid</p></label>
+			</div>
+			<div id="srank_skill_container" class="chart-container collapse show" style="position:relative;">
+				<div class="card">
+					<canvas id="srank_chart" class="p-3 chart" aria-label="srank-chart" width="400" height="200"></canvas>
+				</div>
+			</div>
+			<div id="srank_sigmoid_container" class="chart-container collapse" style="position:relative;">
+				<div class="card">
+					<canvas id="srank_sigmoid" class="p-3 chart" aria-label="srank-sigmoid" width="400" height="200"></canvas>
+				</div>
 			</div>
 		</div>
 		<!--<div id="trueskill_chart_container" class="chart-container collapse" style="position: relative;">
@@ -156,7 +181,7 @@
 		<!-- line break -->
 		<hr class="my-4" style="padding:0px;">
 		<!-- event cards -->
-		<p class="text-left text-muted small font-italic">Recent Events</p>
+		<p class="text-left text-muted small font-italic" style="text-decoration:none;">Recent <a href="../events/" style="text-decoration:none;">Events</a></p>
 		<div class="card-deck" id="player_events_deck">
 			{% for i in (0..3) %}
 			<div class="card invisible" id="event_card_{{i}}">
