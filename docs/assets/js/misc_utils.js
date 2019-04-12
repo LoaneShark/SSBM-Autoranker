@@ -140,6 +140,8 @@ function snapshotToSearchbar(snapshot){
 	snapshot.forEach(function(childSnapshot) {
 		var player = {name: childSnapshot.child('tag').val(),
 					  id: childSnapshot.key,
+					  team: childSnapshot.child('team').val(),
+					  fullname: childSnapshot.child('firstname').val() + ' ' + childSnapshot.child('lastname').val(),
 					  aliases: childSnapshot.child('aliases').val()};
 
 		returnArr.push(player)

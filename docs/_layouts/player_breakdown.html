@@ -103,15 +103,17 @@
       var gameId = getGameId('{{page.game}}')
       //var searchbar_ref = firebase.database().ref("/"+gameId+"_2018_1/p_info");
       var searchbar_ref = firebase.database().ref("/"+gameId+"_2016_3_c/p_info");
-      var searchbar_query = searchbar_ref.orderByChild('srank').limitToFirst(500);
+      var searchbar_query = searchbar_ref.orderByChild('srank').limitToFirst(1000);
       var searchbar_contents = searchbar_query.once('value').then(function(PlayerInfoSnapshot) {
         if (PlayerInfoSnapshot.exists()) {
           var searchbar_players = snapshotToSearchbar(PlayerInfoSnapshot,attr="key");
-          // custom tokenizer, so that search is sensetive to gamertag, player id, or any known aliases
+          // custom tokenizer, so that search is sensetive to gamertag, player id, prefix/sponsor, or any known aliases
           function customTokenizer(datum) {
             var nameTokens = Bloodhound.tokenizers.whitespace(datum.name);
             var idTokens = Bloodhound.tokenizers.whitespace(datum.id);
+            var teamTokens = Bloodhound.tokenizers.whitespace(datum.team);
             var returnTokens = nameTokens.concat(idTokens);
+            returnTokens = returnTokens.concat(teamTokens);
             for (i=0;i<datum.aliases.length;i++){
               returnTokens = returnTokens.concat(Bloodhound.tokenizers.whitespace(datum.aliases[i]))
             }
@@ -130,13 +132,20 @@
             minLength: 1
           },{
             name: 'players',
-            //display: function(obj) {return obj.name;},
+            display: function(context){
+              if (context.team != null && context.team.includes(context.query)){
+                return context.name+' ('+context.team+')';
+              } else {
+                return context.name;
+              }
+            },
             displayKey: 'name',
             //limit: 10,
             source: searchbar_engine,
             templates: {
-              //suggestion: Handlebars.compile('<div><strong>{{name}}</strong> - {{id}}</div>'),
-              empty: ['<div><p class="text-muted">Search...</p></div>']
+              //suggestion: ,
+              notFound: ['<div class="text-muted p-2">No player found...</div>'],
+              pending: ['<div class="text-muted p-2">Fetching...</div>']
             }
           });
 
@@ -168,6 +177,9 @@
         var gameId = getGameId('{{page.game}}');
         var curr_year = new Date().getFullYear();
         $('#game_icon_div').html('<img src="'+getGameIconPath(gameId)+'" alt="'+gameId+'" style="width:20px;height:20px;">');
+
+        $('#player_event_link').attr("href","full/#"+playerId);
+        $('#player_event_link_2').attr("href","full/#"+playerId);
 
         // query db and populate profile
         if (currentDB){
@@ -252,10 +264,11 @@
               if (player_otherGames.length > 1) {
                 for (i=0;i<player_otherGames.length;i++){
                   if (player_otherGames[i] != gameId){
-                    $('#player_games').append('<a href="/games/'+getGameTitle(player_otherGames[i]).toLowerCase()+'/players/#'+playerId+'"><img src="'+getGameIconPath(player_otherGames[i])+'"  alt="'+player_otherGames[i]+'" style="width:30px;height:30px;"></a>');
+                    $('#player_games').append('<a href="/games/'+getGameTitle(player_otherGames[i]).toLowerCase()+'/players/#'+playerId+'"><img src="'+getGameIconPath(player_otherGames[i])+'"  alt="'+player_otherGames[i]+'" style="width:30px;height:30px;" data-toggle="tooltip" title="'+getGameTitle(player_otherGames[i])+'"></a>');
                   }
                 }
                 $('#player_games_div').removeClass('invisible');
+                $('[data-toggle="tooltip"]').tooltip();
               }
             });
             // onerror="this.onerror=null;this.src=\''++'\';" />');
@@ -307,11 +320,11 @@
             var srankVal = Math.round(PlayerSnapshot.child('srank').val()*1000.)/1000.;
 
             var eloRnkVal = PlayerSnapshot.child('elo-rnk').val();
-            eloRnkVal = ''+eloRnkVal+'<sup>'+ordinalSuffixOf(eloRnkVal)+'</sup>';
+            var eloRnkText = ''+eloRnkVal+'<sup>'+ordinalSuffixOf(eloRnkVal)+'</sup>';
             var glickoRnkVal = PlayerSnapshot.child('glicko-rnk').val();
-            glickoRnkVal = ''+glickoRnkVal+'<sup>'+ordinalSuffixOf(glickoRnkVal)+'</sup>';
+            var glickoRnkText = ''+glickoRnkVal+'<sup>'+ordinalSuffixOf(glickoRnkVal)+'</sup>';
             var srankRnkVal = PlayerSnapshot.child('srank-rnk').val();
-            srankRnkVal = ''+srankRnkVal+'<sup>'+ordinalSuffixOf(srankRnkVal)+'</sup>';
+            var srankRnkText = ''+srankRnkVal+'<sup>'+ordinalSuffixOf(srankRnkVal)+'</sup>';
 
             if (PlayerSnapshot.child('mainrank').exists()){
               var mainrankVal = PlayerSnapshot.child('mainrank').val();
@@ -323,6 +336,55 @@
             $('#player_srank').html(srankVal);
             $('#player_mainrank').html(mainrankVal);
             //$('#player_trueskill').html(Math.round(PlayerSnapshot.child('trueskill').val()));
+
+            // highlight skill button if top 10/100/500
+            $('#mainrank_trophy').css('width',$('#player_mainrank_button').css('width'));
+            $('#elo_trophy').css('width',$('#player_elo_button').css('width'));
+            $('#glicko_trophy').css('width',$('#player_glicko_button').css('width'));
+            $('#srank_trophy').css('width',$('#player_srank_button').css('width'));
+
+            if (eloRnkVal <= 500){
+              if (eloRnkVal <= 100){
+                if (eloRnkVal <= 10){
+                  //$('#player_elo_button').addClass('border rounded border-sr-top10')
+                  $('#elo_trophy').html('<i class="fas fa-xs fa-star text-sr-top10"></i> Top 10')
+                } else {
+                  //$('#player_elo_button').addClass('border rounded border-sr-top100')
+                  $('#elo_trophy').html('<i class="fas fa-xs fa-star text-sr-top100"></i> Top 100')
+                }
+              } else {
+                //$('#player_elo_button').addClass('border rounded border-sr-top500')
+                $('#elo_trophy').html('<i class="fas fa-xs fa-star text-sr-top500"></i> Top 500')
+              }
+            }
+            if (glickoRnkVal <= 500){
+              if (glickoRnkVal <= 100){
+                if (glickoRnkVal <= 10){
+                  //$('#player_glicko_button').addClass('border rounded border-sr-top10')
+                  $('#glicko_trophy').html('<i class="fas fa-xs fa-star text-sr-top10"></i> Top 10')
+                } else {
+                  //$('#player_glicko_button').addClass('border rounded border-sr-top100')
+                  $('#glicko_trophy').html('<i class="fas fa-xs fa-star text-sr-top100"></i> Top 100')
+                }
+              } else {
+                //$('#player_glicko_button').addClass('border rounded border-sr-top500')
+                $('#glicko_trophy').html('<i class="fas fa-xs fa-star text-sr-top500"></i> Top 500')
+              }
+            }
+            if (srankRnkVal <= 500){
+              if (srankRnkVal <= 100){
+                if (srankRnkVal <= 10){
+                  //$('#player_srank_button').addClass('border rounded border-sr-top10')
+                  $('#srank_trophy').html('<i class="fas fa-sm fa-star text-sr-top10"></i> Top 10')
+                } else {
+                  //$('#player_srank_button').addClass('border rounded border-sr-top100')
+                  $('#srank_trophy').html('<i class="fas fa-sm fa-star text-sr-top100"></i> Top 100')
+                }
+              } else {
+                //$('#player_srank_button').addClass('border rounded border-sr-top500')
+                $('#srank_trophy').html('<i class="fas fa-sm fa-star text-sr-top500"></i> Top 500')
+              }
+            }
 
             // populate h2h-at-a-glance
             var playerRecordStr = '/' + gameId + '_2016_' + (curr_year-2016)+ '_c' + '/records/'+playerId;
@@ -337,7 +399,7 @@
                 if (playerWins != null || playerLosses != null){
                   var topPlayerRefStr = '/' + gameId + '_2016_' + (curr_year-2016)+ '_c' + '/p_info';
                   var topPlayerRef = firebase.database().ref(topPlayerRefStr);
-                  var topPlayerQuery = topPlayerRef.orderByChild('srank').limitToFirst(500).once('value').then(function(TopPlayerSnapshot){
+                  var topPlayerQuery = topPlayerRef.orderByChild('srank').limitToFirst(100).once('value').then(function(TopPlayerSnapshot){
                     if (TopPlayerSnapshot.exists()){
                       TopPlayerSnapshot.forEach(function(childSnapshot){
                         oppId = childSnapshot.key;
@@ -365,9 +427,15 @@
                           }
                         }
                       });
-                      $('#top500_h2h').html('<span class="text-success">'+h2h['top500w']+'</span>-<span class="text-danger">'+h2h['top500l']+'</span>');
-                      $('#top100_h2h').html('<span class="text-success">'+h2h['top100w']+'</span>-<span class="text-danger">'+h2h['top100l']+'</span>');
-                      $('#top10_h2h').html('<span class="text-success">'+h2h['top10w']+'</span>-<span class="text-danger">'+h2h['top10l']+'</span>');
+                      //$('#top500_h2h').html('<span class="text-success">'+h2h['top500w']+'</span>' +
+                      //                      '<span class="text-secondary">-</span>' +
+                      //                      '<span class="text-danger">'+h2h['top500l']+'</span>');
+                      $('#top100_h2h').html('<span class="text-success">'+h2h['top100w']+'</span>' +
+                                            '<span class="text-secondary">-</span>' +
+                                            '<span class="text-danger">'+h2h['top100l']+'</span>');
+                      $('#top10_h2h').html('<span class="text-success">'+h2h['top10w']+'</span>' +
+                                            '<span class="text-secondary">-</span>' +
+                                            '<span class="text-danger">'+h2h['top10l']+'</span>');
                     }
                   });
                 } else {
@@ -492,9 +560,9 @@
                 //$('#checkbox_status').html('Toggle: ' + $(this).prop('checked'));
                 if (this.id == 'skill_switch'){
                   if ($(this).prop('checked')){
-                    $('#player_elo').html(eloRnkVal);
-                    $('#player_glicko').html(glickoRnkVal);
-                    $('#player_srank').html(srankRnkVal);
+                    $('#player_elo').html(eloRnkText);
+                    $('#player_glicko').html(glickoRnkText);
+                    $('#player_srank').html(srankRnkText);
                   } else {
                     //var eloVal = Math.round(PlayerSnapshot.child('elo').val());
                     //var glickoVal = Math.round(PlayerSnapshot.child('glicko').val()[0]);
@@ -542,6 +610,13 @@
         $('[data-toggle="tooltip"]').tooltip({
           animated: 'fade'
         });
+      });
+      $(window).on('load', function(){
+        var trophyBox = $('#mainrank_trophy')[0];
+
+        trophyBox.style.display='inline-block';
+        trophyBox.offsetHeight; // no need to store this anywhere, the reference is enough
+        trophyBox.style.display='';
       });
     </script>
 

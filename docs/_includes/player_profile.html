@@ -70,94 +70,95 @@
 		  <input type="checkbox" class="custom-control-input" id="skill_switch">
 		  <label class="custom-control-label ranks-switch" for="skill_switch"><p class="text-muted small">Toggle Ranks</p></label>
 		</div>
-			<div class="d-flex flex-row justify-content-between" style="margin:0px;padding:0px;">
-				<div class="btn-group" role="group" aria-label="Skills" id="player_skills_div">
+		<div class="d-flex flex-row justify-content-between" style="margin:0px;padding:0px;">
+			<div class="btn-group" role="group" aria-label="Skills" id="player_skills_div">
 				<a class="btn" data-toggle="collapse" href="#mainrank_chart_container" role="button" aria-expanded="false" aria-controls="mainrank-button" id="player_mainrank_button">
-					<div class="p-2" id="player_mainrank_div">
-						<p class="text-muted font-italic">
-											{% if {{page.game}} == 'Ultimate'%}
-												PGRU
-											{% elsif {{page.game}} == 'Melee' %}
-												MPGR
-											{% elsif {{page.game}} == 'PM' %}
-												PMRank
-											{% elsif {{page.game}} == 'Smash4' %}
-												PGR
-											{% elsif {{page.game}} == 'Brawl' %}
-												SSBBRank
-											{% elsif {{page.game}} == '64' %}
-												64LR
-											{% else %}
-												Rank
-											{% endif %}</p>
-						<p class="lead" id="player_mainrank"></p>
-					</div>
+					<p class="text-muted font-italic">
+										{% if {{page.game}} == 'Ultimate'%}
+											PGRU
+										{% elsif {{page.game}} == 'Melee' %}
+											MPGR
+										{% elsif {{page.game}} == 'PM' %}
+											PMRank
+										{% elsif {{page.game}} == 'Smash4' %}
+											PGR
+										{% elsif {{page.game}} == 'Brawl' %}
+											SSBBRank
+										{% elsif {{page.game}} == '64' %}
+											64LR
+										{% else %}
+											Rank
+										{% endif %}</p>
+					<p class="lead" id="player_mainrank"></p>
 				</a>
 				<a class="btn" data-toggle="collapse" href="#elo_chart_container" role="button" aria-expanded="false" aria-controls="elo-button" id="player_elo_button">
-					<div class="p-2" id="player_elo_div">
 						<p class="text-muted font-italic">Elo</p>
 						<p class="lead" id="player_elo"></p>
-					</div>
 				</a>
 				<a class="btn" data-toggle="collapse" href="#glicko_chart_container" role="button" aria-expanded="false" aria-controls="glicko-button" id="player_glicko_button">
-					<div class="p-2" id="player_glicko_div">
 						<p class="text-muted font-italic">Glicko</p>
 						<p class="lead" id="player_glicko"></p>
-					</div>
 				</a>
 				<!--<div class="p-2" id="player_trueskill_div">
 					<p class="text-muted font-italic">TrueSkill</p>
 					<p class="lead" id="player_trueskill"></p>
 				</div>-->
 				<a class="btn" data-toggle="collapse" href="#srank_chart_container" role="button" aria-expanded="false" aria-controls="srank-button" id="player_srank_button">
-					<div class="p-2" id="player_srank_div">
-						<p class="text-muted font-italic">S-Rank
-						<span class="fa-layers fa-fw">
-							<i class="fas fa-square" data-fa-transform="shrink-3 up-3"></i>
-							<span class="fa-layers-text fa-inverse" data-fa-transform="shrink-8 up-4 left-0.5" style="font-weight:400">
-								&alpha;
-							</span>
+					<p class="text-muted font-italic">S-Rank
+					<span class="fa-layers fa-fw">
+						<i class="fas fa-square" data-fa-transform="shrink-3 up-3"></i>
+						<span class="fa-layers-text fa-inverse" data-fa-transform="shrink-8 up-4 left-0.5" style="font-weight:400">
+							&beta;
 						</span>
-						</p>
-						<p class="lead" id="player_srank"></p>
-					</div>
+					</span>
+					</p>
+					<p class="lead" id="player_srank"></p>
 				</a>
 			</div> <!-- skills -->
-			<div class="d-flex flex-row justify-content-end" id="h2h_div"> 
-				<div class="p-2" id="top10_h2h_div">
+			<div class="btn-group" role="group" aria-label="H2H at a glance" id="player_h2h_div">
+				<a class="btn btn-default" href="#" data-toggle="collapse" role="button" aria-expanded="false" aria-controls="top-10-button" id="top10_h2h_div">
 					<p class="text-muted text-center font-italic">vs. Top 10 </p>
 					<p class="lead text-center" id="top10_h2h"></p>
-				</div>
-				<div class="p-2" id="top100_h2h_div">
+				</a>
+				<a class="btn" href="#" data-toggle="collapse" role="button" aria-expanded="false" aria-controls="top-100-button" id="top100_h2h_div">
 					<p class="text-muted text-center font-italic">vs. Top 100 </p>
 					<p class="lead text-center" id="top100_h2h"></p>
-				</div>
-				<div class="p-2" id="top500_h2h_div">
+				</a>
+				<!--<a class="btn" href="#" data-toggle="collapse" role="button" aria-expanded="false" aria-controls="top-500-button" id="top500_h2h_div">
 					<p class="text-muted text-center font-italic">vs. Top 500 </p>
 					<p class="lead text-center" id="top500_h2h"></p>
-				</div>
+				</a>-->
 			</div> <!-- h2h at a glance -->
 		</div> 
 		<div class="d-flex flex-row justify-content-end" id="today_date_div" style="padding:0px;margin:0px;">
-			<p class="text-muted small font-italic font-weight-light" id="today_date" style="padding:0px;margin:0px;"></p>
-		</div>
+			<div class="text-muted small font-italic font-weight-light text-center" id="mainrank_trophy" style="padding:0px;margin:0px;"></div>
+			<div class="text-muted small font-italic font-weight-light text-center" id="elo_trophy" style="padding:0px;margin:0px;"></div>
+			<div class="text-muted small font-italic font-weight-light text-center" id="glicko_trophy" style="padding:0px;margin:0px;"></div>
+			<div class="text-muted small font-italic font-weight-light text-center" id="srank_trophy" style="padding:0px;margin:0px;"></div>
+			<div class="flex-grow-1 text-muted small font-italic font-weight-light" style="padding:0px;margin:0px;"></div>
+			<div class="col-2 text-muted small font-italic font-weight-light text-right" id="today_date" style="padding:0px;margin:0px;"></div>
+		</div> <!-- trophy case // date marker -->
 		<!-- data chart -->
 		<div id="mainrank_chart_container" class="chart-container collapse" style="position: relative;">
+			<div class="text-muted font-weight-light small invisible">~</div>
 			<div class="card">
 				<canvas id="mainrank_chart" class="p-3 chart" aria-label="mainrank-chart" width="400" height="200"></canvas>
 			</div>
 		</div>
 		<div id="elo_chart_container" class="chart-container collapse" style="position: relative;">
+			<div class="text-muted font-weight-light small invisible">~</div>
 			<div class="card">
 				<canvas id="elo_chart" class="p-3 chart" aria-label="elo-chart" width="400" height="200"></canvas>
 			</div>
 		</div>
 		<div id="glicko_chart_container" class="chart-container collapse" style="position: relative;">
+			<div class="text-muted font-weight-light small invisible">~</div>
 			<div class="card">
 				<canvas id="glicko_chart" class="p-3 chart" aria-label="glicko-chart" width="400" height="200"></canvas>
 			</div>
 		</div>
 		<div id="srank_chart_container" class="chart-container collapse" style="position: relative;">
+			<div class="text-muted font-weight-light small invisible">~</div>
 			<div class="custom-control custom-switch">
 			  <input type="checkbox" class="custom-control-input" id="srank_switch">
 			  <label class="custom-control-label ranks-switch" for="srank_switch"><p class="text-muted small">Toggle Sigmoid</p></label>
@@ -174,6 +175,7 @@
 			</div>
 		</div>
 		<!--<div id="trueskill_chart_container" class="chart-container collapse" style="position: relative;">
+			<div class="text-muted font-weight-light small invisible">~</div>
 			<div class="card">
 				<canvas id="trueskill_chart" class="p-3 chart" aria-label="trueskill-chart" width="400" height="200"></canvas>
 			</div>
@@ -197,5 +199,14 @@
 				</div>
 			</div>
 			{% endfor %}
+		</div>
+		<div id="full_event_link_div" class="p-2">
+			<span class="text-left text-muted small font-italic" style="text-decoration:none;">
+				See 
+				<a id="player_event_link" style="text-decoration:none;">All</a>
+			</span>
+			<span class="text-left text-muted small">
+				<a id="player_event_link_2" style="text-decoration:none;"> ⟶</a>
+			</span>
 		</div>
 	</div>
