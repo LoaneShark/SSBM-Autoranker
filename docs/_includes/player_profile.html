@@ -71,7 +71,7 @@
 		  <label class="custom-control-label ranks-switch" for="skill_switch"><p class="text-muted small">Toggle Ranks</p></label>
 		</div>
 		<div class="d-flex flex-row justify-content-between" style="margin:0px;padding:0px;">
-			<div class="btn-group" role="group" aria-label="Skills" id="player_skills_div">
+			<div class="btn-group" role="group" aria-label="Skills" id="player_skills_div" style="text-decoration:none;">
 				<a class="btn" data-toggle="collapse" href="#mainrank_chart_container" role="button" aria-expanded="false" aria-controls="mainrank-button" id="player_mainrank_button">
 					<p class="text-muted font-italic">
 										{% if {{page.game}} == 'Ultimate'%}
@@ -89,7 +89,7 @@
 										{% else %}
 											Rank
 										{% endif %}</p>
-					<p class="lead" id="player_mainrank"></p>
+					<p class="lead" id="player_mainrank" style="text-decoration:none;"></p>
 				</a>
 				<a class="btn" data-toggle="collapse" href="#elo_chart_container" role="button" aria-expanded="false" aria-controls="elo-button" id="player_elo_button">
 						<p class="text-muted font-italic">Elo</p>
@@ -97,7 +97,7 @@
 				</a>
 				<a class="btn" data-toggle="collapse" href="#glicko_chart_container" role="button" aria-expanded="false" aria-controls="glicko-button" id="player_glicko_button">
 						<p class="text-muted font-italic">Glicko</p>
-						<p class="lead" id="player_glicko"></p>
+						<p class="lead link-unstyled" id="player_glicko"></p>
 				</a>
 				<!--<div class="p-2" id="player_trueskill_div">
 					<p class="text-muted font-italic">TrueSkill</p>
@@ -112,7 +112,7 @@
 						</span>
 					</span>
 					</p>
-					<p class="lead" id="player_srank"></p>
+					<p class="lead" id="player_srank" style="text-decoration:none;"></p>
 				</a>
 			</div> <!-- skills -->
 			<div class="btn-group" role="group" aria-label="H2H at a glance" id="player_h2h_div">

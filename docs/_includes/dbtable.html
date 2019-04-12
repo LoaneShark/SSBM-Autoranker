@@ -229,7 +229,8 @@
 								{targets: 0, className: 'text-right'},
 								{targets: 1, data: null, render: function(dataCol){
 									return '<a href="/games/'+gameTitle.toLowerCase()+'/players/#'+dataCol[6]+'">'+dataCol[1]+'</a>'
-								}}
+								}},
+								{targets: 2, type: 'num'}
 								]
 				});
 				$('#current-tab').tab('show')
@@ -262,7 +263,8 @@
 					columnDefs: [{targets: 0, className:'text-right'},
 								{targets: 1, data: null, render: function(dataCol){
 									return '<a href="/games/'+gameTitle.toLowerCase()+'/players/#'+dataCol[6]+'">'+dataCol[1]+'</a>'
-								}}]
+								}},
+								{targets: 2, type: 'num'}]
 				});
 				$($.fn.dataTable.tables(true)).DataTable().columns.adjust().responsive.recalc();
 			} else {
@@ -291,7 +293,8 @@
 					columnDefs: [{targets: 0, className:'text-right'},
 								{targets: 1, data: null, render: function(dataCol){
 									return '<a href="/games/'+gameTitle.toLowerCase()+'/players/#'+dataCol[6]+'">'+dataCol[1]+'</a>'
-								}}]
+								}},
+								{targets: 2, type: 'num'}]
 				});
 				$($.fn.dataTable.tables(true)).DataTable().columns.adjust().responsive.recalc();
 			} else {

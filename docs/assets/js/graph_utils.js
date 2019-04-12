@@ -1,26 +1,28 @@
 // Custom plugin to only render tooltips for certain datasets (so as to not render for initialSkillset)
-Chart.plugins.register({
-  // need to manipulate tooltip visibility before its drawn (but after update)
-  beforeDraw: function(chartInstance, easing) {
-    // check and see if the plugin is active (its active if the option exists)
-    if (chartInstance.config.options.tooltips.onlyShowForDatasetIndex) {
-      // get the plugin configuration
-      var tooltipsToDisplay = chartInstance.config.options.tooltips.onlyShowForDatasetIndex;
+$(window).on('load',function(){
+	Chart.plugins.register({
+	  // need to manipulate tooltip visibility before its drawn (but after update)
+	  beforeDraw: function(chartInstance, easing) {
+	    // check and see if the plugin is active (its active if the option exists)
+	    if (chartInstance.config.options.tooltips.onlyShowForDatasetIndex) {
+	      // get the plugin configuration
+	      var tooltipsToDisplay = chartInstance.config.options.tooltips.onlyShowForDatasetIndex;
 
-      // get the active tooltip (if there is one)
-      var active = chartInstance.tooltip._active || [];
+	      // get the active tooltip (if there is one)
+	      var active = chartInstance.tooltip._active || [];
 
-      // only manipulate the tooltip if its just about to be drawn
-      if (active.length > 0) {
-        // first check if the tooltip relates to a dataset index we don't want to show
-        if (tooltipsToDisplay.indexOf(active[0]._datasetIndex) === -1) {
-          // we don't want to show this tooltip so set it's opacity back to 0
-          // which causes the tooltip draw method to do nothing
-          chartInstance.tooltip._model.opacity = 0;
-        }
-      }
-    }
-  }
+	      // only manipulate the tooltip if its just about to be drawn
+	      if (active.length > 0) {
+	        // first check if the tooltip relates to a dataset index we don't want to show
+	        if (tooltipsToDisplay.indexOf(active[0]._datasetIndex) === -1) {
+	          // we don't want to show this tooltip so set it's opacity back to 0
+	          // which causes the tooltip draw method to do nothing
+	          chartInstance.tooltip._model.opacity = 0;
+	        }
+	      }
+	    }
+	  }
+	});
 });
 // Custom plugin to plot a mathematical function (in our case sigmoid)
 var funcPlugin = {
@@ -167,6 +169,7 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 	})
 	// separate out the period before being ranked from the rest of the sets
 	if (type == 'srank'){
+		console.log(skillset)
 		if (srankOldSkill == 1){
 			var showRankPeriod = true;
 			var datasetTooltipIndices = [0,3]
@@ -205,7 +208,9 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 		// if they already had a ranked skill, shift them back into skillset (had to do it this way for some reason)
 		if (!(showRankPeriod)){
 			for (i=0;i<rankLen;i++){
-				skillset.unshift(rankPeriod.pop());
+				if (rankPeriod.length > 0){
+					skillset.unshift(rankPeriod.pop());
+				}
 			}
 		}
 	}
@@ -290,7 +295,8 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 				displayColors: false,
 				callbacks: {
 					title: function(tooltipItem,data){
-						var eventDate = new Date(tooltipItem[0].xLabel)
+						labelString = tooltipItem[0].xLabel;
+						var eventDate = new Date(labelString.slice(0,labelString.length-17));
 						return eventDate.toDateString();
 					},
 					beforeLabel: function(tooltipItem,data){
