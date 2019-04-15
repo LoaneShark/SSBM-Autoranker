@@ -78,6 +78,12 @@ elif args.current_db:
 	db_current = True
 else:
 	db_current = args.current_db
+if args.season_db == 'False':
+	db_season = False
+elif args.season_db:
+	db_season = True
+else:
+	db_season = args.season_db
 teamsize = int(args.teamsize)
 glicko_tau = float(args.glicko_tau)
 
@@ -157,9 +163,9 @@ def read_tourneys(slugs,ver='default',year=None,base=None,current=False,to_updat
 		verstr = ver
 
 	if base == None:
-		[tourneys,ids,p_info,records,skills] = easy_load_db(verstr)
+		[tourneys,ids,p_info,records,skills,meta] = easy_load_db(verstr)
 	else:
-		tourneys,ids,p_info,records,skills = base
+		tourneys,ids,p_info,records,skills,meta = base
 
 	if v >= 4 and len(tourneys.keys())>1 and year == db_year:
 		print('Loaded Tourneys: ' + str([tourneys[t_id]['name'] for t_id in tourneys if not t_id == 'slugs' if tourneys[t_id]['active']]))
@@ -180,12 +186,12 @@ def read_tourneys(slugs,ver='default',year=None,base=None,current=False,to_updat
 					readins = readin(slug)
 					if readins:
 						if current:
-							clean_old_tourneys((tourneys,ids,p_info,records,skills),readins[0])
+							clean_old_tourneys((tourneys,ids,p_info,records,skills,meta),readins[0])
 						if v >= 4:
 							print('Importing to DB...')
-						if store_data(readins,(tourneys,ids,p_info,records,skills),slug):
+						if store_data(readins,(tourneys,ids,p_info,records,skills,meta),slug):
 							if to_save_db:
-								save_db((tourneys,ids,p_info,records,skills),verstr)
+								save_db((tourneys,ids,p_info,records,skills,meta),verstr)
 								save_db_sets(readins[6],verstr)
 							t_id = tourneys['slugs'][readins[0][2]]
 							if collect:
@@ -193,15 +199,17 @@ def read_tourneys(slugs,ver='default',year=None,base=None,current=False,to_updat
 			else:
 				if v >= 4:
 					print('Skipping %s: more recent events already present'%slug)
+	# update meta info
+	store_meta((tourneys,ids,p_info,records,skills,meta))
 
 	if to_update_socials:
-		update_social_media((tourneys,ids,p_info,records,skills))
-	return tourneys,ids,p_info,records,skills
+		update_social_media((tourneys,ids,p_info,records,skills,meta))
+	return tourneys,ids,p_info,records,skills,meta
 
 # helper function to store all data from a call to readin
 def store_data(readins,dicts,slug):
 	t_info,entrants,names,paths,wins,losses,sets = readins
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	if len(entrants.keys()) > 1:
 		if store_players(entrants,names,t_info,dicts):
 			if store_records(wins,losses,paths,sets,t_info,dicts):
@@ -215,7 +223,7 @@ def store_data(readins,dicts,slug):
 # and metainfo = [firstname, lastname, state, country, city]
 def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size,t_images,t_coords = t_info
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	if t_id not in tourneys:
 		# store teams/crews instead if this is a teams competition
 		#if teamsize == 2 or teamsize == 3:
@@ -340,10 +348,9 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 # ranking period in months (only used by sigmoid ranking)
 def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_update_sigmoids=True,ranking_period=2):
 	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size,t_images,t_coords = t_info
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	old_p_info = dcopy(p_info)
 	glicko_matches = {}
-
 
 	elo_history = skills['elo']
 	elo_deltas = skills['elo_del']
@@ -467,13 +474,13 @@ def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_up
 	if to_update_ranks:
 		if v >= 5:
 			print('Updating Performances...')
-		update_performances((tourneys,ids,old_p_info,records,skills),t_info)
+		update_performances(dicts,t_info)
 		if v >= 4:
 			print('Updating Glicko...')
 		update_glicko(dicts,glicko_matches,t_info,tau=glicko_tau)
 		if to_update_sigmoids:
 			#update_sigmoids(dicts,t_info,max_iterations=500,v=v,ranking_period=ranking_period)
-			sigrank_res = update_sigmoids(dicts,t_info,max_iterations=1000,v=v,ranking_period=1,sig='alt')
+			sigrank_res = update_sigmoids(dicts,t_info,max_iterations=1000,v=v,ranking_period=0,sig='alt')
 			if sigrank_res:
 				ISR = {'params': sigrank_res}
 				save_dict(ISR,'ISR_%d_%d_%d'%(db_game,db_year,db_year_count),None,'..\\lib')
@@ -484,7 +491,7 @@ def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_up
 # stores tourney meta info and marks tournament as imported
 def store_tourney(slug,t_info,group_names,dicts):
 	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size,t_images,t_coords = t_info
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	tourneys[t_id] = {}
 	tourneys[t_id]['name'] = t_name
 	tourneys[t_id]['slug'] = t_slug
@@ -509,12 +516,90 @@ def store_tourney(slug,t_info,group_names,dicts):
 		
 	return True
 
+def store_meta(dicts):
+	tourneys,ids,p_info,records,skills,meta = dicts
+
+	# store basic info on the db
+	meta['gameId'] = db_game
+	meta['startYear'] = db_year
+	meta['endYear'] = max(db_year,db_year+db_year_count)
+	meta['yearCount'] = db_year_count
+	meta['isCurrent'] = db_current
+	meta['isSeason'] = db_season
+	meta['isArcadian'] = only_arcadians
+	meta['numEvents'] = len([t_id for t_id in tourneys if type(t_id) is not str])
+	meta['numEventsActive'] = len([t_id for t_id in tourneys if type(t_id) is not str if tourneys[t_id]['active']])
+
+	# store info on last arguments
+	if 'args' not in meta:
+		meta['args'] = {}
+
+	for arg in vars(args):
+		meta['args'][arg] = getattr(args,arg)
+
+	# instantiate min/max skill markers
+	n = 0
+	if 'srank_min' not in meta:
+		meta['srank_min'] = 1.
+		meta['elo_min'] = 1500
+		meta['elo_max'] = 1500
+		meta['glicko_min'] = 1500
+		meta['glicko_max'] = 1500
+	srank_min = meta['srank_min']
+	elo_min = meta['elo_min']
+	elo_max = meta['elo_max']
+	glicko_min = meta['glicko_min']
+	glicko_max = meta['glicko_max']
+
+	# instantiate top 10/100/500 dicts if not already present
+	if 'top10' not in meta:
+		meta['top10'] = {}
+		meta['top10']['srank'] = {k:{} for k in range(10)}
+		meta['top10']['elo'] = {k:{} for k in range(10)}
+		meta['top10']['glicko'] = {k:{} for k in range(10)}
+		meta['top10']['mainrank'] = {k:{} for k in range(10)}
+	if 'top100' not in meta:
+		meta['top100'] = {}
+		meta['top100']['srank'] = {k:{} for k in range(100)}
+		meta['top100']['elo'] = {k:{} for k in range(100)}
+		meta['top100']['glicko'] = {k:{} for k in range(100)}
+		meta['top100']['mainrank'] = {k:{} for k in range(100)}
+	if 'top500' not in meta:
+		meta['top500'] = {}
+		meta['top500']['srank'] = {k:{} for k in range(500)}
+		meta['top500']['elo'] = {k:{} for k in range(500)}
+		meta['top500']['glicko'] = {k:{} for k in range(500)}
+		meta['top500']['mainrank'] = {k:{} for k in range(500)}
+	for p_id in p_info:
+		n += 1
+		# check for min/max elo
+		p_elo = p_info[p_id]['elo']
+		if p_elo < elo_min:
+			elo_min = p_elo
+		if p_elo > elo_max:
+			elo_max = p_elo
+		# check for min/max glicko
+		p_glicko = p_info[p_id]['glicko'][0]
+		if p_glicko < glicko_min:
+			glicko_min = p_glicko
+		if p_glicko > glicko_max:
+			glicko_max = p_glicko
+		# store top 10/100/500 player ids (by each skill)
+		for skill_rnk in ['elo','glicko','srank']:
+			for skill_div in [500,100,10]:
+				if p_info[p_id][skill_rnk+'-rnk'] < skill_div:
+					meta['top'+str(skill_div)][skill_rnk][p_info[p_id][skill_rnk+'-rnk']] = p_id
+
+	meta['numPlayers'] = n
+
+	return dicts
+
 # delete all data imported from a tourney
 # (keeps absolute player data such as ID, meta info)
 # **does NOT save db automatically**
 # does NOT delete players (in case they become active again, saves info/skills) or skill histories
 def delete_tourney(dicts,t_id,slug=None,clean_slugs=False,clean_tourneys=True):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	if not slug == None:
 		t_id = tourneys['slugs'][slug]
 
@@ -607,11 +692,11 @@ def delete_tourney(dicts,t_id,slug=None,clean_slugs=False,clean_tourneys=True):
 			if clean_tourneys:
 				del tourneys[t_id]
 
-	return tourneys,ids,p_info,records,skills
+	return tourneys,ids,p_info,records,skills,meta
 
 # cleans out tourneys over a year out from the currently importing one
 def clean_old_tourneys(dicts,t_info,rank_period=12,delete_data=False):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size,t_images,t_coords = t_info
 	if v >= 6:
 		print('Cleaning tourneys over: %d months out from %s'%(rank_period,t_date))
@@ -634,7 +719,7 @@ def clean_old_tourneys(dicts,t_info,rank_period=12,delete_data=False):
 # (player id, meta info, tourney results/records are deleted!!!)
 # **does NOT save db automatically**
 def delete_player(dicts,p_id,tag=None,delete_sets=True):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	abs_id,p_meta,p_records,p_ids = get_player(dicts,p_id,tag)
 
 	# delete player records
@@ -648,7 +733,7 @@ def delete_player(dicts,p_id,tag=None,delete_sets=True):
 		for w_id in p_records['wins']:
 			del [records][w_id]['losses'][abs_id]
 
-	return tourneys,ids,p_info,records,skills
+	return tourneys,ids,p_info,records,skills,meta
 
 # creates a blank db and writes over any existing one in the given directory
 def clear_db(ver,loc='db'):
@@ -667,7 +752,7 @@ def save_db(dicts,ver,loc='db'):
 	if to_save_db:
 		if v >= 3:
 			print('Saving DB...')
-		for data,name in zip(dicts,['tourneys','ids','p_info','records','skills']):
+		for data,name in zip(dicts,['tourneys','ids','p_info','records','skills','meta']):
 			save_dict(data,name,ver,loc)
 	else:
 		return False
@@ -681,9 +766,9 @@ def load_db(ver,loc='db',force_blank=False):
 	if to_load_db and not force_blank:
 		if v >= 3:
 			print('Loading DB...')
-		return [load_dict(name,ver,loc) for name in ['tourneys','ids','p_info','records','skills']]
+		return [load_dict(name,ver,loc) for name in ['tourneys','ids','p_info','records','skills','meta']]
 	else:
-		return [load_dict(name,'blank',loc='db') for name in ['tourneys','ids','p_info','records','skills']]
+		return [load_dict(name,'blank',loc='db') for name in ['tourneys','ids','p_info','records','skills','meta']]
 
 # used to load datasets/hashtables; auto-fills ver modifiers based on args
 def easy_load_db(ver,loc='db',force_blank=False):
@@ -733,5 +818,6 @@ def easy_load_db_sets(ver,loc='db'):
 	return load_db_sets(ver,loc)
 
 
-if __name__ == '__main__':
-	read_majors()
+#if __name__ == '__main__':
+	#read_majors()
+	#print([[arg,getattr(args,arg)] for arg in vars(args)])

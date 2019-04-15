@@ -15,8 +15,6 @@ import glob
 def calc_region(country,state=None,city=None,granularity=2,force_new=False):
 	cc = coco.CountryConverter()
 
-	print(country,state,city,granularity)
-
 	# handle empty/invalid inputs
 	if city in ['N/A','n/a','',' ','  ','None']:
 		city == None
@@ -46,7 +44,7 @@ def calc_region(country,state=None,city=None,granularity=2,force_new=False):
 			state = 'MH'
 		if 'micronesia' in country_low or 'micronesia' in str(state).lower():
 			country = 'United States'
-			state = 'FM','Palau'
+			state = 'FM'
 		if 'northern marianas' in country_low:
 			country = 'United States'
 			state = 'MP'
@@ -400,7 +398,7 @@ def is_sfl(geoloc,location):
 
 # returns the regional grouping given either a player id or tag or location
 def get_region(dicts,p_id,tag=None,country=None,state=None,city=None,granularity=2,to_calc=False):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	if not country == None:
 		return calc_region(country,state,city,granularity)
 	if not tag == None:
@@ -416,17 +414,17 @@ def get_region(dicts,p_id,tag=None,country=None,state=None,city=None,granularity
 
 # returns a list of player ids (and their json data if requested) given a regional name
 def get_players_by_region(dicts,region,granularity=2,get_data=False):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	if get_data:
 		return [(abs_id,get_player(dicts,abs_id)) for abs_id in p_info if get_region(dicts,abs_id,granularity=granularity) == region]
 	else:
 		return [abs_id for abs_id in p_info if get_region(dicts,abs_id,granularity=granularity) == region]
 
 def update_regions(dicts,players,granularities=range(1,6)):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	for p_id in players:
 		for gran in granularities:
-			p_info[p_id]['region'][gran] = get_region((tourneys,ids,p_info,records,skills),p_id,granularity=gran,to_calc=True)
+			p_info[p_id]['region'][gran] = get_region((tourneys,ids,p_info,records,skills,meta),p_id,granularity=gran,to_calc=True)
 
 # saves the given cities in additions, with the given classification (Socal, Norcal, or Misc)
 def save_city_dict(state,cities={},to_load=True,hard_cali_load=False):

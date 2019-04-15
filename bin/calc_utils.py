@@ -28,7 +28,7 @@ def set_default_activity_min(val):
 
 # returns true if given player meets specified minimum activity requirements (default 3)
 def is_active(dicts,p_id,tag=None,min_req=activity_min,min_wins=0):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	if tag != None:
 		p_id = get_abs_id_from_tag(dicts,tag)
 	if p_id not in records:
@@ -42,13 +42,13 @@ def is_active(dicts,p_id,tag=None,min_req=activity_min,min_wins=0):
 
 # returns a list of booleans for each given player, if they meet activity requirements
 def are_active(dicts,p_ids,tags=[],min_req=activity_min):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	if type(tags) is list and len(tags) > 0:
 		p_ids = [get_abs_id_from_tag(dicts,tag) for tag in tags]
 	return [is_active(dicts,p_id,min_req=min_req) for p_id in p_ids]
 
 def score(dicts,placing,t_id,t_size=None):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 
 	if t_size == None:
 		num_entrants = tourneys[t_id]['numEntrants']
@@ -62,7 +62,7 @@ def score(dicts,placing,t_id,t_size=None):
 # using the FIDE "rule of 400" PR estimator
 # (not a very meaningful metric; unused in other calculations)
 def calc_performance(dicts,abs_id,t_info,use_FIDE=True):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size,t_images,t_coords = t_info
 	#print("Calculating performance: %d :: %s"%(abs_id,t_name))
 	w_count,l_count = 0.,0.
@@ -102,7 +102,7 @@ def calc_performance(dicts,abs_id,t_info,use_FIDE=True):
 	return res
 
 def update_performances(dicts,t_info,use_FIDE=True):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size,t_images,t_coords = t_info
 
 	for abs_id in records:
@@ -235,7 +235,7 @@ def glicko_update_vol(mu,phi,sigma,p_matches,delta,v_g,tau):
 # after a given tournament
 old_glicko_tau = 0.5
 def update_glicko(dicts,matches,t_info,tau=0.5,ranking_period=60):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size,t_images,t_coords = t_info
 	# converts match information to (s_j,mu_j,phi_j) format
 	p_info_old = dcopy(p_info)
@@ -302,7 +302,7 @@ def update_glicko(dicts,matches,t_info,tau=0.5,ranking_period=60):
 def calc_sigrank(dicts,max_iter=1000,min_req=3,verbosity=0,rank_size=None,disp_size=100,alpha=0.5,\
 	mode='array',sig_mode='sigmoid',seed='elo',score_by='intsig',\
 	print_res=False,learn_decay=True,plot_ranks=True,use_bins=False,running_bins=False):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	#larry_id,T_id,jtails_id = get_abs_id_from_tag(dicts,'Tweek'),get_abs_id_from_tag(dicts,'Ally'),get_abs_id_from_tag(dicts,'Jtails')
 	#print(void_id,dabuz_id,larry_id)
 	#t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size,t_images,t_coords = t_info
@@ -724,7 +724,7 @@ def sigrank(data,winps,chis,id_list,max_iter=1000,v=0,learn_rate=0.5,beta=0.9,to
 # updates all sigmoids if a new ranking period has come to pass
 # if era <= 0, updates after each tourney
 def update_sigmoids(dicts,t_info,sig='sigmoid',ranking_period=2,max_iterations=1000,v=0):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size,t_images,t_coords = t_info
 	sigrank_history = skills['srank']
 	sigrank_deltas = skills['srank_del']
@@ -738,10 +738,11 @@ def update_sigmoids(dicts,t_info,sig='sigmoid',ranking_period=2,max_iterations=1
 		era = lambda d: int(num_months(d)/ranking_period)-int(num_months(first_date)/ranking_period) if ranking_period > 0 else date(d[0],d[1],d[2])
 		## if its a new ranking period
 		#if (t_date[1]-last_date[1])%12 >= ranking_period:
-		if era(t_date) > era(last_date):
+		if era(t_date) > era(last_date) or ranking_period <= 0:
 			if v >= 4:
 				print('Updating Sigmoids...')
-			sigrank_res = calc_sigrank(dicts,plot_ranks=False,max_iter=max_iterations,seed='dict',print_res=False,verbosity=v,sig_mode=sig)
+			#sigrank_res = calc_sigrank(dicts,plot_ranks=False,max_iter=max_iterations,seed='dict',print_res=False,verbosity=v,sig_mode=sig,running_bins=False)
+			sigrank_res = calc_sigrank(dicts,plot_ranks=False,max_iter=100,seed='dict',print_res=False,verbosity=v,sig_mode=sig,running_bins=True)
 			# new_data_dict, winps, sigdict, data_hist_dict, id_list = sigrank_res
 			for abs_id in p_info:
 				# if in id_list
@@ -762,7 +763,7 @@ def update_sigmoids(dicts,t_info,sig='sigmoid',ranking_period=2,max_iterations=1
 				# otherwise set skill to 1 (unrankable/inactive player)
 				else:
 					p_info[abs_id]['srank'] = 1.
-					p_info[abs_id]['srank_sig'] = get_fitsig_guesses()
+					p_info[abs_id]['srank_sig'] = list(get_fitsig_guesses())
 					sigrank_deltas[abs_id][t_id] = 0.
 					sigrank_history[abs_id][t_id] = p_info[abs_id]['srank']
 					sigmoid_history[abs_id][t_id] = p_info[abs_id]['srank_sig']
@@ -776,12 +777,12 @@ def update_sigmoids(dicts,t_info,sig='sigmoid',ranking_period=2,max_iterations=1
 		# everyone stays the same
 		else:
 			for abs_id in p_info:
-				if p_info[abs_id]['last_event'] == t_id:
-					sigrank_history[abs_id][t_id] = p_info[abs_id]['srank']
-					sigmoid_history[abs_id][t_id] = p_info[abs_id]['srank_sig']
-				else:
-					sigrank_history[abs_id][t_id] = sigrank_history[abs_id][p_info[abs_id]['last_event']]
-					sigmoid_history[abs_id][t_id] = sigmoid_history[abs_id][p_info[abs_id]['last_event']]
+				#if p_info[abs_id]['last_event'] == t_id:
+				sigrank_history[abs_id][t_id] = p_info[abs_id]['srank']
+				sigmoid_history[abs_id][t_id] = p_info[abs_id]['srank_sig']
+				#else:
+				#	sigrank_history[abs_id][t_id] = sigrank_history[abs_id][p_info[abs_id]['last_event']]
+				#	sigmoid_history[abs_id][t_id] = sigmoid_history[abs_id][p_info[abs_id]['last_event']]
 				sigrank_deltas[abs_id][t_id] = 0.
 			return False
 	# everyone starts with starting values if it's the first tourney of the DB
@@ -795,7 +796,7 @@ def update_sigmoids(dicts,t_info,sig='sigmoid',ranking_period=2,max_iterations=1
 ## SIGRANK HELPER UTILS
 # returns the h2h record for two given players (from p1's perspective)
 def h2h(dicts,p1_id,p2_id):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	w,l = 0,0
 
 	if p2_id in records[p1_id]['wins']:
@@ -811,7 +812,7 @@ def h2h(dicts,p1_id,p2_id):
 # returns a dict with the probability that player A beats player B, based on h2h records
 # (stores -1 if no records exist)
 def winprobs(dicts,id_list=None,mode='array'):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	if id_list == None:
 		id_list = [p_id for p_id in records]
 	if mode != 'array':
@@ -870,7 +871,7 @@ def winprobs(dicts,id_list=None,mode='array'):
 	return winps,chis
 
 def running_winprobs(data,winps,p_id,mode='dict',plot_probs=True):
-	#tourneys,ids,p_info,records,skills = dicts
+	#tourneys,ids,p_info,records,skills,meta = dicts
 	p_winps = winps[p_id]
 	opp_list = sorted([opp_id for opp_id in p_winps],key=lambda opp:p_winps[opp])
 
@@ -924,7 +925,7 @@ def running_winprobs(data,winps,p_id,mode='dict',plot_probs=True):
 # plots the win probabilities for a player given their rank, and 
 # calculates and plots the logistic function regression
 def plot_winprobs(data,winps,sigs,id_list,p_id,plot_sigmoid=True,plot_running_sigmoid=False,plot_tags=False,plot_rank=True,scale_skills=False,char_data=None,mode='dict',sig_mode='sigmoid'):
-	#tourneys,ids,p_info,records,skills = dicts
+	#tourneys,ids,p_info,records,skills,meta = dicts
 	#dats = winps[p_id]
 	if sig_mode not in ['sigmoid','alt','simple','scipy']:
 		sig_mode = 'sigmoid'
@@ -1050,7 +1051,7 @@ def plot_winprobs(data,winps,sigs,id_list,p_id,plot_sigmoid=True,plot_running_si
 
 # plots the skills of players against their ordered rank
 def plot_skills(data,id_list,plot_tags=False,mode='dict'):
-	#tourneys,ids,p_info,records,skills = dicts
+	#tourneys,ids,p_info,records,skills,meta = dicts
 	n = len(id_list)
 	if mode == 'dict':
 		N = float(len(data.keys()))
@@ -1383,9 +1384,9 @@ def fitsig(skill_ranks,data,winps,chis,id_list,old_guess=None,method='curve_fit'
 				binlist.append(y)
 				y_hist[bin_idx] = binlist
 
-			s_hist = np.array([1./max(len(y_h),1.) for y_h in y_hist if len(y_h) >= 1])
 			x_hist = np.array([x_h for x_h,y_h in zip(x_hist,y_hist) if len(y_h) >= 1])
 			y_hist = np.array([np.mean(y_h) for y_h in y_hist if len(y_h) >= 1])
+			s_hist = np.array([1./max(len(y_h),1.) for y_h in y_hist if len(y_h) >= 1])
 
 			xs = list(x_hist)
 			ys = list(y_hist)

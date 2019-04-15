@@ -15,14 +15,14 @@ def main():
 # update firebase db by setting all values to local db, for a given game/year/count
 def update_db(dicts,db_key,force_update=False,new_db=False):
 	print('----------------------')
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	# load sets from db and add them to 'dicts'
 	split_key = db_key.split('_')
 	yc_str = ''
 	if int(split_key[2]) > 0:
 		yc_str += '-'+str(int(split_key[1])+int(split_key[2]))
 	sets = easy_load_db_sets(ver=str(split_key[0])+'/'+str(split_key[1])+yc_str)
-	dicts = (tourneys,ids,p_info,records,skills,sets)
+	dicts = (tourneys,ids,p_info,records,skills,meta,sets)
 
 	# open db
 	db = get_db_reference()
@@ -40,7 +40,7 @@ def update_db(dicts,db_key,force_update=False,new_db=False):
 		if game_db.get() is None or (type(game_db.get()) is str and game_db.get() == '') or force_update:
 			game_db.set('')
 	# add directories for all the major information dicts
-	for dictname,dictdata in zip(['tourneys','ids','p_info','records','skills','sets'],dicts):
+	for dictname,dictdata in zip(['tourneys','ids','p_info','records','skills','meta','sets'],dicts):
 		print('pushing...',dictname)
 		sub_db = game_db.child(dictname)
 		# import dict data to firebase db
@@ -59,6 +59,10 @@ def update_db(dicts,db_key,force_update=False,new_db=False):
 							batch_upload(dictdata[skill_key],skill_db_ref)
 				else:
 					batch_upload(dictdata,sub_db)
+			except TypeError as te:
+				print('Upload failed. Checking for dirtied dict...')
+				is_clean_dict(dictdata)
+
 	print('%s pushed'%db_key)
 
 # update all games for the given year/count [WIP]
@@ -99,7 +103,7 @@ def is_clean_dict(e_dict,e_key=None):
 		return all([is_clean_dict(e_dict[key],key) if type(key) in [str,int,float,list,tuple,None,type(None),datetime.date] else False for key in e_dict])
 	# base case
 	else:
-		if type(e_dict) in [str,int,float,list,tuple,None,type(None),datetime.date]:
+		if type(e_dict) in [str,int,float,list,tuple,None,type(None),bool,datetime.date]:
 			return True
 		else:
 			print('e_key:',e_key,'||','value:',type(e_dict))

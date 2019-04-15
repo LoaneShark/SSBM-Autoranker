@@ -18,7 +18,7 @@ flatten = lambda l: [item for sublist in l for item in sublist] if type(l) is li
 # format is a list of players sorted by final placement, with indexing:
 # (p_id,p_team,p_tag,p_path,p_place,p_losses,p_wins)
 def get_result(dicts,t_id,res_filt=None):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	t = tourneys[t_id]
 	t_labels = t['groups']
 
@@ -120,7 +120,7 @@ def get_result(dicts,t_id,res_filt=None):
 # returns a copy of the database containing the dicts of info relating to a given player
 # (filtered by event(s) if provided)
 def get_player(dicts,p_id,tag=None,t_ids=None,slugs=None):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	if not tag == None:
 		p_id = get_abs_id_from_tag(dicts,tag)
 	if not slugs == None:
@@ -180,7 +180,7 @@ def get_results(dicts,t_ids,res_filt=None):
 # for each tourney they attended (or only in those provided).
 # can pull the results for a whole team as well
 def get_resume(dicts,p_id,tags=None,t_ids=None,team=None,slugs=None,chars=None):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	# recursion filtering
 	if type(p_id) is list:
 		return flatten([get_resume(dicts,pid,tags=tags,t_ids=t_ids,team=team,slugs=slugs,chars=chars) for pid in p_id])
@@ -233,7 +233,7 @@ def get_resume(dicts,p_id,tags=None,t_ids=None,team=None,slugs=None,chars=None):
 # returns player id given their tag in a string
 # if multiple matches, returns first found result (by p_id or skill), unless first_only is disabled
 def get_abs_id_from_tag(dicts,tag,first_only=True,sort_by_skill=False,leet_sensetive=True):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	#print(tag)
 	p_ids = [abs_id for abs_id in p_info if tag is not None if tag in p_info[abs_id]['aliases'] or \
 											tag.lower().strip() in [p_alias.lower().strip() for p_alias in p_info[abs_id]['aliases'] if p_alias is not None]]
@@ -255,7 +255,7 @@ def get_abs_id_from_tag(dicts,tag,first_only=True,sort_by_skill=False,leet_sense
 
 # returns an english tag either from cache or transliterated directly, given either p_id or japanese tag
 def get_en_tag(dicts,tag=None,p_id=None):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 
 	# get p_id if not already provided
 	if p_id == None:
@@ -307,19 +307,19 @@ def leetify_rec(tag,convs,c_i):
 
 # returns a list of all player ids listed under this team
 def get_players_from_team(dicts,team):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	roster = [abs_id for abs_id in p_info if p_info[abs_id]['team'] == team]
 	return roster
 
 # returns a list of all player ids that have at least one recorded game with a given character
 def get_players_by_character(dicts,character):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	reps = [abs_id for abs_id in p_info if character in p_info['characters']]
 	return reps
 
 # lists all the tourneys in a given year/the entire dataset
 def list_tourneys(dicts,year=None,list_ids=False):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	if year == None:
 		if list_ids:
 			return [[t_id,tourneys[t_id]['name']] for t_id in tourneys if t_id != 'slugs']
@@ -333,7 +333,7 @@ def list_tourneys(dicts,year=None,list_ids=False):
 
 ## db_utils helpers
 def update_official_ranks(dicts,game,year,year_half=1,lookback=False):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 
 	# update the previous year if it wasn't already there (for first import)
 	if lookback:
@@ -382,7 +382,7 @@ def update_official_ranks(dicts,game,year,year_half=1,lookback=False):
 			p_info[p_id]['mainrank'] = p_rank
 
 def update_percentiles(dicts):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 
 	for skill_key in ['elo','glicko','srank']:
 	#for skill_key in ['elo','glicko','srank','trueskill']:
@@ -431,7 +431,7 @@ def get_main(p,p_info):
 		return ''
 
 def get_social_media(dicts,p_id):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	player_url = 'https://api.smash.gg/player/%d'%p_id
 	#print(p_id)
 	aliases = p_info[p_id]['aliases']
@@ -479,7 +479,7 @@ def get_social_media(dicts,p_id):
 		return False
 
 def update_social_media(dicts,p_ids):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 
 	if p_ids == None:
 		p_ids = [p_id for p_id in p_info]
@@ -505,7 +505,7 @@ def update_social_media(dicts,p_ids):
 
 # print (filtered) results for a given tourney
 def print_result(dicts,t_id,res_filt=None,max_place=64):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	res = get_result(dicts,t_id,res_filt)
 	maxlen = 0
 	t = tourneys[t_id]
@@ -570,7 +570,7 @@ def print_events(dicts,t_ids,max_place=64):
 
 # prints the specified records, grouping by the g_key criteria
 def print_resume(dicts,res,g_key='player',s_key=None,disp_raw=False,disp_wins=True):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	#print(res)
 	if not res or len(res) == 0 or res == []:
 		print('Resume was not provided or could not be found')
@@ -712,7 +712,7 @@ def print_resume_line(line,h_idx,s_idx,disp_wins=True):
 # print's an event's results (deprecated)
 def old_print_event(dicts,t_id,max_place=64,translate_cjk=True):
 	maxlen = 0
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	t = tourneys[t_id]
 	t_labels = t['groups']
 

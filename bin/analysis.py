@@ -117,13 +117,16 @@ min_act = int(args.min_activity)
 
 def main():
 	dicts = main_read()
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	# ==========================================================================================
 
-	#tourneys,ids,p_info,records,skills = load_db(str(game_idx)+"/"+yearstr)
-	#tourneys,ids,p_info,records,skills = load_db(str(game_idx)+"/"+str(year))
+	#tourneys,ids,p_info,records,skills,meta = load_db(str(game_idx)+"/"+yearstr)
+	#tourneys,ids,p_info,records,skills,meta = load_db(str(game_idx)+"/"+str(year))
 
 	#print(get_result((tourneys,ids,p_info,records),36179,res_filt={'player':1000}))
+	#for p_id in p_info:
+	#	p_info[p_id]['srank_sig'] = list(p_info[p_id]['srank_sig'])
+	#	skills['srank_sig'][p_id] = list(skills['srank_sig'][p_id])
 
 	#resume = get_resume(dicts,None,tags=['Iago','Jobbo','Jobboman','Crimock','CrimockLyte'])
 	#resume = get_resume(dicts,None,tags=['Draxsel','iModerz','TehGuitarLord','Joe-J','San','PikaPika!','K.I.D. Goggles','K.I.D.Goggles','Dom','Fun China'])
@@ -134,7 +137,7 @@ def main():
 		#print(tourneys[6076])
 		#delete_tourney(dicts,6076)
 		#dicts = read_majors(1,2017,base=dicts)
-		#tourneys,ids,p_info,records,skills = dicts
+		#tourneys,ids,p_info,records,skills,meta = dicts
 		#print(tourneys[5643])
 		#print(p_info[5643])
 		#print(records[5643])
@@ -147,9 +150,9 @@ def main():
 		#print(p_info[490223])
 		#print(len(get_players_by_region(dicts,'SoCal')))
 		#print(get_region(dicts,14514,to_calc=True))
-	#resume = get_resume(dicts,[1000,4465,1004])
+	resume = get_resume(dicts,None,tags=['Bimbo'])
 	#resume = get_resume(dicts,None,tags=['Surfero','kla','ZENT','FriedLizard','Katsu','Bread'])
-	#print_resume(dicts,resume,g_key='player',s_key='event')
+	print_resume(dicts,resume,g_key='player',s_key='event')
 	#print_resume(dicts,resume,g_key='player',s_key='event')
 	#disp_all(dicts,key='elo',dispnum=10,min_activity=min_act,tier_tol=-1,plot_skills=False)
 	#if game_idx == 1386 or game_idx == 3:
@@ -165,10 +168,10 @@ def main():
 			iagorank_params = calc_sigrank(dicts,min_req=min_act,max_iter=100,learn_decay=False,disp_size=300,verbosity=5,print_res=True,plot_ranks=False,\
 				mode='array',seed='blank',sig_mode='alt',score_by='intsig',use_bins=False,running_bins=True)
 		else:
-			iagorank_params = calc_sigrank(dicts,min_req=min_act,max_iter=50,learn_decay=True,disp_size=300,verbosity=5,print_res=True,plot_ranks=False,\
+			iagorank_params = calc_sigrank(dicts,min_req=min_act,max_iter=100,learn_decay=True,disp_size=300,verbosity=5,print_res=True,plot_ranks=False,\
 				mode='array',seed='blank',sig_mode='alt',score_by='intsig',use_bins=False,running_bins=True)
 		array_time = timer()-array_t
-		print('Array time elapsed:','{:.3f}'.format(array_time) + ' s')
+		print('Sigrank calc time elapsed:','{:.3f}'.format(array_time) + ' s')
 		ISR = {'params': iagorank_params}
 		save_dict(ISR,'ISR_%d_%d_%d'%(game_idx,year,year_count),None,'..\\lib')
 	else:
@@ -348,14 +351,14 @@ def main_read():
 		yearstr = str(year)+'-'+str(year+year_count)
 	if args.current_db:
 		yearstr += '_c'
-	tourneys,ids,p_info,records,skills = easy_load_db(str(game_idx)+'/'+yearstr)
-	tourneys,ids,p_info,records,skills = read_year(game_idx,year,base=(tourneys,ids,p_info,records,skills))
+	tourneys,ids,p_info,records,skills,meta = easy_load_db(str(game_idx)+'/'+yearstr)
+	tourneys,ids,p_info,records,skills,meta = read_year(game_idx,year,base=(tourneys,ids,p_info,records,skills,meta))
 	for i in range(1,year_count+1):
 		if i == year_count:
-			#tourneys,ids,p_info,records,skills = read_year(game_idx,year+i,base=(tourneys,ids,p_info,records,skills),to_update_socials=True)
-			tourneys,ids,p_info,records,skills = read_year(game_idx,year+i,base=(tourneys,ids,p_info,records,skills))
+			#tourneys,ids,p_info,records,skills,meta = read_year(game_idx,year+i,base=(tourneys,ids,p_info,records,skills,meta),to_update_socials=True)
+			tourneys,ids,p_info,records,skills,meta = read_year(game_idx,year+i,base=(tourneys,ids,p_info,records,skills,meta))
 		else:
-			tourneys,ids,p_info,records,skills = read_year(game_idx,year+i,base=(tourneys,ids,p_info,records,skills))
+			tourneys,ids,p_info,records,skills,meta = read_year(game_idx,year+i,base=(tourneys,ids,p_info,records,skills,meta))
 
 	if game_idx == 1386:
 		filename = 'ultimate_mains.csv'
@@ -380,10 +383,10 @@ def main_read():
 									p_info[p_id]['characters'][char_id][1] += 10
 						else:
 							print(p_id,'-',p_id in p_info.keys())
-	return tourneys,ids,p_info,records,skills
+	return tourneys,ids,p_info,records,skills,meta
 
 def find_opt_hyperparams(dicts,a_rng=20,ma_rng=9,plot_res=True,key_ids=[1000]):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 
 	#a_rng = 2
 	#ma_rng = 2

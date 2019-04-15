@@ -91,12 +91,12 @@ def load_obj(t_id,phase,name):
 
 # saves all params for the load_sets function
 def save_all(t_id,phase,params):
-	names = ['entrants','wins','losses','results','names','sets']
+	names = ['entrants','wins','losses','results','names','meta','sets']
 	return all([save_obj(t_id,phase,param,name) for param,name in zip(params,names)])
 
 # load all params for the load_sets function
 def load_all(t_id,phase):
-	names = ['entrants','wins','losses','results','names','sets']
+	names = ['entrants','wins','losses','results','names','meta','sets']
 	return [load_obj(t_id,phase,name) for name in names]
 
 # prints smash.gg query pulls as pretty JSON .txt files (for human readability)
@@ -579,4 +579,5 @@ def print_results(res,names,entrants,losses,characters,game=1,max_place=64,trans
 	return res_s
 
 #if __name__ == '__main__':
-#	print(save_stock_icons())
+	#print(save_stock_icons())
+	#write_blank_dict('meta')

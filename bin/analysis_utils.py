@@ -16,7 +16,7 @@ from db_utils import load_db_sets,easy_load_db_sets
 # gets a the "score" for each player, calculated as the average percentage of bracket completed
 # (average number of rounds made through the bracket, normalized to [0,1])
 def get_scores(dicts,acc=3,scale_vals=False,activity=3):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	scores = {}
 	for p_id in p_info:
 		if p_id in records and is_active(dicts,p_id,min_req=activity):
@@ -30,7 +30,7 @@ def get_scores(dicts,acc=3,scale_vals=False,activity=3):
 
 # displays the above scores for the given number of people
 def disp_scores(dicts,dispnum=20,scale_vals=False,activity=3):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	scores = get_scores(dicts,scale_vals=scale_vals,activity=activity)
 
 	players = sorted([[p_info[p_id]['tag'],scores[p_id]] for p_id in scores],key=lambda x: x[1],reverse=True)
@@ -39,7 +39,7 @@ def disp_scores(dicts,dispnum=20,scale_vals=False,activity=3):
 		print(player)
 
 def get_elos(dicts,acc=3,scale_vals=False,activity=3):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	elos = {}
 	for p_id in p_info:
 		if p_id in records and is_active(dicts,p_id,min_req=activity):
@@ -53,7 +53,7 @@ def get_elos(dicts,acc=3,scale_vals=False,activity=3):
 	return elos
 
 def disp_elos(dicts,dispnum=20,scale_vals=False,activity=3):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	elos = get_elos(dicts,scale_vals=scale_vals,activity=activity)
 
 	players = sorted([[p_info[p_id]['tag'],elos[p_id]] for p_id in elos],key=lambda x: x[1],reverse=True)
@@ -62,7 +62,7 @@ def disp_elos(dicts,dispnum=20,scale_vals=False,activity=3):
 		print(player)
 
 def get_glickos(dicts,acc=3,scale_vals=False,activity=3):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	glickos = {}
 	for p_id in p_info:
 		if p_id in records and is_active(dicts,p_id,min_req=activity):
@@ -75,7 +75,7 @@ def get_glickos(dicts,acc=3,scale_vals=False,activity=3):
 	return glickos
 
 def disp_glickos(dicts,dispnum=20,scale_vals=False,activity=3):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	elos = get_glickos(dicts,scale_vals=scale_vals,activity=activity)
 
 	players = sorted([[p_info[p_id]['tag'],glickos[p_id]] for p_id in glickos],key=lambda x: x[1],reverse=True)
@@ -84,11 +84,11 @@ def disp_glickos(dicts,dispnum=20,scale_vals=False,activity=3):
 		print(player)
 
 def get_iagorank(dicts,acc=3,scale_vals=True,activity=3):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	return True
 
 def get_avg_performances(dicts,acc=3,scale_vals=False):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	avg_perfs = {}
 
 	for p_id in p_info:
@@ -111,7 +111,7 @@ def get_avg_performances(dicts,acc=3,scale_vals=False):
 	return avg_perfs
 
 def get_best_performances(dicts,use_names=False,acc=3,scale_vals=False):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	#print(len(records))
 	best_perfs = {}
 
@@ -141,7 +141,7 @@ def get_best_performances(dicts,use_names=False,acc=3,scale_vals=False):
 
 def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,winprobs=None,skill_weight=False,v=0,n_bins=20000,\
 							infer_characters=False,label_mode='tens',use_icons=False,prune_sparse=True,save_figure=False,plot_fails=False):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	if id_list == None:
 		id_list = [p_id for p_id in records]
 	if label_mode not in ['ones','fives','tens','split']:
@@ -400,7 +400,7 @@ def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,winprobs=No
 	plt.show()
 
 def generate_tier_list(dicts,game,year,year_count,id_list=None,skill_weight=True,use_icons=True):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	if id_list == None:
 		id_list = [p_id for p_id in records]
 	yc_str = ''
@@ -505,7 +505,7 @@ def generate_tier_list(dicts,game,year,year_count,id_list=None,skill_weight=True
 
 
 def disp_all(dicts,dispnum=20,key='elo',trans_cjk=True,avg_perf=False,scale_vals=False,min_activity=3,tier_tol=-1,plot_skills=False):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	key_idx = 1
 	if key == 'norm_all':
 		scale_vals = True

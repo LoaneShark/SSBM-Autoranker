@@ -240,7 +240,7 @@ def scrape_ranks(game,year,yr_half=-1):
 	return tags,ratings,yearstr.strip('_')
 
 def check_ssbwiki(dicts,p_id,tag):
-	tourneys,ids,p_info,records,skills = dicts
+	tourneys,ids,p_info,records,skills,meta = dicts
 	#print('Checking Wiki for: %s (%d)'%(tag,p_id))
 	# modify tag to handle properly in urls
 	if tag is None:
