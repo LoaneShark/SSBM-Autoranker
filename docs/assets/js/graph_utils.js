@@ -427,7 +427,7 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 function sigmoidChart(PlayerSnapshot,infoRefStr,sigmoid,winprobs,pSkill){
 	// sigmoid = [x0,g,c,k]
 	var ctx = $('#srank_sigmoid')[0].getContext('2d');
-	console.log(sigmoid)
+	//console.log(sigmoid)
 	if (pSkill==1 && sigmoid[0]==0.5 && sigmoid[1]==0 && sigmoid[2]==1 && sigmoid[3]==5){
 		var rankedSigmoid = false;
 		var sigmoidBorderDash = [5,5];

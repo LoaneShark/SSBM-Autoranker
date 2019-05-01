@@ -6,15 +6,34 @@
 
 <a name="active"></a>
 <div class="accordion" id="current_event_accordion">
-	<div class="card border"><div class="card-header font-weight-bold">CURRENT EVENTS</div></div>
+	<div class="card border">
+		<div class="card-header font-weight-bold" id="current_event_header">
+			<a data-toggle="collapse" class="btn" href="#current_event_accordion_span" onclick="$('#curr_collapsed_chevron').toggleClass('fa-rotate-180')" aria-label="Expand/Collapse Inactive Events" aria-expanded="true" role="button" style="box-shadow:none;">
+				<i class="fas fa-chevron-circle-up" id="curr_collapsed_chevron" aria-hidden="true"></i>
+			</a>
+			CURRENT EVENTS
+		</div>
+	</div>
+	<div id="current_event_accordion_span" class="collapse show" aria-labelledby="current_event_header">
+	</div>
 </div>
 <div class="row invisible">~</div>
 <hr>
 <div class="row invisible">~</div>
 <a name="inactive"></a>
 <div class="accordion invisible" id="old_event_accordion">
-	<div class="card border"><div class="card-header font-weight-bold">INACTIVE EVENTS</div></div>
+	<div class="card border">
+		<div class="card-header font-weight-bold" id="old_event_header">
+			<a data-toggle="collapse" class="collapsed btn" href="#old_event_accordion_span" onclick="$('#old_collapsed_chevron').toggleClass('fa-rotate-180')" aria-label="Expand/Collapse Inactive Events" aria-expanded="false" role="button" style="box-shadow:none;">
+				<i class="fas fa-chevron-circle-down" id="old_collapsed_chevron" aria-hidden="true"></i>
+			</a>
+			INACTIVE EVENTS
+		</div>
+	</div>
+	<div id="old_event_accordion_span" class="collapse" aria-labelledby="old_event_header">
+	</div>
 </div>
+<div class="row invisible">~</div>
 
 {% include firebase_scripts.html %}
 <script class="text/javascript" src="/assets/js/misc_utils.js"></script>
@@ -25,6 +44,8 @@
 	tourneyQuery = tourneyRef.once('value').then(function(TourneySnapshot){
 		if (TourneySnapshot.exists()){
 			var i = 0;
+			var n_curr = 0;
+			var n_old = 0;
 			var firstDate = null;
 			var lastDate = null;
 			var eventList = Object.values(TourneySnapshot.val()); // convert to object, then array
@@ -44,8 +65,10 @@
 			eventList.map(function(event){
 				if (event['active']) {
 					var acc_name = 'current_event_accordion';
+					n_curr += 1;
 				} else {
 					var acc_name = 'old_event_accordion'
+					n_old += 1;
 					$('#old_event_accordion').removeClass('invisible')
 				}
 
@@ -54,15 +77,15 @@
 	            if (eventPropicUrl == null){
 	              eventPropicUrl = "https://via.placeholder.com/100/81daea/6A5ACD?text="+event['name'].slice(0,1);
 	            }
-
-				$('#'+acc_name).append(
+	            // write event card to appropriate accordion, depending on date
+				$('#'+acc_name+'_span').append(
 					'<div class="card border">' +
 					  '<div class="card-header" style="background-color:whitesmoke;">' +
-					    '<img src="'+eventPropicUrl+'" alt="img" class="rounded" style="height:5vw;">' +
 					    '<button class="btn text-sr-dark collapsed" type="button" data-toggle="collapse" aria-expanded="false"' +
 						    'data-target="#event_collapse_'+i+'" aria-controls="event_collapse_'+i+'" ' +
-						    'id="#event_header_'+i+'" style="box-shadow:none;">' +
-					           event['name'] +
+						    'id="#event_header_'+i+'" style="box-shadow:none;padding-left:0rem;">' +
+					    	'<img src="'+eventPropicUrl+'" alt="img" class="rounded" style="height:5vw;">' +
+					        '&nbsp;&nbsp;'+event['name'] +
 					    '</button>' +
 					  '</div>' +
 
@@ -93,6 +116,7 @@
 					eventShortSlug = eventSlug;
 				}
 
+				// populate event cards with body and footer info
 				$('#event_body_'+i).append(
 					'<h5 class="card-title">' +
 					  event['name'] +
@@ -113,14 +137,27 @@
 
 				i++;
 			});
-			var eventCountText = ''+i+' Event'
-			if (i >= 2){
-				eventCountText += 's'
+			var currEventCountText = ''+n_curr+' Event'
+			if (n_curr >= 2){
+				currEventCountText += 's'
 			}
+			var oldEventCountText = ''+n_old+' Event'
+			if (n_old >= 2){
+				oldEventCountText += 's'
+			}
+			// append final date range to 'current' accordion
 			$('#current_event_accordion').append(
 				'<div class="card border">' +
 				  '<div class="card-footer text-muted">' +
-				  eventCountText+'  •  '+(firstDate.getMonth()+1)+'/'+firstDate.getFullYear()+' - '+(lastDate.getMonth()+1)+'/'+lastDate.getFullYear() +
+				  currEventCountText+'  •  '+(firstDate.getMonth()+1)+'/'+firstDate.getFullYear()+' - '+(lastDate.getMonth()+1)+'/'+lastDate.getFullYear() +
+				  '</div>' + 
+				'</div>'
+			);
+			// append final date range to 'inactive' accordion
+			$('#old_event_accordion').append(
+				'<div class="card border">' +
+				  '<div class="card-footer text-muted">' +
+				  oldEventCountText+'  •  '+'1/2016 - '+(firstDate.getMonth()+1)+'/'+firstDate.getFullYear() +
 				  '</div>' + 
 				'</div>'
 			);
