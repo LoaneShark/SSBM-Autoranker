@@ -332,7 +332,7 @@ def calc_sigrank(dicts,max_iter=1000,min_req=3,verbosity=0,rank_size=None,disp_s
 		if verbosity >= 5:
 			print('[seeding by previous/initial skill values]')
 		#data_dict = {p_id: ([tag,p_info[p_id]['srank']] if type(p_info[p_id]['srank']) is float else [tag,0.5]) for p_id,tag,_,_ in data}
-		data_dict = {p_id: ([tag,p_info[p_id]['srank']] if type(p_info[p_id]['srank']) is float else [tag,1.0]) for p_id,tag,_,_ in data}
+		data_dict = {p_id: ([tag,p_info[p_id]['srank']] if type(p_info[p_id]['srank']) is float else [tag,0.5] if p_id in id_list else [tag,1]) for p_id,tag,_,_ in data}
 	# use average win percentage as skill seeds
 	# scale by 1-winrate to fit expected shape of sigmoid skill distribution (lower value == higher skill)
 	elif seed == 'winrate':
@@ -353,7 +353,7 @@ def calc_sigrank(dicts,max_iter=1000,min_req=3,verbosity=0,rank_size=None,disp_s
 	elif seed == 'blank':
 		if verbosity >= 5:
 			print('[blanked seeding]')
-		data_dict = {p_id: ([tag,0.5] if type(p_info[p_id]['srank']) is float else [tag,1.0]) for p_id,tag,_,_ in data}
+		data_dict = {p_id: ([tag,0.5] if p_id in id_list is float else [tag,1.0]) for p_id,tag,_,_ in data}
 
 	# use elo/glicko as skill seeds
 	else:
@@ -760,10 +760,12 @@ def update_sigmoids(dicts,t_info,sig='sigmoid',ranking_period=2,max_iterations=1
 					# remove numpy data typings for JSON db compatability
 					p_info[abs_id]['srank'] = float(skill_rank)
 					p_info[abs_id]['srank_sig'] = list(sigrank_res[2][abs_id])
+					p_info[abs_id]['srank_active'] = True
 				# otherwise set skill to 1 (unrankable/inactive player)
 				else:
-					p_info[abs_id]['srank'] = 1.
+					p_info[abs_id]['srank'] = int(1)
 					p_info[abs_id]['srank_sig'] = list(get_fitsig_guesses())
+					p_info[abs_id]['srank_active'] = False
 					sigrank_deltas[abs_id][t_id] = 0.
 					sigrank_history[abs_id][t_id] = p_info[abs_id]['srank']
 					sigmoid_history[abs_id][t_id] = p_info[abs_id]['srank_sig']
@@ -791,6 +793,7 @@ def update_sigmoids(dicts,t_info,sig='sigmoid',ranking_period=2,max_iterations=1
 			sigrank_history[abs_id][t_id] = p_info[abs_id]['srank']
 			sigmoid_history[abs_id][t_id] = p_info[abs_id]['srank_sig']
 			sigrank_deltas[abs_id][t_id] = 0.
+			p_info[abs_id]['srank_active'] = False
 		return False
 
 ## SIGRANK HELPER UTILS

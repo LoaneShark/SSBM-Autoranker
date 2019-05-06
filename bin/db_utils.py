@@ -182,7 +182,7 @@ def read_tourneys(slugs,ver='default',year=None,base=None,current=False,to_updat
 			date_list = sorted([tourneys[old_id]['date'] for old_id in tourneys if old_id != 'slugs'])
 			# ensure it's not before the last imported event (or that it's the first event in the db)
 			if len(date_list) <= 0 or (slug_date[0] > date_list[0][0]) or (slug_date[0] == date_list[0][0] and slug_date[1] >= date_list[0][1]):
-				if slug not in tourneys['slugs']:
+				if slug not in meta['slugs']:
 					readins = readin(slug)
 					if readins:
 						if current:
@@ -193,17 +193,15 @@ def read_tourneys(slugs,ver='default',year=None,base=None,current=False,to_updat
 							if to_save_db:
 								save_db((tourneys,ids,p_info,records,skills,meta),verstr)
 								save_db_sets(readins[6],verstr)
-							t_id = tourneys['slugs'][readins[0][2]]
+							t_id = meta['slugs'][readins[0][2]]
 							if collect:
 								delete_tourney_cache(t_id)
 			else:
 				if v >= 4:
 					print('Skipping %s: more recent events already present'%slug)
-	# update meta info
-	store_meta((tourneys,ids,p_info,records,skills,meta))
 
 	if to_update_socials:
-		update_social_media((tourneys,ids,p_info,records,skills,meta))
+		update_social_media((tourneys,ids,p_info,records,skills,meta),None,v)
 	return tourneys,ids,p_info,records,skills,meta
 
 # helper function to store all data from a call to readin
@@ -213,8 +211,9 @@ def store_data(readins,dicts,slug):
 	if len(entrants.keys()) > 1:
 		if store_players(entrants,names,t_info,dicts):
 			if store_records(wins,losses,paths,sets,t_info,dicts):
-				if store_tourney(slug,t_info,names['groups'],dicts):
-					return True
+				if store_tourney(slug,t_info,names['groups'],entrants,sets,dicts):
+					if store_meta((tourneys,ids,p_info,records,skills,meta),t_info):
+						return True
 	return False
 
 # stores data through absolute player IDs (converting from entrant IDs)
@@ -307,7 +306,7 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 
 				# only update socials once, to avoid making calls for every entrant
 				if to_update_socials:
-					update_social_media(dicts,abs_id)
+					update_social_media(dicts,abs_id,v)
 
 				# store ranking data, with initial values if needed
 				if 'elo' not in skills:
@@ -333,6 +332,7 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 					p_info[abs_id]['sets_played'] = 0
 				if 'events_entered' not in p_info[abs_id]:
 					p_info[abs_id]['events_entered'] = 0
+				p_info[abs_id]['events_entered'] += 1
 				p_info[abs_id]['last_event'] = t_id
 				if abs_id not in skills['perf']:
 					skills['perf'][abs_id] = {}
@@ -489,7 +489,7 @@ def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_up
 	return True
 
 # stores tourney meta info and marks tournament as imported
-def store_tourney(slug,t_info,group_names,dicts):
+def store_tourney(slug,t_info,group_names,entrants,sets,dicts):
 	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size,t_images,t_coords = t_info
 	tourneys,ids,p_info,records,skills,meta = dicts
 	tourneys[t_id] = {}
@@ -504,20 +504,37 @@ def store_tourney(slug,t_info,group_names,dicts):
 	tourneys[t_id]['url_prof'] = t_images[0]
 	tourneys[t_id]['url_banner'] = t_images[1]
 	tourneys[t_id]['active'] = True
-	if 'slugs' not in tourneys:
-		tourneys['slugs'] = {}
-	tourneys['slugs'][t_slug] = t_id
-	tourneys['slugs'][t_ss] = t_id
-	tourneys['slugs'][slug] = t_id
 	if 'groups' not in tourneys[t_id]:
 		tourneys[t_id]['groups'] = {}
 	group_names = {group_key:{'name':group_name} for group_key,group_name in group_names.items()}
 	tourneys[t_id]['groups'] = group_names
+
+	# store list of attendees and set ids
+	tourneys[t_id]['attendees'] = []
+	for e_id in entrants:
+		for abs_id in entrants[e_id][1]:
+			tourneys[t_id]['attendees'].append(abs_id)
+
+	tourneys[t_id]['setIds'] = []
+	for set_id in sets:
+		tourneys[t_id]['setIds'].append(set_id)
+
+	if 'slugs' not in meta:
+		meta['slugs'] = {}
+	meta['slugs'][t_slug] = t_id
+	meta['slugs'][t_ss] = t_id
+	meta['slugs'][slug] = t_id
+	if 'numEvents' not in meta:
+		meta['numEvents'] = 0
+		tourneys[t_id]['index'] = 0
+	else:
+		tourneys[t_id]['index'] = meta['numEvents']
 		
 	return True
 
-def store_meta(dicts):
+def store_meta(dicts,t_info):
 	tourneys,ids,p_info,records,skills,meta = dicts
+	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size,t_images,t_coords = t_info
 
 	# store basic info on the db
 	meta['gameId'] = db_game
@@ -527,8 +544,10 @@ def store_meta(dicts):
 	meta['isCurrent'] = db_current
 	meta['isSeason'] = db_season
 	meta['isArcadian'] = only_arcadians
-	meta['numEvents'] = len([t_id for t_id in tourneys if type(t_id) is not str])
-	meta['numEventsActive'] = len([t_id for t_id in tourneys if type(t_id) is not str if tourneys[t_id]['active']])
+	meta['numEvents'] = len([temp_t_id for temp_t_id in tourneys if type(temp_t_id) is not str])
+	meta['numEventsActive'] = len([temp_t_id for temp_t_id in tourneys if type(temp_t_id) is not str if tourneys[temp_t_id]['active']])
+	if 'emptyAccts' not in meta:
+		meta['emptyAccts'] = []
 
 	# store info on last arguments
 	if 'args' not in meta:
@@ -538,7 +557,6 @@ def store_meta(dicts):
 		meta['args'][arg] = getattr(args,arg)
 
 	# instantiate min/max skill markers
-	n = 0
 	if 'srank_min' not in meta:
 		meta['srank_min'] = 1.
 		meta['elo_min'] = 1500
@@ -570,8 +588,12 @@ def store_meta(dicts):
 		meta['top500']['elo'] = {k:{} for k in range(500)}
 		meta['top500']['glicko'] = {k:{} for k in range(500)}
 		meta['top500']['mainrank'] = {k:{} for k in range(500)}
+	n = 0
 	for p_id in p_info:
 		n += 1
+		# check for account type (if nameDisplay is null, not a real user account)
+		if p_info[p_id]['name_display'] is None and p_id not in meta['emptyAccts']:
+			meta['emptyAccts'].append(p_id)
 		# check for min/max elo
 		p_elo = p_info[p_id]['elo']
 		if p_elo < elo_min:
@@ -584,13 +606,27 @@ def store_meta(dicts):
 			glicko_min = p_glicko
 		if p_glicko > glicko_max:
 			glicko_max = p_glicko
+		# check for min srank
+		if p_info[p_id]['srank'] < srank_min:
+			srank_min = p_info[p_id]['srank']
 		# store top 10/100/500 player ids (by each skill)
 		for skill_rnk in ['elo','glicko','srank']:
 			for skill_div in [500,100,10]:
+				# get skill values for top 10/50/100/500 cutoffs
+				if p_info[p_id][skill_rnk+'-rnk'] == skill_div:
+					meta[skill_rnk+'_'+str(skill_div)+'_cutoff'] = p_info[p_id][skill_rnk]
+				# store top 10/100/500 player ids by each skill rank, with rank as key
 				if p_info[p_id][skill_rnk+'-rnk'] < skill_div:
 					meta['top'+str(skill_div)][skill_rnk][p_info[p_id][skill_rnk+'-rnk']] = p_id
+	# store new max/mins
+	meta['srank_min'] = srank_min
+	meta['elo_min'] = elo_min
+	meta['elo_max'] = elo_max
+	meta['glicko_min'] = glicko_min
+	meta['glicko_max'] = glicko_max
 
 	meta['numPlayers'] = n
+	meta['lastEvent'] = t_id
 
 	return dicts
 
@@ -601,7 +637,7 @@ def store_meta(dicts):
 def delete_tourney(dicts,t_id,slug=None,clean_slugs=False,clean_tourneys=True):
 	tourneys,ids,p_info,records,skills,meta = dicts
 	if not slug == None:
-		t_id = tourneys['slugs'][slug]
+		t_id = meta['slugs'][slug]
 
 	if t_id in tourneys:
 		if v >= 6:
@@ -678,19 +714,21 @@ def delete_tourney(dicts,t_id,slug=None,clean_slugs=False,clean_tourneys=True):
 		# (off by default)
 		if clean_slugs:
 			l_slugs = load_slugs(game_id,year)
-			l_slugs = [l_slug for l_slug in l_slugs if tourneys['slugs'][slug] != t_id]
+			l_slugs = [l_slug for l_slug in l_slugs if meta['slugs'][slug] != t_id]
 			save_slugs(l_slugs,game_id,year,to_save_db=to_save_db)
 
 		# remove tournament (or mark inactive)
 		if clean_tourneys:
-			for t_s in dcopy(tourneys['slugs']):
-				if tourneys['slugs'][t_s] == t_id:
+			for t_s in dcopy(meta['slugs']):
+				if meta['slugs'][t_s] == t_id:
 					#slug = t_s
-					del tourneys['slugs'][t_s]
+					del meta['slugs'][t_s]
 		if t_id in tourneys:
 			tourneys[t_id]['active'] = False
 			if clean_tourneys:
 				del tourneys[t_id]
+
+		meta['lastDeleted'] = t_id
 
 	return tourneys,ids,p_info,records,skills,meta
 
@@ -700,7 +738,6 @@ def clean_old_tourneys(dicts,t_info,rank_period=12,delete_data=False):
 	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size,t_images,t_coords = t_info
 	if v >= 6:
 		print('Cleaning tourneys over: %d months out from %s'%(rank_period,t_date))
-
 
 	for old_id in tourneys:
 		if old_id != 'slugs':

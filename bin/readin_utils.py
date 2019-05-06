@@ -263,10 +263,15 @@ def load_dict(name,ver,loc='db'):
 	except FileNotFoundError:
 		if name == 'tourneys':
 			t = {}
-			t['slugs'] = {}
+			#t['slugs'] = {}
 			#t['groups'] = {}
 			save_dict(t,name,ver,loc)
 			return t
+		if name == 'meta':
+			m = {}
+			m['slugs'] = {}
+			save_dict(m,name,ver,loc)
+			return m
 		elif name == 'skills':
 			s = {}
 			s['mainrank'] = {}
@@ -288,7 +293,13 @@ def load_dict(name,ver,loc='db'):
 			return {}
 
 def write_blank_dict(name,loc='db'):
-	return save_dict(load_dict(name,None,None),name,'blank',loc)
+	try:
+		os.remove('%s/blank/%s.pkl'%(loc,name))
+	except FileNotFoundError:
+		print('invalid blank dict location')
+		return False
+	else:
+		return load_dict(name,'blank',loc)
 
 # deletes a single dict
 def delete_dict(name,ver,loc='db'):
@@ -578,6 +589,7 @@ def print_results(res,names,entrants,losses,characters,game=1,max_place=64,trans
 
 	return res_s
 
-#if __name__ == '__main__':
-	#print(save_stock_icons())
+if __name__ == '__main__':
+	print(save_character_dicts(1386))
+	print(save_stock_icons(1386))
 	#write_blank_dict('meta')

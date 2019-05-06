@@ -124,7 +124,7 @@ def get_player(dicts,p_id,tag=None,t_ids=None,slugs=None):
 	if not tag == None:
 		p_id = get_abs_id_from_tag(dicts,tag)
 	if not slugs == None:
-		t_ids = [tourneys['slugs'][slug] for slug in slugs]
+		t_ids = [meta['slugs'][slug] for slug in slugs]
 
 	if not t_ids == None:
 		if type(t_ids) == int:
@@ -217,7 +217,7 @@ def get_resume(dicts,p_id,tags=None,t_ids=None,team=None,slugs=None,chars=None):
 	if t_ids == None:
 		t_ids = []
 	if type(slugs) is list:
-		t_ids.extend([tourneys['slugs'][slug] for slug in slugs])
+		t_ids.extend([meta['slugs'][slug] for slug in slugs])
 	#print(t_ids)
 	if len(t_ids) > 0:
 		res = [flatten([[t_id],get_result(dicts,t_id,res_filt={'player': p_id})]) for t_id in t_ids if not get_result(dicts,t_id,res_filt={'player': p_id}) == []]
@@ -430,7 +430,7 @@ def get_main(p,p_info):
 	else:
 		return ''
 
-def get_social_media(dicts,p_id):
+def get_social_media(dicts,p_id,getAcctType=True):
 	tourneys,ids,p_info,records,skills,meta = dicts
 	player_url = 'https://api.smash.gg/player/%d'%p_id
 	#print(p_id)
@@ -439,8 +439,13 @@ def get_social_media(dicts,p_id):
 		pfile = urlopen(player_url).read()
 		pdata = json.loads(pfile.decode('UTF-8'))
 		#print('opened file')
-
 		player_data = pdata['entities']['player']
+
+		if getAcctType and 'nameDisplay' in player_data:
+			nameDisplay = player_data['nameDisplay']
+		else:
+			nameDisplay = None
+
 		p_twitter = player_data['twitterHandle']
 		p_twitch = player_data['twitchStream']
 		p_reddit = player_data['redditUsername']
@@ -473,28 +478,32 @@ def get_social_media(dicts,p_id):
 						p_ssbwiki = wiki_url
 						break
 
-		return [p_twitter,p_twitch,p_reddit,p_youtube,p_smashboards,p_ssbwiki]
+		return [p_twitter,p_twitch,p_reddit,p_youtube,p_smashboards,p_ssbwiki,nameDisplay]
 	except HTTPError as e:
 		print('Connection Error::',e)
 		return False
 
-def update_social_media(dicts,p_ids):
+def update_social_media(dicts,p_ids=None,v=0):
 	tourneys,ids,p_info,records,skills,meta = dicts
 
 	if p_ids == None:
+		if v >= 6:
+			print('Updating all social media...')
 		p_ids = [p_id for p_id in p_info]
 	elif type(p_ids) is not list:
 		p_ids = [p_ids]
 
 	for abs_id in p_ids:
+		if v >= 6:
+			print('Updating social media for:',p_info[abs_id]['tag'],'|',abs_id)
 		#print(abs_id)
 		socials = get_social_media(dicts,abs_id)
 		# if the player doesn't exist (???)
 		if not socials:
-			print('Error: %d (%s) not found on smash.gg player API'%(abs_id,p_info[abs_id]))
+			print('Error: %d (%s) not found on smash.gg player API'%(abs_id,p_info[abs_id]['tag']))
 			return False
 		#print(p_id)
-		p_twitter,p_twitch,p_reddit,p_youtube,p_smashboards,p_ssbwiki = socials
+		p_twitter,p_twitch,p_reddit,p_youtube,p_smashboards,p_ssbwiki,p_display = socials
 		p_info[abs_id]['twitter'] = p_twitter
 		p_info[abs_id]['twitch'] = p_twitch
 		p_info[abs_id]['reddit'] = p_reddit
@@ -502,6 +511,7 @@ def update_social_media(dicts,p_ids):
 		p_info[abs_id]['smashboards'] = p_smashboards
 		p_info[abs_id]['ssbwiki'] = p_ssbwiki
 		p_info[abs_id]['discord'] = None
+		p_info[abs_id]['name_display'] = p_display
 
 # print (filtered) results for a given tourney
 def print_result(dicts,t_id,res_filt=None,max_place=64):

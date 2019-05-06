@@ -395,7 +395,6 @@ def is_sfl(geoloc,location):
 	b = y1-m*x1
 	return y_l < (m*x_l+b)
 
-
 # returns the regional grouping given either a player id or tag or location
 def get_region(dicts,p_id,tag=None,country=None,state=None,city=None,granularity=2,to_calc=False):
 	tourneys,ids,p_info,records,skills,meta = dicts
