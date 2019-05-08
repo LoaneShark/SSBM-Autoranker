@@ -21,11 +21,7 @@ from webdb import *
 ## TODO: 
 ##	Shortterm
 ##		HIGH PRIORITY:
-## 		 - add optional caching of tournament data / json files?
 ## 		 - add fully offline mode toggle  // prefer offline argument
-## 		 - add a 'tourney memory' duration (default 1 year) -- delete all events that are older than this from DB, including records etc.
-## 		     - elo etc still calculated this way, but only recent events 'count' (???)
-## 		 - config file
 ##		 - fix errors with player ids being inconsistent somehow? (lookin' at you, We Tech Those 3 PM Singles [Pool PMA2])
 ## 		 - query mode
 ## 		 - MIGRATE TO NEW API
@@ -33,7 +29,6 @@ from webdb import *
 ##		MEDIUM PRIORITY:
 ## 		 - how to match players that don't have smash.gg accounts/consistent player ids (mostly japanese players)
 ## 			- also match players that have multiple accounts // remade accounts // use them inconsistently (???)
-## 		 - debug elo/glicko (how?)
 ## 		 - Can we filter out sandbags somehow? intelligent decisionmaking?
 ## 			- Maybe drop lowest N results from each player? does this take away from consistency as a virtue?
 ## 		 - SKILL TIERSSSSS

@@ -61,9 +61,9 @@ srank_max_size = None 			# Max number of players to consider in ranking calculat
 srank_simbrack = False 			# Toggle scoring by simulated brackets rather than sigmoid fitting; deprecated (default False)"""
 
 	try:
-		config_file = open('./defaults.conf','w')
+		config_file = open('./configs/defaults.conf','w')
 	except FileNotFoundError:
-		config_file = open('./defaults.conf','x')
+		config_file = open('./configs/defaults.conf','x')
 	config_file.write(config_text)
 	config_file.close()
 

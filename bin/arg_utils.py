@@ -11,7 +11,7 @@ def add_bool_arg(parser, name, default=False):
 
 parser = configargparse.get_argument_parser()
 # config file path
-parser.add('-cf','--config_file',help='path to config file',default='./defaults.conf',is_config_file=True)
+parser.add('-cf','--config_file',help='path to config file',default='./configs/defaults.conf',is_config_file=True)
 
 # instance/db type args
 parser.add('-g','--game',help='game id to be used: Melee=1, P:M=2, Wii U=3, 64=4, Ultimate=1386 (default melee)',default=1, required=True)

@@ -412,7 +412,6 @@ def update_percentiles(dicts):
 			else:
 				p_info[int(p_line[1])][skill_key+'-pct'] = int(((float(p_line[2])-skillmin)/(skillmax-skillmin))*100)
 
-
 # returns the number of times a player [p] used a given character [c] 
 # (by id values)
 def char_count(p,c,p_info):

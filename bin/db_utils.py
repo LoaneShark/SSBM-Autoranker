@@ -16,30 +16,6 @@ from region_utils import *
 from dict_utils import get_main,update_official_ranks,update_social_media,update_percentiles
 import scraper
 
-def deleteme():
-	parser = argparse.ArgumentParser()
-	parser.add_argument('-v','--verbosity',help='verbosity [0-9]',default=0)
-	parser.add_argument('-s','--save',help='save db/cache toggle (default True)',default=True)
-	parser.add_argument('-l','--load',help='load db/cache toggle (default True)',default=True)
-	parser.add_argument('-ls','--load_slugs',help='load slugs toggle (default True)',default=True)
-	parser.add_argument('-ff','--force_first',help='force the first criteria-matching event to be the only event (default True)',default=True)
-	parser.add_argument('-g','--game',help='game id to be used: Melee=1, P:M=2, Wii U=3, 64=4, Ultimate=1386 (default melee)',default=1)
-	parser.add_argument('-fg','--force_game',help='game id to be used, force use (cannot scrape non-smash slugs)',default=False)
-	parser.add_argument('-y','--year',help='The year you want to analyze (for ssbwiki List of Majors scraper)(default 2018)',default=2018)
-	parser.add_argument('-yc','--year_count',help='How many years to analyze from starting year',default=0)
-	parser.add_argument('-t','--teamsize',help='1 for singles bracket, 2 for doubles, 4+ for crews (default 1)',default=1)
-	parser.add_argument('-st','--static_teams',help='store teams as static units, rather than strack skill of its members individually [WIP]',default=False)
-	parser.add_argument('-d','--displaysize',help='lowest placing shown on pretty printer output, or -1 to show all entrants (default 64)',default=64)
-	parser.add_argument('-sl','--slug',help='tournament URL slug',default=None)
-	parser.add_argument('-ss','--short_slug',help='shorthand tournament URL slug',default=None)
-	parser.add_argument('-p','--print',help='print tournament final results to console as they are read in (default False)',default=False)
-	parser.add_argument('-cg','--collect_garbage',help='delete phase data after tournament is done being read in (default True)',default=True)
-	parser.add_argument('-ar','--use_arcadians',help='count arcadian events (default False)',default=False)
-	parser.add_argument('-gt','--glicko_tau',help='tau value to be used by Glicko-2 algorithm (default 0.5)',default=0.5)
-	parser.add_argument('-ma','--min_activity',help='minimum number of tournament appearances in order to be ranked. ELO etc still calculated.',default=3)
-	parser.add_argument('-c','--current_db',help='keep the database "current" i.e. delete tourney records over 1 year old (default False)',default=False)
-	parser.add_argument('-cs','--season_db',help='keep the database as the "current season" i.e. delete tourney records not in current (realtime) year (default False)',default=False)
-
 
 ## ARGUMENT PARSING
 args = get_args()
@@ -198,7 +174,7 @@ def read_tourneys(slugs,ver='default',year=None,base=None,current=False,to_updat
 								save_db((tourneys,ids,p_info,records,skills,meta),verstr)
 								save_db_sets(readins[6],verstr)
 							t_id = meta['slugs'][readins[0][2]]
-							if cache_res:
+							if not cache_res:
 								delete_tourney_cache(t_id)
 			else:
 				if v >= 4:
@@ -578,22 +554,22 @@ def store_meta(dicts,t_info):
 	# instantiate top 10/100/500 dicts if not already present
 	if 'top10' not in meta:
 		meta['top10'] = {}
-		meta['top10']['srank'] = {k:{} for k in range(10)}
-		meta['top10']['elo'] = {k:{} for k in range(10)}
-		meta['top10']['glicko'] = {k:{} for k in range(10)}
-		meta['top10']['mainrank'] = {k:{} for k in range(10)}
+		meta['top10']['srank'] = {k:{} for k in range(11)}
+		meta['top10']['elo'] = {k:{} for k in range(11)}
+		meta['top10']['glicko'] = {k:{} for k in range(11)}
+		meta['top10']['mainrank'] = {k:{} for k in range(11)}
 	if 'top100' not in meta:
 		meta['top100'] = {}
-		meta['top100']['srank'] = {k:{} for k in range(100)}
-		meta['top100']['elo'] = {k:{} for k in range(100)}
-		meta['top100']['glicko'] = {k:{} for k in range(100)}
-		meta['top100']['mainrank'] = {k:{} for k in range(100)}
+		meta['top100']['srank'] = {k:{} for k in range(101)}
+		meta['top100']['elo'] = {k:{} for k in range(101)}
+		meta['top100']['glicko'] = {k:{} for k in range(101)}
+		meta['top100']['mainrank'] = {k:{} for k in range(101)}
 	if 'top500' not in meta:
 		meta['top500'] = {}
-		meta['top500']['srank'] = {k:{} for k in range(500)}
-		meta['top500']['elo'] = {k:{} for k in range(500)}
-		meta['top500']['glicko'] = {k:{} for k in range(500)}
-		meta['top500']['mainrank'] = {k:{} for k in range(500)}
+		meta['top500']['srank'] = {k:{} for k in range(501)}
+		meta['top500']['elo'] = {k:{} for k in range(501)}
+		meta['top500']['glicko'] = {k:{} for k in range(501)}
+		meta['top500']['mainrank'] = {k:{} for k in range(501)}
 	n = 0
 	for p_id in p_info:
 		n += 1
@@ -622,7 +598,7 @@ def store_meta(dicts,t_info):
 				if p_info[p_id][skill_rnk+'-rnk'] == skill_div:
 					meta[skill_rnk+'_'+str(skill_div)+'_cutoff'] = p_info[p_id][skill_rnk]
 				# store top 10/100/500 player ids by each skill rank, with rank as key
-				if p_info[p_id][skill_rnk+'-rnk'] < skill_div:
+				if p_info[p_id][skill_rnk+'-rnk'] <= skill_div:
 					meta['top'+str(skill_div)][skill_rnk][p_info[p_id][skill_rnk+'-rnk']] = p_id
 	# store new max/mins
 	meta['srank_min'] = srank_min

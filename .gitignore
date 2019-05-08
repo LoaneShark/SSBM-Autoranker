@@ -10,4 +10,6 @@ lib/San Token.txt
 lib/Firebase_API_Key.json
 root/_site
 bin/defaults.conf
+bin/configs/*
 bin/__pycache__
+*.pyc
