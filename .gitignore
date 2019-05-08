@@ -1,3 +1,5 @@
+*.pyo
+*.pyc
 bin/obj/**
 !bin/obj/cities
 !bin/obj/cities/
@@ -7,3 +9,5 @@ bin/old
 lib/San Token.txt
 lib/Firebase_API_Key.json
 root/_site
+bin/defaults.conf
+bin/__pycache__

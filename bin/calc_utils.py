@@ -17,10 +17,13 @@ import scipy.optimize
 from random import *
 from sklearn.cluster import KMeans as km
 ## UTIL IMPORTS
+from arg_utils import *
 from dict_utils import get_abs_id_from_tag,get_en_tag
 from readin_utils import save_dict,load_dict
 
-activity_min = 3
+# can't name it args because that would conflict with other dependencies
+c_args = get_args()
+activity_min = c_args.min_activity
 
 def set_default_activity_min(val):
 	activity_min = val
@@ -114,27 +117,27 @@ def update_performances(dicts,t_info,use_FIDE=True):
 
 # returns the player's K-factor
 # (used in Elo calculations)
-def calc_k_factor(elo,n_played):
-
-	# FIDE K-factor method of calculation
-	if n_played < 30:
-		if elo < 2400:
-			return 40
+def calc_k_factor(elo,n_played,use_FIDE=True):
+	if use_FIDE:
+		# FIDE K-factor method of calculation
+		if n_played < 30:
+			if elo < 2400:
+				return 40.
+			else:
+				return 20.
 		else:
-			return 20
+			if elo < 2400:
+				return 20.
+			else:
+				return 10.
 	else:
-		if elo < 2400:
-			return 20
+		# old USCF K-factor method of calculation
+		if elo >= 2400:
+			return 16.
+		elif elo >= 2100:
+			return 24.
 		else:
-			return 10
-
-	# not used (old)
-	if elo >= 2400:
-		return 16.
-	elif elo >= 2100:
-		return 24.
-	else:
-		return 32.
+			return 32.
 
 # returns the player's expected score for a match
 # (used in Elo calculations)
@@ -303,28 +306,28 @@ def calc_sigrank(dicts,max_iter=1000,min_req=3,verbosity=0,rank_size=None,disp_s
 	mode='array',sig_mode='sigmoid',seed='elo',score_by='intsig',\
 	print_res=False,learn_decay=True,plot_ranks=True,use_bins=False,running_bins=False):
 	tourneys,ids,p_info,records,skills,meta = dicts
-	#larry_id,T_id,jtails_id = get_abs_id_from_tag(dicts,'Tweek'),get_abs_id_from_tag(dicts,'Ally'),get_abs_id_from_tag(dicts,'Jtails')
-	#print(void_id,dabuz_id,larry_id)
-	#t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size,t_images,t_coords = t_info
+
 	if mode != 'array':
 		mode == 'dict'
 	if sig_mode not in ['simple','scipy','alt']:
 		sig_mode = 'sigmoid'
-	## get the players that meet activity requirements to start with.
-	## sort them by elo initially
+	# running_bins always takes precedence over use_bins
+	if running_bins:
+		use_bins = False
+	# get the players that meet activity requirements to start with.
+	# sort them by elo initially
 	id_list = [abs_id for abs_id in records if is_active(dicts,abs_id,min_req=min_req,min_wins=1)]
 	id_list = sorted(id_list,key=lambda abs_id: p_info[abs_id]['elo'],reverse=True)
 	if rank_size != None and rank_size <= len(id_list):
 		disp_size = min(disp_size,rank_size)
 		id_list = id_list[:rank_size]
-	## get the win probs for the whole db
-	#winps,chis = winprobs(dicts,id_list=id_list)
+	# get the win probs for the whole db
+
 	winps,chis = winprobs(dicts,id_list=None,mode='dict')
 	N = float(len(winps.keys()))
 	n = float(len(id_list))
 
-	## initialize data with [id, tag, elo, glicko] structure
-	#data = np.array([[p_id,get_en_tag(dicts,tag=p_info[p_id]['tag']),float(p_info[p_id]['elo']),float(p_info[p_id]['glicko'][0])] for p_id in id_list],dtype='object')
+	# initialize data with [id, tag, elo, glicko] structure
 	data = np.array([[p_id,get_en_tag(dicts,p_id=p_id),float(p_info[p_id]['elo']),float(p_info[p_id]['glicko'][0])] for p_id in winps],dtype='object')
 
 	# use previous sigranks as skill seeds
@@ -359,29 +362,30 @@ def calc_sigrank(dicts,max_iter=1000,min_req=3,verbosity=0,rank_size=None,disp_s
 	else:
 		if verbosity >= 5:
 			print('[seeding by avg normalized elo/glicko-2]')
-		## get initial skillranks by rescaling all ranks (elo and glicko) to be between 0 and 1 (for sigmoid fitting)
-		## normalize elo/glicko by all db entrants (N)
+		# get initial skillranks by rescaling all ranks (elo and glicko) to be between 0 and 1 (for sigmoid fitting)
+		# normalize elo/glicko by all db entrants (N)
 		
-		#N = float(len(id_list))
 		elo_min = np.min(data[:,2])
 		elo_max = np.max(data[:,2])
-		## invert scaling so that highest skill corresponds to skill-rank of 1/N (~0)
+		# invert scaling so that highest skill corresponds to skill-rank of 1/N (~0)
 		data[:,2] = ((data[:,2]-elo_min)/(elo_max-elo_min))*(1./N-1.)+1.
 		glicko_min = np.min(data[:,3])
 		glicko_max = np.max(data[:,3])
 		data[:,3] = ((data[:,3]-glicko_min)/(glicko_max-glicko_min))*(1./N-1.)+1.
-		## average normalized elo and glicko for initial skillranks
+		# average normalized elo and glicko for initial skillranks
 		data[:,2] = (data[:,2]+data[:,3])/2.
 		data = data[:,:3]
-		## convert data to a dict and pass to sigrank
+		# convert data to a dict and pass to sigrank
 		data_dict = {p_id: [tag,skill_rank] for p_id,tag,skill_rank in data}
 	if verbosity >= 4:
 		print('Generating Sigmoids... (%d entrants)'%n)
 	if verbosity >= 5:
 		print('[sigmoid mode: %s]'%sig_mode)
-	#new_data_dict,sigs = sigrank(data_dict,winps,id_list,max_iter=max_iter)
-	#new_data_dict,sigs,data_hist = sigrank(data_dict,winps,chis,id_list,max_iter=max_iter,simulate_bracket=False,score_intsigs=True,learn_rate=0.5,learn_decay=False,simple_sigmoid=False)
-	new_data,sigs,data_hist,covs = sigrank(data_dict,winps,chis,id_list,max_iter=max_iter,v=verbosity,score_by=score_by,learn_rate=alpha,learn_decay=learn_decay,mode=mode,sig_mode=sig_mode,use_bins=use_bins,running_bins=running_bins)
+
+	# call sigrank
+	new_data,sigs,data_hist,covs = sigrank(data_dict,winps,chis,id_list, \
+		max_iter=max_iter,v=verbosity,score_by=score_by,learn_rate=alpha,learn_decay=learn_decay,mode=mode,sig_mode=sig_mode,use_bins=use_bins,running_bins=running_bins)
+
 	if mode == 'dict':
 		new_data_dict = dcopy(new_data)
 
@@ -434,10 +438,7 @@ def calc_sigrank(dicts,max_iter=1000,min_req=3,verbosity=0,rank_size=None,disp_s
 			mins = [min(attr) for attr in [[p_val[i] for p_val in p_list] for i in range(len(p_list[0]))]]
 			maxs = [max(attr) for attr in [[p_val[i] for p_val in p_list] for i in range(len(p_list[0]))]]
 			means = [np.mean(attr) for attr in [[p_val[i] for p_val in p_list] for i in range(len(p_list[0]))]]
-			#else:
-			#	mins = [min(attr) for attr in [[p_val[i] for p_val in sigs] for i in range(len(sigs[0]))]]
-			#	maxs = [max(attr) for attr in [[p_val[i] for p_val in sigs] for i in range(len(sigs[0]))]]
-			#	means = [np.mean(attr) for attr in [[p_val[i] for p_val in sigs] for i in range(len(sigs[0]))]]
+
 			print('=======================')
 			print(mins)
 			print(maxs)
@@ -741,8 +742,10 @@ def update_sigmoids(dicts,t_info,sig='sigmoid',ranking_period=2,max_iterations=1
 		if era(t_date) > era(last_date) or ranking_period <= 0:
 			if v >= 4:
 				print('Updating Sigmoids...')
-			#sigrank_res = calc_sigrank(dicts,plot_ranks=False,max_iter=max_iterations,seed='dict',print_res=False,verbosity=v,sig_mode=sig,running_bins=False)
-			sigrank_res = calc_sigrank(dicts,plot_ranks=False,max_iter=100,seed='dict',print_res=False,verbosity=v,sig_mode=sig,running_bins=True)
+				
+			sigrank_res = calc_sigrank(dicts,plot_ranks=False,max_iter=max_iterations,seed=c_args.srank_seed_mode,print_res=c_args.srank_print_res,verbosity=v,sig_mode=c_args.srank_sig_mode,running_bins=c_args.srank_use_running_avg)
+			#sigrank_res = calc_sigrank(dicts,plot_ranks=False,max_iter=100,seed='dict',print_res=False,verbosity=v,sig_mode=sig,running_bins=True)
+			
 			# new_data_dict, winps, sigdict, data_hist_dict, id_list = sigrank_res
 			for abs_id in p_info:
 				# if in id_list

@@ -5,12 +5,14 @@ from urllib.error import HTTPError
 #import lxml.html as lh
 #import pandas as pd
 from bs4 import BeautifulSoup
+from arg_utils import *
 
-v = 0
+args = get_args()
+v = args.verbosity
 
 # scrapes the ssbwiki url links for each major tournament, and returns their smash.gg slug
 # requires a game and year
-def scrape(game,year,verb=0):
+def scrape(game,year,verb=v):
 	if game not in [1,2,3,4,5,1386]:
 		print('Error: Cannot scrape majors/slugs for this game ID (%d)'%game)
 		return False

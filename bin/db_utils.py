@@ -8,6 +8,7 @@ from timeit import default_timer as timer
 from copy import deepcopy as dcopy
 from math import *
 ## UTIL IMPORTS
+from arg_utils import *
 from readin import readin,set_readin_args
 from readin_utils import *
 from calc_utils import *
@@ -15,32 +16,35 @@ from region_utils import *
 from dict_utils import get_main,update_official_ranks,update_social_media,update_percentiles
 import scraper
 
-## ARGUMENT PARSING
-parser = argparse.ArgumentParser()
-parser.add_argument('-v','--verbosity',help='verbosity [0-9]',default=0)
-parser.add_argument('-s','--save',help='save db/cache toggle (default True)',default=True)
-parser.add_argument('-l','--load',help='load db/cache toggle (default True)',default=True)
-parser.add_argument('-ls','--load_slugs',help='load slugs toggle (default True)',default=True)
-parser.add_argument('-ff','--force_first',help='force the first criteria-matching event to be the only event (default True)',default=True)
-parser.add_argument('-g','--game',help='game id to be used: Melee=1, P:M=2, Wii U=3, 64=4, Ultimate=1386 (default melee)',default=1)
-parser.add_argument('-fg','--force_game',help='game id to be used, force use (cannot scrape non-smash slugs)',default=False)
-parser.add_argument('-y','--year',help='The year you want to analyze (for ssbwiki List of Majors scraper)(default 2018)',default=2018)
-parser.add_argument('-yc','--year_count',help='How many years to analyze from starting year',default=0)
-parser.add_argument('-t','--teamsize',help='1 for singles bracket, 2 for doubles, 4+ for crews (default 1)',default=1)
-parser.add_argument('-st','--static_teams',help='store teams as static units, rather than strack skill of its members individually [WIP]',default=False)
-parser.add_argument('-d','--displaysize',help='lowest placing shown on pretty printer output, or -1 to show all entrants (default 64)',default=64)
-parser.add_argument('-sl','--slug',help='tournament URL slug',default=None)
-parser.add_argument('-ss','--short_slug',help='shorthand tournament URL slug',default=None)
-parser.add_argument('-p','--print',help='print tournament final results to console as they are read in (default False)',default=False)
-parser.add_argument('-cg','--collect_garbage',help='delete phase data after tournament is done being read in (default True)',default=True)
-parser.add_argument('-ar','--use_arcadians',help='count arcadian events (default False)',default=False)
-parser.add_argument('-gt','--glicko_tau',help='tau value to be used by Glicko-2 algorithm (default 0.5)',default=0.5)
-parser.add_argument('-ma','--min_activity',help='minimum number of tournament appearances in order to be ranked. ELO etc still calculated.',default=3)
-parser.add_argument('-c','--current_db',help='keep the database "current" i.e. delete tourney records over 1 year old (default False)',default=False)
-parser.add_argument('-cs','--season_db',help='keep the database as the "current season" i.e. delete tourney records not in current (realtime) year (default False)',default=False)
-args = parser.parse_args()
+def deleteme():
+	parser = argparse.ArgumentParser()
+	parser.add_argument('-v','--verbosity',help='verbosity [0-9]',default=0)
+	parser.add_argument('-s','--save',help='save db/cache toggle (default True)',default=True)
+	parser.add_argument('-l','--load',help='load db/cache toggle (default True)',default=True)
+	parser.add_argument('-ls','--load_slugs',help='load slugs toggle (default True)',default=True)
+	parser.add_argument('-ff','--force_first',help='force the first criteria-matching event to be the only event (default True)',default=True)
+	parser.add_argument('-g','--game',help='game id to be used: Melee=1, P:M=2, Wii U=3, 64=4, Ultimate=1386 (default melee)',default=1)
+	parser.add_argument('-fg','--force_game',help='game id to be used, force use (cannot scrape non-smash slugs)',default=False)
+	parser.add_argument('-y','--year',help='The year you want to analyze (for ssbwiki List of Majors scraper)(default 2018)',default=2018)
+	parser.add_argument('-yc','--year_count',help='How many years to analyze from starting year',default=0)
+	parser.add_argument('-t','--teamsize',help='1 for singles bracket, 2 for doubles, 4+ for crews (default 1)',default=1)
+	parser.add_argument('-st','--static_teams',help='store teams as static units, rather than strack skill of its members individually [WIP]',default=False)
+	parser.add_argument('-d','--displaysize',help='lowest placing shown on pretty printer output, or -1 to show all entrants (default 64)',default=64)
+	parser.add_argument('-sl','--slug',help='tournament URL slug',default=None)
+	parser.add_argument('-ss','--short_slug',help='shorthand tournament URL slug',default=None)
+	parser.add_argument('-p','--print',help='print tournament final results to console as they are read in (default False)',default=False)
+	parser.add_argument('-cg','--collect_garbage',help='delete phase data after tournament is done being read in (default True)',default=True)
+	parser.add_argument('-ar','--use_arcadians',help='count arcadian events (default False)',default=False)
+	parser.add_argument('-gt','--glicko_tau',help='tau value to be used by Glicko-2 algorithm (default 0.5)',default=0.5)
+	parser.add_argument('-ma','--min_activity',help='minimum number of tournament appearances in order to be ranked. ELO etc still calculated.',default=3)
+	parser.add_argument('-c','--current_db',help='keep the database "current" i.e. delete tourney records over 1 year old (default False)',default=False)
+	parser.add_argument('-cs','--season_db',help='keep the database as the "current season" i.e. delete tourney records not in current (realtime) year (default False)',default=False)
 
-collect = args.collect_garbage
+
+## ARGUMENT PARSING
+args = get_args()
+
+cache_res = args.cache_results
 v = int(args.verbosity)
 if not args.short_slug == None:
 	args.slug = get_slug(args.short_slug)
@@ -52,8 +56,8 @@ if args.load == 'False':
 if args.save == 'False':
 	args.save == False
 	to_save_db = False
-to_load_slugs = args.load_slugs
-if args.load_slugs == 'False':
+to_load_slugs = args.cache_slugs
+if args.cache_slugs == 'False':
 	to_load_slugs = False
 db_slug = args.slug
 db_game = int(args.game)
@@ -91,7 +95,7 @@ glicko_tau = float(args.glicko_tau)
 # in the specified year for the specified game (per smash.gg numeric id value)
 # returns in the form of 4 dicts: tourneys,ids,p_info,records
 def read_year(game_id=int(db_game),year=int(db_year),base=None,current=db_current):
-	set_readin_args(args)
+	#set_readin_args(args)
 	#slugs = ["genesis-5","summit6","shine2018","tbh8","summit7"]
 	fails = []
 	scrape_load = False
@@ -133,25 +137,25 @@ def read_year(game_id=int(db_game),year=int(db_year),base=None,current=db_curren
 	update_official_ranks(dicts,game_id,year)
 	return dicts
 
-def set_db_args(args):
-	collect = args.collect_garbage
-	v = int(args.verbosity)
-	if not args.short_slug == None:
-		args.slug = get_slug(args.short_slug)
-	to_save_db = args.save
-	to_load_db = args.load
-	if args.load == 'False':
-		args.load == False
+def set_db_args(db_args):
+	cache_res = db_args.cache_results
+	v = int(db_args.verbosity)
+	if not db_args.short_slug == None:
+		db_args.slug = get_slug(db_args.short_slug)
+	to_save_db = db_args.save
+	to_load_db = db_args.load
+	if db_args.load == 'False':
+		db_args.load == False
 		to_load_db = False
-	if args.save == 'False':
-		args.save == False
+	if db_args.save == 'False':
+		db_args.save == False
 		to_save_db = False
-	db_slug = args.slug
-	db_game = int(args.game)
-	db_year = int(args.year)
-	if args.current_db == 'False':
+	db_slug = db_args.slug
+	db_game = int(db_args.game)
+	db_year = int(db_args.year)
+	if db_args.current_db == 'False':
 		db_current = False
-	elif args.current_db:
+	elif db_args.current_db:
 		db_current = True
 
 ## AUXILIARY FUNCTIONS
@@ -194,7 +198,7 @@ def read_tourneys(slugs,ver='default',year=None,base=None,current=False,to_updat
 								save_db((tourneys,ids,p_info,records,skills,meta),verstr)
 								save_db_sets(readins[6],verstr)
 							t_id = meta['slugs'][readins[0][2]]
-							if collect:
+							if cache_res:
 								delete_tourney_cache(t_id)
 			else:
 				if v >= 4:
@@ -305,6 +309,8 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 					p_info[abs_id]['main'] = None
 
 				# only update socials once, to avoid making calls for every entrant
+				if 'name_display' not in p_info[abs_id]:
+					p_info[abs_id]['name_display'] = None
 				if to_update_socials:
 					update_social_media(dicts,abs_id,v)
 
@@ -480,7 +486,7 @@ def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_up
 		update_glicko(dicts,glicko_matches,t_info,tau=glicko_tau)
 		if to_update_sigmoids:
 			#update_sigmoids(dicts,t_info,max_iterations=500,v=v,ranking_period=ranking_period)
-			sigrank_res = update_sigmoids(dicts,t_info,max_iterations=1000,v=v,ranking_period=0,sig='alt')
+			sigrank_res = update_sigmoids(dicts,t_info,max_iterations=args.srank_max_iter,v=v,ranking_period=0,sig=args.srank_sig_mode)
 			if sigrank_res:
 				ISR = {'params': sigrank_res}
 				save_dict(ISR,'ISR_%d_%d_%d'%(db_game,db_year,db_year_count),None,'..\\lib')

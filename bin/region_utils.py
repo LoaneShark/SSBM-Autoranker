@@ -2,11 +2,13 @@ import country_converter as coco
 from geopy.geocoders import Nominatim,PickPoint
 from copy import deepcopy as dcopy
 from math import *
-from readin_utils import save_dict,load_dict,delete_dict
 import re
 from geopy.exc import GeocoderQuotaExceeded
 import time
 import glob
+
+from readin_utils import save_dict,load_dict,delete_dict
+from arg_utils import *
 
 ## REGION UTILS
 # returns the region given a location and granularity

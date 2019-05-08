@@ -7,6 +7,7 @@ from firebase_admin.db import ApiCallError
 from firebase_admin import auth
 from six.moves.urllib.error import HTTPError
 ## UTIL IMPORTS
+from arg_utils import *
 from db_utils import load_db_sets,easy_load_db_sets
 
 def main():

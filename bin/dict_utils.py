@@ -8,6 +8,7 @@ from six.moves.urllib.error import HTTPError
 from timeit import default_timer as timer
 from copy import deepcopy as dcopy
 ## UTIL IMPORTS
+from arg_utils import *
 from readin_utils import *
 from region_utils import *
 from scraper import scrape_ranks,check_ssbwiki

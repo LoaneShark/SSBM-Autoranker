@@ -10,6 +10,8 @@ import re
 import argparse
 from timeit import default_timer as timer
 import os,pickle,time,datetime
+## UTIL IMPORTS
+from arg_utils import *
 from readin_utils import *
 
 ## DESCRIPTION
@@ -19,29 +21,30 @@ from readin_utils import *
 #   Phases: https://api.smash.gg/phase_group/<GROUP_ID>?expand[]=seeds&expand[]=sets
 
 ## ARGUMENT PARSING
-parser = argparse.ArgumentParser()
-parser.add_argument('-v','--verbosity',help='verbosity [0-9]',default=0)
-parser.add_argument('-s','--save',help='save db/cache toggle (default True)',default=True)
-parser.add_argument('-l','--load',help='load db/cache toggle (default True)',default=True)
-parser.add_argument('-ls','--load_slugs',help='load slugs toggle (default True)',default=True)
-parser.add_argument('-ff','--force_first',help='force the first criteria-matching event to be the only event (default True)',default=True)
-parser.add_argument('-g','--game',help='game id to be used: Melee=1, P:M=2, Wii U=3, 64=4, Ultimate=1386 (default melee)',default=1)
-parser.add_argument('-fg','--force_game',help='game id to be used, force use (cannot scrape non-smash slugs)',default=False)
-parser.add_argument('-y','--year',help='The year you want to analyze (for ssbwiki List of Majors scraper)(default 2018)',default=2018)
-parser.add_argument('-yc','--year_count',help='How many years to analyze from starting year',default=0)
-parser.add_argument('-t','--teamsize',help='1 for singles bracket, 2 for doubles, 4+ for crews (default 1)',default=1)
-parser.add_argument('-d','--displaysize',help='lowest placing shown on pretty printer output, or -1 to show all entrants (default 64)',default=64)
-parser.add_argument('-st','--static_teams',help='store teams as static units, rather than strack skill of its members individually [WIP]',default=False)
-parser.add_argument('-sl','--slug',help='tournament URL slug',default=None)
-parser.add_argument('-ss','--short_slug',help='shorthand tournament URL slug',default=None)
-parser.add_argument('-p','--print',help='print tournament final results to console as they are read in (default False)',default=False)
-parser.add_argument('-cg','--collect_garbage',help='delete phase data after tournament is done being read in (default True)',default=True)
-parser.add_argument('-ar','--use_arcadians',help='count arcadian events (default False)',default=False)
-parser.add_argument('-gt','--glicko_tau',help='tau value to be used by Glicko-2 algorithm (default 0.5)',default=0.5)
-parser.add_argument('-ma','--min_activity',help='minimum number of tournament appearances in order to be ranked. ELO etc still calculated.',default=3)
-parser.add_argument('-c','--current_db',help='keep the database "current" i.e. delete tourney records over 1 year old (default False)',default=False)
-parser.add_argument('-cs','--season_db',help='keep the database as the "current season" i.e. delete tourney records not in current (realtime) year (default False)',default=False)
-args = parser.parse_args()
+def deleteme():
+	parser = argparse.ArgumentParser()
+	parser.add_argument('-v','--verbosity',help='verbosity [0-9]',default=0)
+	parser.add_argument('-s','--save',help='save db/cache toggle (default True)',default=True)
+	parser.add_argument('-l','--load',help='load db/cache toggle (default True)',default=True)
+	parser.add_argument('-ls','--load_slugs',help='load slugs toggle (default True)',default=True)
+	parser.add_argument('-ff','--force_first',help='force the first criteria-matching event to be the only event (default True)',default=True)
+	parser.add_argument('-g','--game',help='game id to be used: Melee=1, P:M=2, Wii U=3, 64=4, Ultimate=1386 (default melee)',default=1)
+	parser.add_argument('-fg','--force_game',help='game id to be used, force use (cannot scrape non-smash slugs)',default=False)
+	parser.add_argument('-y','--year',help='The year you want to analyze (for ssbwiki List of Majors scraper)(default 2018)',default=2018)
+	parser.add_argument('-yc','--year_count',help='How many years to analyze from starting year',default=0)
+	parser.add_argument('-t','--teamsize',help='1 for singles bracket, 2 for doubles, 4+ for crews (default 1)',default=1)
+	parser.add_argument('-d','--displaysize',help='lowest placing shown on pretty printer output, or -1 to show all entrants (default 64)',default=64)
+	parser.add_argument('-st','--static_teams',help='store teams as static units, rather than strack skill of its members individually [WIP]',default=False)
+	parser.add_argument('-sl','--slug',help='tournament URL slug',default=None)
+	parser.add_argument('-ss','--short_slug',help='shorthand tournament URL slug',default=None)
+	parser.add_argument('-p','--print',help='print tournament final results to console as they are read in (default False)',default=False)
+	parser.add_argument('-cg','--collect_garbage',help='delete phase data after tournament is done being read in (default True)',default=True)
+	parser.add_argument('-ar','--use_arcadians',help='count arcadian events (default False)',default=False)
+	parser.add_argument('-gt','--glicko_tau',help='tau value to be used by Glicko-2 algorithm (default 0.5)',default=0.5)
+	parser.add_argument('-ma','--min_activity',help='minimum number of tournament appearances in order to be ranked. ELO etc still calculated.',default=3)
+	parser.add_argument('-c','--current_db',help='keep the database "current" i.e. delete tourney records over 1 year old (default False)',default=False)
+	parser.add_argument('-cs','--season_db',help='keep the database as the "current season" i.e. delete tourney records not in current (realtime) year (default False)',default=False)
+args = get_args()
 
 v = int(args.verbosity)
 # verbosity threshold for save/load statements
@@ -62,7 +65,7 @@ if args.force_game:
 if game not in [1,2,3,4,5,1386] and not force_game:		#SSB = 4 	SSBM = 1	SSBB = 5 	P:M = 2		SSB4 = 3 	SSBU = 1386
 	print('Invalid game number provided. Forcing melee (id=1) instead.')
 	game = 1
-disp_num = int(args.displaysize)
+disp_num = int(args.display_size)
 t_slug_a = args.slug
 t_ss_a = args.short_slug
 if t_ss_a == None:
@@ -110,27 +113,27 @@ def readin(tourney,t_type='slug'):
 	else:
 		return False
 
-def set_readin_args(args):
-	v = int(args.verbosity)
+def set_readin_args(r_args):
+	v = int(r_args.verbosity)
 	# verbosity for save/load statements
 	lv = 6
-	save_res = args.save
-	load_res = args.load
-	force_first_event = args.force_first
-	teamsize = int(args.teamsize)
-	game = int(args.game)
+	save_res = r_args.save
+	load_res = r_args.load
+	force_first_event = r_args.force_first
+	teamsize = int(r_args.teamsize)
+	game = int(r_args.game)
 	if game not in [1,2,3,4,5,1386] and False:		#SSB = 4 	SSBM = 1	SSBB = 5 	P:M = 2		SSB4 = 3 	SSBU = 1386
 		print('Invalid game number provided. Forcing melee (id=1) instead.')
 		game = 1
-	disp_num = int(args.displaysize)
-	t_slug_a = args.slug
-	t_ss_a = args.short_slug
+	disp_num = int(r_args.display_size)
+	t_slug_a = r_args.slug
+	t_ss_a = r_args.short_slug
 	if t_ss_a == None:
 		t_slug_a = t_slug_a
 	else:
 		t_slug_a = get_slug(t_ss_a)
-	print_res = args.print
-	current_db = args.current_db
+	print_res = r_args.print
+	current_db = r_args.current_db
 
 # reads the match data for a given phase
 def read_groups(t_id,groups,phase_data,translate_cjk=True):

@@ -16,6 +16,14 @@ import regex
 import shutil
 import subprocess
 #from translation import baidu
+from arg_utils import *
+
+## OVERHEAD FUNCTIONS
+
+# generates files necessary for a clean install // establishes necessary directories
+# WIP
+def setup_dirs():
+	return None
 
 ## AUXILIARY FUNCTIONS
 # returns the full slug (needed to pull tourney data) given the short slug
