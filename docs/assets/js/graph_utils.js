@@ -169,7 +169,7 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 	})
 	// separate out the period before being ranked from the rest of the sets
 	if (type == 'srank'){
-		console.log(skillset)
+		//console.log(skillset)
 		if (srankOldSkill == 1){
 			var showRankPeriod = true;
 			var datasetTooltipIndices = [0,3]
@@ -291,17 +291,27 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 				mode: 'x'
 			},
 			tooltips: {
+				mode: 'point',
 				onlyShowForDatasetIndex: datasetTooltipIndices,
 				displayColors: false,
 				callbacks: {
 					title: function(tooltipItem,data){
 						labelString = tooltipItem[0].xLabel;
 						var eventDate = new Date(labelString.slice(0,labelString.length-17));
-						return eventDate.toDateString();
+						var eventDateString = eventDate.toDateString();
+						return eventDateString.slice(0,eventDateString.length-4);
 					},
 					beforeLabel: function(tooltipItem,data){
 						var eventName = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].label;
 						var currSkill = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y;
+						// avoid repeat tooltips where datasets transition (unranked -> ranked)
+						if (tooltipItem.datasetIndex == 3){
+							if (tooltipItem.index == data.datasets[3].data.length-1){
+								if (data.datasets[0].data.length >= 1){
+									return null;
+								}
+							}
+						}
 						if (type == 'srank'){
 							currSkill = Math.round(currSkill*1000.0)/1000.0;
 						} else {
@@ -323,7 +333,13 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 						} else {
 							var oldSkill = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index-1].y;
 						}
+						// avoid repeat tooltips where datasets transition (unranked -> ranked)
 						if (tooltipItem.datasetIndex == 3){
+							if (tooltipItem.index == data.datasets[3].data.length-1){
+								if (data.datasets[0].data.length >= 1){
+									return null;
+								}
+							}
 							return '[Unranked]'
 						}
 						var skillDel = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y - oldSkill;
@@ -488,26 +504,37 @@ function sigmoidChart(PlayerSnapshot,infoRefStr,sigmoid,winprobs,pSkill){
 				tooltips: {
 					onlyShowForDatasetIndex: [0],
 					displayColors: false,
+					itemSort: function(a,b){
+						// sorts tooltip items by x value (s-rank)
+						return a.x < b.x;
+					},
 					callbacks: {
 						title: function(tooltipItem,data){
-							return data.datasets[tooltipItem[0].datasetIndex].data[tooltipItem[0].index].label;
+							// currently never hits the 'else' statement
+							if (tooltipItem.length >= 1){
+								return 'Winrate: '+Math.round(data.datasets[tooltipItem[0].datasetIndex].data[tooltipItem[0].index].y*100) + '%';
+							} else {
+								return data.datasets[tooltipItem[0].datasetIndex].data[tooltipItem[0].index].label;
+							}
 						},
-						beforeLabel: function(tooltipItem,data){
+						/*beforeLabel: function(tooltipItem,data){
+							return data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].label;
+							// never reaches below
 							return 'S-Rank: ' + Math.round(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].x*1000)/1000;
-						},
+						},*/
 						label: function(tooltipItem,data){
-							var winrate = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y;
-							var n = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].n;
-							return 'Record: ' + winrate*n + '-' + (n-(winrate*n));
+							if (tooltipItem.datasetIndex <= 0){
+								var oppTag = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].label;
+								var winrate = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y;
+								var n = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].n;
+								var skill = Math.round(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].x*1000)/1000;
+								return ''+skill+': '+oppTag+' ('+ winrate*n + '-' + (n-(winrate*n))+ ')';
+							}
 						}
-					}
+					},
+					mode: 'point'//,
+					//intersect: true
 				},
-				//hover: {
-				//	mode: 'x'
-				//},
-				//tooltips: {
-
-				//},
 		        scales: {
 		            xAxes: [{
 		                type: 'linear',

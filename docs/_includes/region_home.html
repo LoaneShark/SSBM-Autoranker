@@ -1,0 +1,520 @@
+
+{% include region_css.html %}
+<link href="/assets/css/flags.css" rel=stylesheet type="text/css" defer>
+
+<style type="text/css">
+	.btn {
+		height:120px;
+	}
+	.btn-lg {
+		width:210px;
+	}
+</style>
+
+<main class="page-content" aria-label="Content">
+	<div class="container">
+		<div class="row justify-content-center">
+			<div class="card border-dark" style="width:100%;height:10vw;">
+				<p class="text-center display-2" id="game_title"><span class="text-sr-primary">{{page.game}}</span> {{page.title}}</p>
+			</div>
+		</div>
+		<div class="row invisible">
+			<div class="col-2 border border-warning align-self-end">
+    			~
+			</div>
+		</div>
+
+		<!-- Regional navigation buttons -->
+
+		<div class="d-flex flex-row justify-content-center">
+			<div class="col">
+				<a href="" class="text-decoration-none">
+    				<div class="btn-group" role="group" id="region_button_group">
+        				<button type="button" class="btn btn-sr-dark btn-dark" id="region_icon_button" disabled>
+        					<span class="fa-stack fa-1x">
+        						<i class="fas fa-chart-line"></i>
+        					</span>
+        				</button>
+        				<button type="button" class="btn btn-lg btn-sr-primary btn-info" id="region_button" disabled>Region Breakdowns <p class="text-light font-weight-light"> [Coming Soon]</p></button>
+        			</div>
+        		</a>
+			</div>
+			<div class="col">
+				<a href="maps/" class="text-decoration-none">
+    				<div class="btn-group" role="group" id="event_button_group">
+        				<button type="button" class="btn btn-dark btn-sr-dark" id="event_icon_button">
+        					<span class="fa-stack fa-1x">
+        						<i class="fas fa-globe-europe"></i>
+        					</span>
+        				</button>
+        				<button type="button" class="btn btn-lg btn-sr-primary btn-info" id="event_button">Maps</button>
+        			</div>
+    			</a>
+			</div>
+		</div>
+		<div class="row invisible">
+			<div class="col-2 border border-warning align-self-end">
+    			~
+			</div>
+		</div>
+
+		<!-- PRs at a glance -->
+		<div class="container">
+			<!-- nav tabs -->
+			<ul class="nav nav-tabs d-flex nav-fill nav-justified" role="tablist" id=tables-tablist style="margin-left:0px">
+				<li class="nav-item"><a id="america-tab" class="nav-link" href="#america-panel" aria-controls="america" role="tab" data-toggle="tab">North America</a></li>
+				<li class="nav-item"><a id="europe-tab" class="nav-link" href="#europe-panel" aria-controls="europe" role="tab" data-toggle="tab">Europe</a></li>
+				<li class="nav-item"><a id="asia-tab" class="nav-link" href="#asia-panel" aria-controls="asia" role="tab" data-toggle="tab">Asia</a></li>
+				<li class="nav-item"><a id="other-tab" class="nav-link" href="#other-panel" aria-controls="other" role="tab" data-toggle="tab">Other</a></li>
+			</ul>
+
+			<!-- tab contents -->
+			<div class="tab-content border border-top-0">
+				<div role="tabpanel" class="tab-pane fade" id="america-panel" aria-labelledby="america-tab">
+					<table id="america-table" class="table table-striped table-bordered hover" cellspacing="0" width="100%" style="margin-top:0px !important;margin-bottom:0px !important;">
+						<!-- table header -->
+						<colgroup>
+							<col width='15%' /> <!-- team     -->
+							<col width='30%' /> <!-- player   -->
+							<col width='10%' /> <!-- ssbmrank -->
+							<col width='18%' /> <!-- s-rank   -->
+							<col width='18%' /> <!-- ww rank  -->
+							<col width='10%' /> <!-- country  -->
+						</colgroup>
+						<thead>
+							<tr class='header'>
+								<th>Team</th>
+								<th>Player</th>
+								<th>{% if {{page.game}} == 'Ultimate'%}
+										PGR
+									{% elsif {{page.game}} == 'Melee' %}
+										MPGR
+									{% elsif {{page.game}} == 'PM' %}
+										PMRank
+									{% elsif {{page.game}} == 'Smash4' %}
+										PGR
+									{% elsif {{page.game}} == 'Brawl' %}
+										SSBBRank
+									{% elsif {{page.game}} == '64' %}
+										64LR
+									{% else %}
+										Rank
+									{% endif %}
+								</th>
+								<th>S-Rank
+									<span class="fa-layers fa-fw">
+										<i class="fas fa-square" data-fa-transform="shrink-3 up-3"></i>
+										<span class="fa-layers-text fa-inverse" data-fa-transform="shrink-8 up-4 left-0.5" style="font-weight:400">
+											&beta;
+										</span>
+									</span>
+								</th>
+								<th>World Rank</th>
+								<th>Country</th>
+							</tr>
+						</thead>
+						<!-- table body -->
+						<tbody>
+							{% for i in (0..9) %}
+								<tr>
+									<td markdown='span' align='right' id={{'team_' | append: i}}></td>
+									<td markdown='span' id={{'tag_' | append: i}}></td>
+									<td markdown='span' id={{'rank_' | append: i}}></td>
+									<td markdown='span' id={{'srank_' | append: i}}></td>
+									<td markdown='span' id={{'elo_' | append: i}}></td>
+									<td markdown='span' id={{'glicko_' | append: i}}></td>
+								</tr>
+							{% endfor %}
+						</tbody>
+					</table> <!-- america table -->
+				</div> <!-- america tab -->
+				<div role="tabpanel" class="tab-pane fade" id="europe-panel" aria-labelledby="europe-tab">
+					<table id="europe-table" class="table table-striped table-bordered hover" cellspacing="0" width="100%" style="margin-top:0px !important;margin-bottom:0px !important;">
+						<!-- table header -->
+						<colgroup>
+							<col width='15%' /> <!-- team     -->
+							<col width='30%' /> <!-- player   -->
+							<col width='10%' /> <!-- ssbmrank -->
+							<col width='19%' /> <!-- s-rank   -->
+							<col width='10%' /> <!-- ww rank  -->
+							<col width='16%' /> <!-- country  -->
+						</colgroup>
+						<thead>
+							<tr class='header'>
+								<th>Team</th>
+								<th>Player</th>
+								<th>{% if {{page.game}} == 'Ultimate'%}
+										PGR
+									{% elsif {{page.game}} == 'Melee' %}
+										MPGR
+									{% elsif {{page.game}} == 'PM' %}
+										PMRank
+									{% elsif {{page.game}} == 'Smash4' %}
+										PGR
+									{% elsif {{page.game}} == 'Brawl' %}
+										SSBBRank
+									{% elsif {{page.game}} == '64' %}
+										64LR
+									{% else %}
+										Rank
+									{% endif %}
+								</th>
+								<th>S-Rank
+									<span class="fa-layers fa-fw">
+										<i class="fas fa-square" data-fa-transform="shrink-3 up-3"></i>
+										<span class="fa-layers-text fa-inverse" data-fa-transform="shrink-8 up-4 left-0.5" style="font-weight:400">
+											&beta;
+										</span>
+									</span>
+								</th>
+								<th>World Rank</th>
+								<th>Country</th>
+							</tr>
+						</thead>
+						<!-- table body -->
+						<tbody>
+							{% for i in (0..9) %}
+								<tr>
+									<td markdown='span' align='right' id={{'team_' | append: i}}></td>
+									<td markdown='span' id={{'tag_' | append: i}}></td>
+									<td markdown='span' id={{'rank_' | append: i}}></td>
+									<td markdown='span' id={{'srank_' | append: i}}></td>
+									<td markdown='span' id={{'elo_' | append: i}}></td>
+									<td markdown='span' id={{'glicko_' | append: i}}></td>
+								</tr>
+							{% endfor %}
+						</tbody>
+					</table> <!-- europe table -->
+				</div> <!-- europe tab -->
+				<div role="tabpanel" class="tab-pane fade" id="asia-panel" aria-labelledby="asia-tab">
+					<table id="asia-table" class="table table-striped table-bordered hover" cellspacing="0" width="100%" style="margin-top:0px !important;margin-bottom:0px !important;">
+						<!-- table header -->
+						<colgroup>
+							<col width='15%' /> <!-- team     -->
+							<col width='30%' /> <!-- player   -->
+							<col width='10%' /> <!-- ssbmrank -->
+							<col width='19%' /> <!-- s-rank   -->
+							<col width='10%' /> <!-- ww rank  -->
+							<col width='16%' /> <!-- country  -->
+						</colgroup>
+						<thead>
+							<tr class='header'>
+								<th>Team</th>
+								<th>Player</th>
+								<th>{% if {{page.game}} == 'Ultimate'%}
+										PGR
+									{% elsif {{page.game}} == 'Melee' %}
+										MPGR
+									{% elsif {{page.game}} == 'PM' %}
+										PMRank
+									{% elsif {{page.game}} == 'Smash4' %}
+										PGR
+									{% elsif {{page.game}} == 'Brawl' %}
+										SSBBRank
+									{% elsif {{page.game}} == '64' %}
+										64LR
+									{% else %}
+										Rank
+									{% endif %}
+								</th>
+								<th>S-Rank
+									<span class="fa-layers fa-fw">
+										<i class="fas fa-square" data-fa-transform="shrink-3 up-3"></i>
+										<span class="fa-layers-text fa-inverse" data-fa-transform="shrink-8 up-4 left-0.5" style="font-weight:400">
+											&beta;
+										</span>
+									</span>
+								</th>
+								<th>World Rank</th>
+								<th>Country</th>
+							</tr>
+						</thead>
+						<!-- table body -->
+						<tbody>
+							{% for i in (0..9) %}
+								<tr>
+									<td markdown='span' align='right' id={{'team_' | append: i}}></td>
+									<td markdown='span' id={{'tag_' | append: i}}></td>
+									<td markdown='span' id={{'rank_' | append: i}}></td>
+									<td markdown='span' id={{'srank_' | append: i}}></td>
+									<td markdown='span' id={{'elo_' | append: i}}></td>
+									<td markdown='span' id={{'glicko_' | append: i}}></td>
+								</tr>
+							{% endfor %}
+						</tbody>
+					</table> <!-- asia table -->
+				</div> <!-- asia tab -->
+				<div role="tabpanel" class="tab-pane fade" id="other-panel" aria-labelledby="other-tab">
+					<table id="other-table" class="table table-striped table-bordered hover" cellspacing="0" width="100%" style="margin-top:0px !important;margin-bottom:0px !important;">
+						<!-- table header -->
+						<colgroup>
+							<col width='15%' /> <!-- team     -->
+							<col width='30%' /> <!-- player   -->
+							<col width='10%' /> <!-- ssbmrank -->
+							<col width='19%' /> <!-- s-rank   -->
+							<col width='10%' /> <!-- ww rank  -->
+							<col width='16%' /> <!-- country  -->
+						</colgroup>
+						<thead>
+							<tr class='header'>
+								<th>Team</th>
+								<th>Player</th>
+								<th>{% if {{page.game}} == 'Ultimate'%}
+										PGR
+									{% elsif {{page.game}} == 'Melee' %}
+										MPGR
+									{% elsif {{page.game}} == 'PM' %}
+										PMRank
+									{% elsif {{page.game}} == 'Smash4' %}
+										PGR
+									{% elsif {{page.game}} == 'Brawl' %}
+										SSBBRank
+									{% elsif {{page.game}} == '64' %}
+										64LR
+									{% else %}
+										Rank
+									{% endif %}
+								</th>
+								<th>S-Rank
+									<span class="fa-layers fa-fw">
+										<i class="fas fa-square" data-fa-transform="shrink-3 up-3"></i>
+										<span class="fa-layers-text fa-inverse" data-fa-transform="shrink-8 up-4 left-0.5" style="font-weight:400">
+											&beta;
+										</span>
+									</span>
+								</th>
+								<th>World Rank</th>
+								<th>Country</th>
+							</tr>
+						</thead>
+						<!-- table body -->
+						<tbody>
+							{% for i in (0..9) %}
+								<tr>
+									<td markdown='span' align='right' id={{'team_' | append: i}}></td>
+									<td markdown='span' id={{'tag_' | append: i}}></td>
+									<td markdown='span' id={{'rank_' | append: i}}></td>
+									<td markdown='span' id={{'srank_' | append: i}}></td>
+									<td markdown='span' id={{'elo_' | append: i}}></td>
+									<td markdown='span' id={{'glicko_' | append: i}}></td>
+								</tr>
+							{% endfor %}
+						</tbody>
+					</table> <!-- other table -->
+				</div> <!-- other tab -->
+			</div>
+		</div>
+</main>
+
+<!-- DB import/connection -->
+{% include firebase_scripts.html %}
+<!-- jQuery, Bootstrap, DataTables, etc. imports -->
+{% include datatables_scripts.html %}
+
+<script type="text/javascript" src="/assets/js/table_utils.js"></script>
+<script type="text/javascript" src="/assets/js/region_utils.js"></script>
+<script type="text/javascript" src="/assets/js/misc_utils.js"></script>
+
+<script>
+	$().ready(function(){
+		var gameId = getGameId("{{page.game}}");
+		var gameTitle = "{{page.game}}"
+		// get current year for db lookups
+		var currYear = new Date().getFullYear();
+
+		// populate "america" table
+		var americaRefStr = "/" + gameId + "_2016_" + (currYear-2016)+ "_c" + "/p_info";
+		var americaRef = firebase.database().ref(americaRefStr);
+		var americaQuery = americaRef.orderByChild('srank').limitToFirst(100)
+		americaQuery.once('value').then(function(PlayerSnapshot) {
+			if (PlayerSnapshot.exists()) {
+
+				var americaPlayerData = snapshotToRegionTable(PlayerSnapshot,'america')
+
+				$('#america-table').DataTable( {
+					data: americaPlayerData,
+					responsive: true,
+					ordering: true,   
+					//"autoWidth": false, 	
+					"order": [[3, "asc"],[2,"asc"],[4,"asc"]],
+					"dom": "<'row'<'col-12't>>",
+					//"dom": '<"top"iflp<"clear">>rt<"bottom"iflp<"clear">>',
+					//scrollY: 200,
+					//scrollCollapse: true,
+					columnDefs: [
+								{targets: 0, className: 'text-right'},
+								{targets: 1, data: null, render: function(dataCol){
+									return '<a href="/games/{{page.game | lower}}/players/#'+dataCol[6]+'">'+dataCol[1]+'</a>'
+								}},
+								{targets: 2, type: 'num'},
+								{targets: 5, className:'text-center', render: function(countryName){
+									if (countryName == 'USA'){
+								        var c_code = countryNameToCC('United States');
+								      } else {
+								        var c_code = countryNameToCC(countryName);
+								      }
+								      if (c_code){
+										return '<img src="/assets/images/blank.gif" class="flag '+'flag-'+c_code.toLowerCase()+'"></img>'
+								      } else {
+										return '<img src="/assets/images/blank.gif" class="flag invisible"></img>'
+								      }
+								}}
+								]
+				});
+				$('#america-tab').tab('show')
+				$($.fn.dataTable.tables(true)).DataTable().columns.adjust().responsive.recalc();
+
+			} else {
+				console.log('Invalid db ref: '+americaRefStr)
+			}
+		});
+		// populate "europe" table
+		/*var europeRefStr = "/" + gameId + "_2016_" + (currYear-2016)+ "_c" + "/p_info";
+		var europeRef = firebase.database().ref(europeRefStr);
+		var europeQuery = europeRef.orderByChild('srank').limitToFirst(100)
+		europeQuery.once('value').then(function(PlayerSnapshot) {*/
+		// do this for now, until we fix how regions are stored/reported
+		americaQuery.once('value').then(function(PlayerSnapshot) {
+			if (PlayerSnapshot.exists()) {
+
+				var europePlayerData = snapshotToRegionTable(PlayerSnapshot,'europe')
+
+				if (europePlayerData.length <= 0){
+					$('#europe-tab').addClass('disabled');
+				} else {
+					$('#europe-table').DataTable( {
+						data: europePlayerData,
+						responsive: true,
+						ordering: true,   
+						//"autoWidth": false, 	
+						"order": [[3, "asc"],[2,"asc"],[4,"asc"]],
+						"dom": "<'row'<'col-12't>>",
+						//"dom": '<"top"iflp<"clear">>rt<"bottom"iflp<"clear">>',
+						//scrollY: 200,
+						//scrollCollapse: true,
+						columnDefs: [
+									{targets: 0, className: 'text-right'},
+									{targets: 1, data: null, render: function(dataCol){
+										return '<a href="/games/{{page.game | lower}}/players/#'+dataCol[6]+'">'+dataCol[1]+'</a>'
+									}},
+									{targets: 2, type: 'num'},
+									{targets: 5, className:'text-center', render: function(countryName){
+										if (countryName == 'USA'){
+									        var c_code = countryNameToCC('United States');
+									      } else {
+									        var c_code = countryNameToCC(countryName);
+									      }
+									      if (c_code){
+											return '<img src="/assets/images/blank.gif" class="flag '+'flag-'+c_code.toLowerCase()+'"></img>'
+									      } else {
+											return '<img src="/assets/images/blank.gif" class="flag invisible"></img>'
+									      }
+									}}
+									]
+					});
+					$($.fn.dataTable.tables(true)).DataTable().columns.adjust().responsive.recalc();
+				}
+			} else {
+				console.log('Invalid db ref: '+europeRefStr)
+			}
+		});
+		// populate "asia" table
+		/*var asiaRefStr = "/" + gameId + "_2016_" + (currYear-2016)+ "_c" + "/p_info";
+		var asiaRef = firebase.database().ref(asiaRefStr);
+		var asiaQuery = asiaRef.orderByChild('srank').limitToFirst(100)
+		asiaQuery.once('value').then(function(PlayerSnapshot) {*/
+		// do this for now, until we fix how regions are stored/reported
+		americaQuery.once('value').then(function(PlayerSnapshot) {
+			if (PlayerSnapshot.exists()) {
+
+				var asiaPlayerData = snapshotToRegionTable(PlayerSnapshot,'asia')
+
+				if (asiaPlayerData.length <= 0){
+					$('#asia-tab').addClass('disabled');
+				} else {
+					$('#asia-table').DataTable( {
+						data: asiaPlayerData,
+						responsive: true,
+						ordering: true,   
+						//"autoWidth": false, 	
+						"order": [[3, "asc"],[2,"asc"],[4,"asc"]],
+						"dom": "<'row'<'col-12't>>",
+						//"dom": '<"top"iflp<"clear">>rt<"bottom"iflp<"clear">>',
+						//scrollY: 200,
+						//scrollCollapse: true,
+						columnDefs: [
+									{targets: 0, className: 'text-right'},
+									{targets: 1, data: null, render: function(dataCol){
+										return '<a href="/games/{{page.game | lower}}/players/#'+dataCol[6]+'">'+dataCol[1]+'</a>'
+									}},
+									{targets: 2, type: 'num'},
+									{targets: 5, className:'text-center', render: function(countryName){
+										if (countryName == 'USA'){
+									        var c_code = countryNameToCC('United States');
+									      } else {
+									        var c_code = countryNameToCC(countryName);
+									      }
+									      if (c_code){
+											return '<img src="/assets/images/blank.gif" class="flag '+'flag-'+c_code.toLowerCase()+'"></img>'
+									      } else {
+											return '<img src="/assets/images/blank.gif" class="flag invisible"></img>'
+									      }
+									}}
+									]
+					});
+					$($.fn.dataTable.tables(true)).DataTable().columns.adjust().responsive.recalc();
+				}
+			} else {
+				console.log('Invalid db ref: '+asiaRefStr)
+			}
+		});
+
+
+		americaQuery.once('value').then(function(PlayerSnapshot) {
+			if (PlayerSnapshot.exists()) {
+
+				var otherPlayerData = snapshotToRegionTable(PlayerSnapshot,'other')
+
+				if (otherPlayerData.length <= 0){
+					$('#other-tab').addClass('disabled');
+				} else {
+					$('#other-table').DataTable( {
+						data: otherPlayerData,
+						responsive: true,
+						ordering: true,   
+						//"autoWidth": false, 	
+						"order": [[3, "asc"],[2,"asc"],[4,"asc"]],
+						"dom": "<'row'<'col-12't>>",
+						//"dom": '<"top"iflp<"clear">>rt<"bottom"iflp<"clear">>',
+						//scrollY: 200,
+						//scrollCollapse: true,
+						columnDefs: [
+									{targets: 0, className: 'text-right'},
+									{targets: 1, data: null, render: function(dataCol){
+										return '<a href="/games/{{page.game | lower}}/players/#'+dataCol[6]+'">'+dataCol[1]+'</a>'
+									}},
+									{targets: 2, type: 'num'},
+									{targets: 5, className:'text-center', render: function(countryName){
+										if (countryName == 'USA'){
+									        var c_code = countryNameToCC('United States');
+									      } else {
+									        var c_code = countryNameToCC(countryName);
+									      }
+									      if (c_code){
+											return '<img src="/assets/images/blank.gif" class="flag '+'flag-'+c_code.toLowerCase()+'"></img>'
+									      } else {
+											return '<img src="/assets/images/blank.gif" class="flag invisible"></img>'
+									      }
+									}}
+									]
+					});
+					$($.fn.dataTable.tables(true)).DataTable().columns.adjust().responsive.recalc();
+				}
+
+			} else {
+				console.log('Invalid db ref: '+otherRefStr)
+			}
+		});
+
+	});
+</script>

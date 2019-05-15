@@ -1,0 +1,30 @@
+---
+title: Region Maps
+game: Melee
+layout: pretty
+---
+{% include region_css.html %}
+{% include region_maps.html %}
+
+
+{% include region_scripts.html %}
+{% include firebase_scripts.html %}
+
+<script type="text/javascript" src="/assets/js/misc_utils.js"></script>
+<script type="text/javascript" src="/assets/js/region_utils.js"></script>
+<!--<script type="text/javascript" src="/assets/js/finch.min.js"></script>-->
+<script>
+	$().ready(function(){
+		generatePlayerMap();
+		generateRegionMap('NA');
+	});
+
+	var $navGroup = $('#region_nav')
+
+	$navGroup.on('show','collapse',function(){
+		$navGroup.find('.collapse.in').collapse('hide');
+	});
+	//.onclick(function(){
+	//	console.log('Booooooooooop')
+	//});
+</script>

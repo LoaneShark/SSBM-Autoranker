@@ -1,0 +1,49 @@
+<div class="container" id="region_container">
+	<ul class="nav nav-pills nav-justified" id="region_nav">
+	  <li class="nav-item">
+	    <a class="btn nav-link" id="player_button" data-toggle="collapse" href="#player_collapse" role="button" aria-expanded="false" aria-controls="player_collapse">Player Map</a>
+	  </li>
+	  <li class="nav-item">
+	    <a class="btn nav-link" id="event_button" data-toggle="collapse" href="#event_collapse" role="button" aria-expanded="false" aria-controls="event_collapse">Event Map</a>
+	  </li>
+	  <li class="nav-item">
+	    <a class="btn nav-link" id="region_button" data-toggle="collapse" href="#region_collapse" role="button" aria-expanded="false" aria-controls="region_collapse">Region Map</a>
+	  </li>
+	</ul>
+
+	<div class="collapse" id="player_collapse" data-parent="#region_container">
+		<div class="d-flex flex-column container" style="width:100%">
+			<div class="d-flex flex-row" style="width:100%">
+				<div class="d-flex flex-column col-9 border border-secondary">
+					<div id="player_chart_div" style="height:600px; width:100%;"></div>
+				</div>
+				<div class="d-flex flex-column col-3">
+					<div id="legend_wrapper">
+						<div id="player_legend_div" style="height:600px; width:100%;"></div>
+					</div>
+				</div>
+			</div>
+			<div class="d-flex flex-row">
+			</div>
+		</div>
+	</div>
+	<div class="collapse" id="event_collapse" data-parent="#region_container">
+		EVENT DEBUG TEXT
+	</div>
+	<div class="collapse" id="region_collapse" data-parent="#region_container">
+		<div class="d-flex flex-column container" style="width:100%">
+			<div class="d-flex flex-row" style="width:100%">
+				<div class="d-flex flex-column col-9 border border-secondary">
+					<div id="region_chart_div" style="height:600px; width:100%;"></div>
+				</div>
+				<div class="d-flex flex-column col-3">
+					<div id="legend_wrapper">
+						<div id="region_legend_div" style="height:600px; width:100%;"></div>
+					</div>
+				</div>
+			</div>
+			<div class="d-flex flex-row">
+			</div>
+		</div>
+	</div>
+</div>

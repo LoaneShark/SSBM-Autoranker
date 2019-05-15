@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="{{ "/assets/css/style.css?v=" | append: site.github.build_revision | relative_url }}">
     {% include bootstrap_css.html %}
     {% include bootstrap_scripts.html %}
-    {% include datatables_scripts.html %}
 
 <style type="text/css">
 /*#player_searchbar .tt-dropdown-menu {
@@ -55,7 +54,11 @@ table.dataTable tr.shown td.details-control:before {
   font-weight: 400;
   content: "\f068";
 }
-
+/*
+table.dataTable{
+  border-collapse: collapse !important;
+}
+*/
 /*
 .custom-switch:before {
   content: "Scores";
@@ -103,11 +106,13 @@ table.dataTable tr.shown td.details-control:before {
     <!-- Player Profile scripts -->
 
     {% include firebase_scripts.html %}
+    {% include datatables_scripts.html %}
     <script type="text/javascript" src="/assets/js/finch.min.js"></script>
     <script type="text/javascript" src="/assets/js/typeahead.bundle.js"></script>
     <script type="text/javascript" src="/assets/js/misc_utils.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.bundle.min.js" async></script>
     <script type="text/javascript" src="/assets/js/graph_utils.js"></script>
+    <script type="text/javascript" src="/assets/js/region_utils.js"></script>
     <script type="text/javascript" src="/assets/js/player_utils.js"></script>
     <!-- Searchbar -->
     <script>
@@ -141,6 +146,8 @@ table.dataTable tr.shown td.details-control:before {
 
         $('#player_event_link').attr("href","full/#"+playerId);
         $('#player_event_link_2').attr("href","full/#"+playerId);
+        $('#player_h2h_link').attr("href","lookup/#"+playerId);
+        $('#player_region_link').attr("href","../regions/");
 
         // query db and populate profile
         if (currentDB){
@@ -179,7 +186,7 @@ table.dataTable tr.shown td.details-control:before {
 
             if (PlayerSnapshot.child('mainrank').exists()){
               var mainrankVal = PlayerSnapshot.child('mainrank').val();
-              var mainrankText = ''+mainrankVal+'<sup>'+ordinalSuffixOf(srankRnkVal)+'</sup>';
+              var mainrankText = ''+mainrankVal+'<sup>'+ordinalSuffixOf(mainrankVal)+'</sup>';
             } else {
               var mainrankVal = 'N/A';
               var mainrankText = 'N/A';

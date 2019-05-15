@@ -8,7 +8,235 @@ permalink: /about/
 	<img src="/assets/images/site_icons/sr_logo_lettered.png" height="120vw">
 </div>
 <div style="height:20px"></div>
-<h3> SmashRanks </h3>
-<p class="text-dark">Lorem? I hardly Ipsum!</p>
+<h1 class="text-sr-primary"> SmashRanks </h1>
+<h4> The Website </h4>
+<p class="text-dark">SmashRanks is a data analytics project and database, created by Iago in December of 2018. 
+						The website is still under construction, and is planned to enter Alpha release soon.</p>
+<h4> The Databases </h4>
+<p class="text-dark">Tournament results are pulled directly from smash.gg's public API, where they are imported into a python backend framework 
+						which tracks and updates player skills and records. Currently there are 6 game databases being maintained on SmashRanks: 
+						Smash 64, Melee, Brawl, Smash 4, Ultimate, and PM. More game support is planned in the future. 
+						The below table shows a glance at the databases and their states.</p>
 
-<h3> The Methods </h3>
+<table id="database-table" class="table" cellspacing="0" width="100%">
+	<thead>
+		<tr class="header">
+			<th>Game</th>
+			<th>Players</th>
+			<th>Events</th>
+			<th>Last Active Year</th>
+			<th>Last Event</th>
+		</tr>
+	</thead>
+	<tbody>
+
+		{% for i in (0..5) %}
+		<tr>
+			<td id="db_{{i}}_name" class="font-weight-bold"></td>
+			<td id="db_{{i}}_playerNum"></td>
+			<td id="db_{{i}}_eventNum"></td>
+			<td id="db_{{i}}_lastYear"></td>
+			<td id="db_{{i}}_lastEvent"></td>
+		</tr>
+		{% endfor %}
+</table>
+
+<h4> The Ranks </h4>
+<p class="text-dark">Currently, SmashRanks has support for 4 different types of ranking methods: Elo, Glicko-2, S-Rank, and panelist voting. 
+						Panelist voting ranks are organized and posted by the respective organizational body of each game's community. For each of the games,
+						the below table lists their official ranking names and includes links to the original hosting. Most ranks are updated anually, with those that
+						rank only bi-anually listing both in each year. Half-year rankings are not considered if there is also a cumulative year-end ranking made, e.g. 
+						Summer SSBMRanks are not considered, as annual SSBMRanks count the same events (plus the second half of the year).</p>
+<table id="mainranks-table" class="table" cellspacing="0" width="100%">
+	<thead>
+		<tr class="header">
+			<th>Game</th>
+			<th>pre 2016</th>
+			<th>2016</th>
+			<th>2017</th>
+			<th>2018</th>
+			<th>2019</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td class="font-weight-bold">64</td>
+			<td></td>
+			<td><a href="https://supersmashbros.org/rankings/past-rankings/">64 League Rankings</a></td>
+			<td><a href="https://supersmashbros.org/rankings/">64 League Rankings</a></td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td class="font-weight-bold">Melee</td>
+			<td><a href="http://www.meleeitonme.com/ssbmrank2015/">2015 SSBMRank</a></td>
+			<td><a href="https://www.redbull.com/us-en/ssbmrank-2016-the-full-list">SSBMRank</a></td>
+			<td><a href="https://www.redbull.com/us-en/ssbmrank-2017-announcement">SSBMRank</a></td>
+			<td><a href="https://www.redbull.com/us-en/mpgr-2018">MPGR</a></td>
+			<td>MPGR</td>
+		</tr>
+		<tr>
+			<td class="font-weight-bold">Brawl</td>
+			<td><a href="http://web.archive.org/web/20150209055943/http://clashtournaments.com/ssbbrank-1-3-the-grand-finale/">2014 SSBBRank<a></td>
+			<td colspan="2"><a href="https://smashboards.com/threads/ssbb-rank-2016-2017-by-the-brawl-community.452558/">1026-2017 SSBBRank</a></td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td class="font-weight-bold">Smash 4</td>
+			<td>PGR (<a href="http://panda.esportsify.com/articles/news/gaming/43/panda-global-rankings-10-1">v1</a>)</td>
+			<td>PGR (<a href="http://panda.esportsify.com/articles/news/gaming/43/panda-global-rankings-10-1">v1</a> cont'd, 
+					 <a href="https://panda.gg/blogs/smash-bros/panda-global-rankings-v2-smash-bros-wii-u-1-10">v2</a>)</td>
+			<td>PGR (<a href="https://panda.gg/blogs/smash-bros/pgrv3-1-10-top-smash-bros-wii-u-players-in-the-world">v3</a>,
+					 <a href="https://panda.gg/blogs/smash-bros/pgrv4-1-10-top-smash-bros-wii-u-players-in-the-world">v4</a>)</td>
+			<td>PGR (<a href="https://www.redbull.com/us-en/pgrv5-announcement">v5</a>, 
+					 <a href="https://twitter.com/ThePGstats/status/1070863114210607105">100</a>)</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td class="font-weight-bold">Ultimate</td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td>PGRU</td>
+		</tr>
+		<tr>
+			<td class="font-weight-bold">PM</td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+	</tbody>
+</table>
+
+<h4> The Algorithms </h4>
+<p class="text-dark"><a class="font-weight-bold text-decoration-none" href="https://en.wikipedia.org/wiki/Elo_rating_system">Elo</a> 
+is a widely used skill-rating algorithm, often employed in professional sports such as Chess and Table Tennis. 
+Elo is appealing because it is simple to implement and easy to calculate, but is not the most robust or accurate model, 
+requires somewhat arbitrary values or that the algorithm be fit to each database, and can discourage player activity for fear of losing points.
+SmashRanks uses the parameters employed by the FIDE, and new players start with a rating of 1500, and gain or lose points as they win or lose matches, respectively.</p>
+
+<p class="text-dark"><a class="font-weight-bold text-decoration-none" href="https://en.wikipedia.org/wiki/Glicko_rating_system">Glicko</a> 
+is a somewhat more complex rating algorithm, built on the fundamentals of Elo but taking into account some uncertainty in player scores.
+This allows players to reach more accurate skill ratings in a shorter time than Elo, or after long periods of inactivity.
+Glicko is used by several online matchmaking services, such as CS:GO or Pokemon Showdown.
+SmashRanks employs a slightly improved version of the algorithm (Glicko-2), which in addition to having a more robust skill model also introduces score decay for inactive players, 
+to encourage regular attendance. New players start with a raing of 1500, and gain or lose points as they win or lose matches, respectively.</p>
+
+<p class="text-dark"><span class="font-weight-bold">S-Rank</span> is an original skill-rating algorithm, created by Iago for the purpose of having a universal, 
+more "objective" skill-rating system that doesn't rely on arbitrary point values, and has meaning outside of the context of the rest of the playerbase. 
+Please note that the algorithm itself is still under development and refinement, and so any rankings or skill ratings published on this site involving S-Ranks are 
+not final and subject to change. S-Ranks are recalculated for the entire playerbase after each event, leaving it a computationally expensive ranking method. 
+A player's S-Rank is essentially a measure of their probability to win against any given opponent in the database, expressed as a percentile.
+Therefore, a lower S-Rank corresponds to a higher skill, and S-Ranks are always bounded between 0 and 1. 
+A player with a theoretical S-Rank of 0 would be assumed to have a perfect record and win probability against any other player in the entire playerbase. 
+Since S-Rank is calculated by analyzing a player's head-to-head record vs. the field, 
+a limit on what period of time needs to be considered must be imposed (in our case, 1 year out from the most recent event). 
+Additionally, players are required to attend a certain number of events before they are considered "active", or an accurate skill rating cannot be determined due to insufficient data. 
+Players that have not met activity requirements are treated as having an S-Rank of 1 (0th percentile), and new players that meet activity requirements are treated as having an S-Rank of 
+0.5 (50th percentile).</p>
+
+
+<h4> Related Sites </h4>
+<div class="d-flex flex-wrap flex-row">
+	<a href="https://smash.gg/" target="_blank">
+		<img src="/assets/images/social_icons/sgg-255px.png" class="img-thumbnail" style="height:128px;width:128px;" data-toggle="tooltip" title="Smash.gg">
+	</a>
+	<a href="https://smashboards.com/" target="_blank">
+		<img src="/assets/images/social_icons/sb-280px.jpg" class="img-thumbnail" style="height:128px;width:128px;" data-toggle="tooltip" title="Smashboards">
+	</a>
+	<a href="https://ssbwiki.com/" target="_blank">
+		<img src="/assets/images/social_icons/sw-200px.png" class="img-thumbnail" style="height:128px;width:128px;" data-toggle="tooltip" title="SmashWiki">
+	</a>
+	<a href="https://liquipedia.net/" target="_blank">
+		<img src="/assets/images/social_icons/lpd-512px.png" class="img-thumbnail" style="height:128px;width:128px;" data-toggle="tooltip" title="Liquipedia">
+	</a>
+	<a href="https://www.smash4tips.com/pages/index.cfm" target="_blank">
+		<img src="/assets/images/social_icons/tafo.png" class="img-thumbnail" style="height:128px;width:128px;" data-toggle="tooltip" title="TafoStats">
+	</a>
+	<a href="https://meleestats.co/" target="_blank">
+		<img src="/assets/images/social_icons/mls-512px.png" class="img-thumbnail" style="height:128px;width:128px;" data-toggle="tooltip" title="Melee Stats">
+	</a>
+	<a href="https://slippi.gg/" target="_blank">
+		<img src="/assets/images/social_icons/slp-400px.png" class="img-thumbnail" style="height:128px;width:128px;" data-toggle="tooltip" title="Project Slippi">
+	</a>
+	<a href="https://vods.co/" target="_blank">
+		<img src="/assets/images/social_icons/vds-512px.jpg" class="img-thumbnail" style="height:128px;width:128px;" data-toggle="tooltip" title="Vods.co">
+	</a>
+	<a href="https://braacket.com/" target="_blank">
+		<img src="/assets/images/social_icons/vds-512px.jpg" class="img-thumbnail" style="height:128px;width:128px;" data-toggle="tooltip" title="Braacket">
+	</a>
+</div>
+<p class="text-dark">More helpful resources coming soon! </p>
+
+{% include firebase_scripts.html %}
+<!-- other functions -->
+<script src="/assets/js/misc_utils.js"></script>
+<script>
+	$().ready(function(){
+
+		// enable tooltips
+        $('[data-toggle="tooltip"]').tooltip({
+          animated: 'fade'
+        });
+
+		var curr_year = new Date().getFullYear();
+
+		gameId_map = {0:4,1:1,2:5,3:3,4:1386,5:2}
+		year_map = {};
+		db_info = [];
+		for (k=0;k<6;k++){
+			gameId = gameId_map[k];
+
+			game_ref_str = '/'+gameId+'_2016_'+(curr_year-2016)+'_c/meta';
+			game_ref = firebase.database().ref(game_ref_str);
+			game_query = game_ref.once('value').then(function(MetaSnapshot){
+				if (MetaSnapshot.exists()){
+					game_db_info = []
+					game_db_info.push(MetaSnapshot.child('numPlayers').val());
+					game_db_info.push(MetaSnapshot.child('numEvents').val());
+					//game_db_info.push(MetaSnapshot.child('lastActiveYear').val());
+					game_db_info.push(getLastYearFromGame(MetaSnapshot.child('gameId').val()));
+
+					var lastEventId = MetaSnapshot.child('lastEvent').val();
+					var lastEventInfo = getEventById('/'+MetaSnapshot.child('gameId').val()+'_2016_'+(curr_year-2016)+'_c/',lastEventId);
+					console.log(lastEventId);
+					console.log(lastEventInfo);
+					var lastEventInfoResolved = lastEventInfo.then(function(lastEvent){
+						return lastEvent['name'];
+					});
+					console.log(lastEventInfoResolved);
+
+					game_db_info.push(lastEventInfoResolved);
+					//console.log(game_db_info)
+					return game_db_info;
+				} else {
+					//console.log('Error: ' + game_ref_str +' reference does not exist!')
+					return ['N/A','N/A','N/A','N/A'];
+				}
+			});
+			db_info.push(game_query);
+		}
+
+		Promise.all(db_info).then(function(TableSnapshot){
+			console.log(TableSnapshot)
+			for (j=0;j<6;j++){
+				$('#db_'+j+'_name').html(getGameTitle(gameId_map[j]));
+				$('#db_'+j+'_playerNum').html(TableSnapshot[j][0]);
+				$('#db_'+j+'_eventNum').html(TableSnapshot[j][1]);
+				$('#db_'+j+'_lastYear').html(TableSnapshot[j][2]);
+				//$('#db_'+j+'_lastEvent').html(TableSnapshot[j][3]);
+
+				Promise.resolve([TableSnapshot[j][3],j]).then(function(promiseValue){
+					console.log(promiseValue)
+					console.log(promiseValue[0])
+					console.log(promiseValue[1])
+					$('#db_'+promiseValue[1]+'_lastEvent').html(Promise.resolve(promiseValue[0]).then(function(v){return v}));
+				});
+			}
+		});
+	});
+</script>

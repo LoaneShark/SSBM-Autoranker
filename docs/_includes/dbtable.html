@@ -193,9 +193,10 @@
 {% include datatables_scripts.html %}
 
 <!-- populating page's table -->
-<script src="/assets/js/table_utils.js"></script>
+<script type="text/javascript" src="/assets/js/table_utils.js"></script>
 <!-- other functions -->
-<script src="/assets/js/misc_utils.js"></script>
+<script type="text/javascript" src="/assets/js/misc_utils.js"></script>
+<script type="text/javascript" src="/assets/js/region_utils.js"></script>
 <script>
 	$().ready(function() {
 		var game_id = getGameId("{{page.title}}");
@@ -220,9 +221,9 @@
 					ordering: true,
 					paging: true,        
 					//"autoWidth": false, 	
-					//"order": [[ 3, "asc" ],[4,"desc"]],
-					"order": [[ 5, "desc" ]],
-					"dom": '<"top"iflp<"clear">>rt<"bottom"iflp<"clear">>',
+					"order": [[ 3, "asc" ],[4,"desc"]],
+					"dom": "<'row p-2'<'col-6'l><'col-6'f>><'row'<'col-12't>><'row p-2'<'col-6'i><'col-6'p>>",
+					//"dom": '<"top"iflp<"clear">>rt<"bottom"iflp<"clear">>',
 					//scrollY: 200,
 					//scrollCollapse: true,
 					columnDefs: [
@@ -257,7 +258,8 @@
 					paging: true,       
 					//"autoWidth": false,  	
 					"order": [[ 3, "asc" ],[4,"desc"]],
-					"dom": '<"top"iflp<"clear">>rt<"bottom"iflp<"clear">>',
+					"dom": "<'row p-2'<'col-6'l><'col-6'f>><'row'<'col-12't>><'row p-2'<'col-6'i><'col-6'p>>",
+					//"dom": '<"top"iflp<"clear">>rt<"bottom"iflp<"clear">>',
 					//scrollY: 200,
 					//scrollCollapse: true,
 					columnDefs: [{targets: 0, className:'text-right'},
@@ -287,7 +289,8 @@
 					paging: true,
 					//"autoWidth": false,      	
 					"order": [[ 3, "asc" ],[4,"desc"]],
-					"dom": '<"top"iflp<"clear">>rt<"bottom"iflp<"clear">>',
+					"dom": "<'row p-2'<'col-6'l><'col-6'f>><'row'<'col-12't>><'row p-2'<'col-6'i><'col-6'p>>",
+					//"dom": '<"top"iflp<"clear">>rt<"bottom"iflp<"clear">>',
 					//scrollY: 200,
 					//scrollCollapse: true,
 					columnDefs: [{targets: 0, className:'text-right'},

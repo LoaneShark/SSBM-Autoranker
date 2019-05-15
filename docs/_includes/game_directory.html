@@ -23,16 +23,6 @@
 			</div>
     		<div class="row">
     			<div class="col">
-    				<!--<div class="input-group" role="group">
-    					<div class="input-group-prepend">
-	        				<button type="button" class="btn btn-sm btn-primary btn-block">
-	        					<i class="fas fa-chart-line"></i>
-	        				</button>
-	        			</div>
-	        			<div class="input-group-append">
-	        				<button type="button" class="btn btn-primary btn-block">Ranks</button>
-	        			</div>
-    				</div>-->
     				<a href="ranks/" class="text-decoration-none">
 	    				<div class="btn-group" role="group" id="rank_button_group">
 	        				<button type="button" class="btn btn-sr-dark btn-dark" id="rank_icon_button">
@@ -64,17 +54,16 @@
 			</div>
     		<div class="row">
     			<div class="col">
-    				<!--<a href="characters/" class="text-decoration-none">-->
-	    				<div class="btn-group" role="group" id="character_button_group">
-	        				<button type="button" class="btn btn-sr-dark btn-dark" id="character_icon_button" disabled>
+    				<a href="regions/" class="text-decoration-none">
+	    				<div class="btn-group" role="group" id="region_button_group">
+	        				<button type="button" class="btn btn-sr-dark btn-dark" id="region_icon_button" disabled>
 	        					<span class="fa-stack fa-1x">
-		        					<i class="fab fa-uikit fa-stack-1x" data-fa-transform="flip-v flip-h"></i>
-		        					<i class="fab fa-uikit fa-stack-1x"></i>
-		        				</span>
+	        						<i class="fas fa-globe"></i>
+	        					</span>
 	        				</button>
-	        				<button type="button" class="btn btn-lg btn-sr-primary btn-info" id="character_button" disabled>Characters <p class="text-light font-weight-light"> [Coming Soon]</p></button>
+	        				<button type="button" class="btn btn-lg btn-sr-primary btn-info" id="region_button" disabled>Regions <p class="text-light font-weight-light"> [Coming Soon]</p></button>
 	        			</div>
-	        		<!--</a>-->
+	        		</a>
     			</div>
     			<div class="col">
     				<a href="events/" class="text-decoration-none">
@@ -89,13 +78,45 @@
         			</a>
     			</div>
     		</div>
+    		<div class="row invisible">
+    			<div class="col-2 border border-warning align-self-end">
+        			~
+    			</div>
+			</div>
+    		<div class="row">
+    			<div class="col">
+    				<!--<a href="characters/" class="text-decoration-none">-->
+	    				<div class="btn-group" role="group" id="character_button_group">
+	        				<button type="button" class="btn btn-sr-dark btn-dark" id="character_icon_button" disabled>
+	        					<span class="fa-stack fa-1x">
+		        					<i class="fab fa-uikit fa-stack-1x" data-fa-transform="flip-v flip-h"></i>
+		        					<i class="fab fa-uikit fa-stack-1x"></i>
+		        				</span>
+	        				</button>
+	        				<button type="button" class="btn btn-lg btn-sr-primary btn-info" id="character_button" disabled>Characters <p class="text-light font-weight-light"> [Coming Soon]</p></button>
+	        			</div>
+	        		<!--</a>-->
+    			</div>
+    			<div class="col">
+    				<a href="teams/" class="text-decoration-none">
+	    				<div class="btn-group" role="group" id="team_button_group">
+	        				<button type="button" class="btn btn-dark btn-sr-dark" id="team_icon_button" disabled>
+	        					<span class="fa-stack fa-1x">
+	        						<i class="fas fa-users"></i>
+	        					</span>
+	        				</button>
+	        				<button type="button" class="btn btn-lg btn-sr-primary btn-info" id="team_button" disabled>Teams <p class="text-light font-weight-light"> [Coming Soon]</p></button>
+	        			</div>
+        			</a>
+    			</div>
+    		</div>
     	</div>
   </div>
 </main>
 
 <script>
 	// Brawl has no character data support
-	if ({{site.game}} == 'Brawl'){
+	if ('{{page.game}}' == 'Brawl'){
 		$('#character_icon_button').prop('disabled',true);
 		$('#character_button').prop('disabled',true);
 	}

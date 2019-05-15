@@ -10,7 +10,7 @@
   <div class="collapse navbar-collapse" id="navbar_main">
   	<div class="navbar-nav">
   	  {% for item in site.data.navigation %}
-		 <a {% if item.link == '/blog.html' %}
+		 <a {% if item.link == '/blog.html' or item.link == '/faq/' %}
 		  class="nav-item nav-link disabled"
 		  {% elsif page.url == item.link %}
 		  class="nav-item nav-link active"

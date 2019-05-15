@@ -67,7 +67,7 @@ function populatePrimaryInfo(PlayerSnapshot){
     $('#player_tag').html(p_tag);
     $('#player_team').html(PlayerSnapshot.child('team').val());
     var p_region = PlayerSnapshot.child('region').val();
-    //console.log(p_region)
+    console.log(p_region)
     if (p_region[2] != 'N/A'){
       $('#player_region_div').removeClass('invisible');
       $('#player_region').html(p_region[2]);
