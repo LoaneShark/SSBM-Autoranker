@@ -18,7 +18,7 @@ parser.add('-g','--game',help='game id to be used: Melee=1, P:M=2, Wii U=3, 64=4
 parser.add('-y','--year',help='The year you want to analyze (for ssbwiki List of Majors scraper)(default 2016)',default=2016, required=True)
 parser.add('-yc','--year_count',help='How many years to analyze from starting year',default=0)
 parser.add('-fg','--force_game',help='game id to be used, force use (cannot scrape non-smash slugs)',default=False)
-parser.add('-d','--debug',help='debug id toggle, will save separately (default False)',default=False)
+parser.add('-d','--debug',help='debug id toggle, will save separately (default False)',action='store_true')
 parser.add('-ds','--debug_str',help='optional str to append to db key name (alphanumeric chars only)',default=False)
 
 parser.add('-c','--current_db',help='keep the database "current" i.e. delete tourney records over 1 year old (default False)',action='store_true')

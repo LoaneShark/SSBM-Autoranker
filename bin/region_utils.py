@@ -54,7 +54,7 @@ def calc_region(country,state=None,city=None,granularity=2,force_new=False):
 			country = 'United States'
 			state = 'PW'
 		if 'd.r.' == country_low:
-			country = 'DR'
+			country = 'Dominican Republic'
 		if 'prc' == country_low:
 			country = 'China'
 

@@ -354,6 +354,13 @@ def read_sets(data,phase_data,wins,losses,xpath,sets):
 		sets[set_id]['w_dq'] = w_DQ
 		sets[set_id]['l_dq'] = l_DQ
 		sets[set_id]['t_id'] = wave_data[6]
+		sets[set_id]['w_placement'] = match['wOverallPlacement']
+		sets[set_id]['l_placement'] = match['lOverallPlacement']
+		sets[set_id]['is_winners'] = match['round'] > 0
+		sets[set_id]['round_num'] = match['round']
+		sets[set_id]['round_text_long'] = match['fullRoundText']
+		sets[set_id]['round_text_med'] = match['midRoundText']
+		sets[set_id]['round_text_short'] = match['shortRoundText']
 		#sets[set_id]['games'] = None
 
 		if not is_bye:
