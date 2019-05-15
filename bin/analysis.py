@@ -81,11 +81,7 @@ if args.force_game:
 year = int(args.year)
 year_count = int(args.year_count)
 to_load_db = args.load
-if args.load == "False":
-	to_load_db = False
 to_load_slugs = args.cache_slugs
-if args.cache_slugs == "False":
-	to_load_slugs = False
 maxpl = int(args.display_size)
 min_act = int(args.min_activity)
 
@@ -139,17 +135,17 @@ def main():
 	if to_calc_sigrank:
 		array_t = timer()
 		if game_idx == 1:
-			iagorank_params = calc_sigrank(dicts,min_req=min_act,max_iter=100,learn_decay=False,disp_size=300,verbosity=5,print_res=True,plot_ranks=False,\
-				mode='array',seed='blank',sig_mode='alt',score_by='intsig',use_bins=False,running_bins=True)
+			iagorank_params = calc_sigrank(dicts,min_req=min_act,max_iter=1000,learn_decay=True,disp_size=300,verbosity=5,print_res=True,plot_ranks=False,\
+				mode='array',seed='blank',sig_mode='alt',score_by='intsig',use_bins=False,running_bins=False)
 		else:
 			iagorank_params = calc_sigrank(dicts,min_req=min_act,max_iter=100,learn_decay=True,disp_size=300,verbosity=5,print_res=True,plot_ranks=False,\
 				mode='array',seed='blank',sig_mode='alt',score_by='intsig',use_bins=False,running_bins=True)
 		array_time = timer()-array_t
 		print('Sigrank calc time elapsed:','{:.3f}'.format(array_time) + ' s')
 		ISR = {'params': iagorank_params}
-		save_dict(ISR,'ISR_%d_%d_%d'%(game_idx,year,year_count),None,'..\\lib')
+		save_dict(ISR,'ISR_'+generate_db_str(),None,'..\\lib')
 	else:
-		iagorank_params = load_dict('ISR_%d_%d_%d'%(game_idx,year,year_count),None,'..\\lib')['params']
+		iagorank_params = load_dict('ISR_'+generate_db_str(),None,'..\\lib')['params']
 
 
 	iagoranks,winprobs,sigmoids,data_hist,id_list = iagorank_params
@@ -305,17 +301,17 @@ def main():
 
 	#return True
 
-	db_str_key = str(game_idx)+'_'+str(year)+'_'+str(year_count)
-	if args.current_db:
-		db_str_key += '_c'
-	#update_db(dicts,db_str_key,force_update=True)
+	if args.web_upload:
+
+		db_str_key = generate_db_str()
+		update_db(dicts,db_str_key,force_update=True)
 	#update_db(dicts,db_str_key,force_update=False)
 
 	#generate_matchup_chart(dicts,game_idx,year,year_count,id_list=id_list,label_mode='ones',v=int(args.verbosity),infer_characters=True,n_bins=10000)
-	'''
-	tl = generate_tier_list(dicts,game_idx,year,year_count,id_list=id_list)
-	for line in tl:
-		print(line)'''
+	
+	#tl = generate_tier_list(dicts,game_idx,year,year_count,id_list=id_list)
+	#for line in tl:
+	#	print(line)
 
 def main_read():
 	#set_db_args(args)

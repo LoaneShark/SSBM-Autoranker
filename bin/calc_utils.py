@@ -50,6 +50,8 @@ def are_active(dicts,p_ids,tags=[],min_req=activity_min):
 		p_ids = [get_abs_id_from_tag(dicts,tag) for tag in tags]
 	return [is_active(dicts,p_id,min_req=min_req) for p_id in p_ids]
 
+# returns the number of rounds completed that a given placing corresponds to
+# RENAME THIS
 def score(dicts,placing,t_id,t_size=None):
 	tourneys,ids,p_info,records,skills,meta = dicts
 
@@ -321,21 +323,23 @@ def calc_sigrank(dicts,max_iter=1000,min_req=3,verbosity=0,rank_size=None,disp_s
 	if rank_size != None and rank_size <= len(id_list):
 		disp_size = min(disp_size,rank_size)
 		id_list = id_list[:rank_size]
-	# get the win probs for the whole db
 
+	# get the win probs for the whole db
 	winps,chis = winprobs(dicts,id_list=None,mode='dict')
 	N = float(len(winps.keys()))
 	n = float(len(id_list))
+	if verbosity >= 5:
+		print('N: ',N,'\t n: ',n)
 
 	# initialize data with [id, tag, elo, glicko] structure
 	data = np.array([[p_id,get_en_tag(dicts,p_id=p_id),float(p_info[p_id]['elo']),float(p_info[p_id]['glicko'][0])] for p_id in winps],dtype='object')
 
 	# use previous sigranks as skill seeds
-	if seed == 'dict':
+	if seed == 'last':
 		if verbosity >= 5:
 			print('[seeding by previous/initial skill values]')
-		#data_dict = {p_id: ([tag,p_info[p_id]['srank']] if type(p_info[p_id]['srank']) is float else [tag,0.5]) for p_id,tag,_,_ in data}
-		data_dict = {p_id: ([tag,p_info[p_id]['srank']] if type(p_info[p_id]['srank']) is float else [tag,0.5] if p_id in id_list else [tag,1]) for p_id,tag,_,_ in data}
+		data_dict = {p_id: ([tag,p_info[p_id]['srank']] if type(p_info[p_id]['srank']) is float else [tag,0.5] if p_id in id_list else [tag,1.0]) for p_id,tag,_,_ in data}
+		#data_dict = {p_id: ([tag,p_info[p_id]['srank']] if type(p_info[p_id]['srank']) is float else [tag,1.0]) for p_id,tag,_,_ in data}
 	# use average win percentage as skill seeds
 	# scale by 1-winrate to fit expected shape of sigmoid skill distribution (lower value == higher skill)
 	elif seed == 'winrate':
@@ -356,11 +360,12 @@ def calc_sigrank(dicts,max_iter=1000,min_req=3,verbosity=0,rank_size=None,disp_s
 	elif seed == 'blank':
 		if verbosity >= 5:
 			print('[blanked seeding]')
-		data_dict = {p_id: ([tag,0.5] if p_id in id_list is float else [tag,1.0]) for p_id,tag,_,_ in data}
+		data_dict = {p_id: ([tag,0.5] if p_id in id_list else [tag,1.0]) for p_id,tag,_,_ in data}
 
 	# use elo/glicko as skill seeds
 	else:
 		if verbosity >= 5:
+			print('invalid seed. defaulting to elo')
 			print('[seeding by avg normalized elo/glicko-2]')
 		# get initial skillranks by rescaling all ranks (elo and glicko) to be between 0 and 1 (for sigmoid fitting)
 		# normalize elo/glicko by all db entrants (N)
@@ -743,7 +748,8 @@ def update_sigmoids(dicts,t_info,sig='sigmoid',ranking_period=2,max_iterations=1
 			if v >= 4:
 				print('Updating Sigmoids...')
 				
-			sigrank_res = calc_sigrank(dicts,plot_ranks=False,max_iter=max_iterations,seed=c_args.srank_seed_mode,print_res=c_args.srank_print_res,verbosity=v,sig_mode=c_args.srank_sig_mode,running_bins=c_args.srank_use_running_avg)
+			sigrank_res = calc_sigrank(dicts,plot_ranks=False,max_iter=max_iterations,seed=c_args.srank_seed_mode,print_res=c_args.srank_print_res,\
+				verbosity=v,sig_mode=c_args.srank_sig_mode,running_bins=c_args.srank_use_running_avg)
 			#sigrank_res = calc_sigrank(dicts,plot_ranks=False,max_iter=100,seed='dict',print_res=False,verbosity=v,sig_mode=sig,running_bins=True)
 			
 			# new_data_dict, winps, sigdict, data_hist_dict, id_list = sigrank_res
@@ -876,13 +882,14 @@ def winprobs(dicts,id_list=None,mode='array'):
 				winps[abs_idx,opp_idx] = prob
 	return winps,chis
 
-def running_winprobs(data,winps,p_id,mode='dict',plot_probs=True):
+# like winprobs, but takes weighted average across s-rank skill distribution
+def running_winprobs(data,winps,p_id,mode='dict',plot_probs=True,window_sigma=c_args.srank_running_avg_sigma,window_step=c_args.srank_running_avg_step):
 	#tourneys,ids,p_info,records,skills,meta = dicts
 	p_winps = winps[p_id]
 	opp_list = sorted([opp_id for opp_id in p_winps],key=lambda opp:p_winps[opp])
 
-	window_sigma = 0.1
-	window_step = 0.05
+	#window_sigma = 0.1
+	#window_step = 0.05
 	bin_locs = np.linspace(0.,1.,num=(1./window_step))
 	local_probs = np.zeros((len(bin_locs)))
 	local_errs = np.zeros((len(bin_locs)))
@@ -925,7 +932,6 @@ def running_winprobs(data,winps,p_id,mode='dict',plot_probs=True):
 		plt.show()
 
 	return bin_locs,local_probs,local_errs
-
 
 ## sigrank PRINTING UTILS
 # plots the win probabilities for a player given their rank, and 

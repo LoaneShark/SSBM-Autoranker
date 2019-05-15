@@ -40,7 +40,7 @@ glicko_tau = 0.5 				# Tau value used by Glicko-2 algorithm, between 0.3 and 1.2
 glicko_tol = 0.000001 			# Tolerance threshold to be used by Glicko-2 algorithm, a very small value is recommended (default 0.000001)
 glicko_init_value = 1500 		# Initial rating for players in Glicko-2 algorithm (default 1500)
 glicko_init_rd = 350 			# Initial rating deviation for players in Glicko-2 algorithm (default 350)
-glicko_init_sigma = 0.06 		 Initial sigma for players in Glicko-2 algorithm (default 0.06)
+glicko_init_sigma = 0.06 		# Initial sigma for players in Glicko-2 algorithm (default 0.06)
 
 # S-Rank configs
 srank_alpha = 0.5 				# S-Rank learnrate (default 0.5)
@@ -49,6 +49,8 @@ srank_tol = 0.0001 				# S-Rank convergence tolerance. Recommended <= 0.0001 (de
 srank_learn_decay = True 		# Toggle learnrate decaying over time (default True)
 srank_use_bins = False 			# Toggle if sigmoids are fit to histogram records vs. individual h2h records (default False)
 srank_use_running_avg = False 	# Toggle if sigmoids are fit to local avg winrate vs. individual h2h records, overwrites use_bins (default False)
+srank_running_avg_sigma = 0.1 	# Sigma of Gaussian window, to capture and weight win probabilities (default 0.1)
+srank_running_avg_step = 0.05 	# Step size for sliding windows (default 0.05)
 srank_print_res = False 		# Print results of sigmoid fitting to console (default False)
 
 srank_sig_mode = alt 			# Change which sigmoid type is fit to data, from ['sigmoid','simple','alt']. sigmoid is fastest, alt is most accurate. (default alt)
@@ -58,7 +60,10 @@ srank_seed_mode = last 			# Choose seeding method, from ['last','winrate','placi
 
 srank_max_iter = 1000 			# Max iterations per update_sigmoids call. Recommended ~500-1000 for standard config, ~100 if running_bins are enabled. (default 1000)
 srank_max_size = None 			# Max number of players to consider in ranking calculations. If None, all "active" players are considered.
-srank_simbrack = False 			# Toggle scoring by simulated brackets rather than sigmoid fitting; deprecated (default False)"""
+srank_simbrack = False 			# Toggle scoring by simulated brackets rather than sigmoid fitting; deprecated (default False)
+
+web_upload = False 				# Toggle for pushing the db to the online Firebase instance (default False)
+fb_key_path = ../lib/Firebase_API_Key.json 		# Path to Firebase API Key json file"""
 
 	try:
 		config_file = open('./configs/defaults.conf','w')

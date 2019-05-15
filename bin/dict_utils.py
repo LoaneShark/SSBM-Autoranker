@@ -400,8 +400,12 @@ def update_percentiles(dicts):
 		# p_rank_data = [rank,p_id,skill]
 
 		print('min/max ranks:',skill_key)
-		print(p_rank_data[0],p_info[p_rank_data[0][1]]['tag'])
-		print(p_rank_data[-1],p_info[p_rank_data[-1][1]]['tag'])
+		if skill_key == 'srank':
+			print([p_rank_data[0][0],p_rank_data[0][1],1.-p_rank_data[0][2]],p_info[p_rank_data[0][1]]['tag'])
+			print([p_rank_data[-1][0],p_rank_data[-1][1],1.-p_rank_data[-1][2]],p_info[p_rank_data[-1][1]]['tag'])
+		else:
+			print(p_rank_data[0],p_info[p_rank_data[0][1]]['tag'])
+			print(p_rank_data[-1],p_info[p_rank_data[-1][1]]['tag'])
 		skillmax = float(p_rank_data[0][2])
 		skillmin = float(p_rank_data[-1][2])
 

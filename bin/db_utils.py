@@ -1,6 +1,6 @@
 ## DEPENDENCY IMPORTS
 import matplotlib.pyplot as plt
-import os,sys,pickle,time
+import os,sys,pickle,time,datetime
 import json
 import argparse
 import shutil
@@ -169,7 +169,7 @@ def read_tourneys(slugs,ver='default',year=None,base=None,current=False,to_updat
 							clean_old_tourneys((tourneys,ids,p_info,records,skills,meta),readins[0])
 						if v >= 4:
 							print('Importing to DB...')
-						if store_data(readins,(tourneys,ids,p_info,records,skills,meta),slug):
+						if store_data(readins,(tourneys,ids,p_info,records,skills,meta),slug,year):
 							if to_save_db:
 								save_db((tourneys,ids,p_info,records,skills,meta),verstr)
 								save_db_sets(readins[6],verstr)
@@ -185,14 +185,14 @@ def read_tourneys(slugs,ver='default',year=None,base=None,current=False,to_updat
 	return tourneys,ids,p_info,records,skills,meta
 
 # helper function to store all data from a call to readin
-def store_data(readins,dicts,slug):
+def store_data(readins,dicts,slug,year):
 	t_info,entrants,names,paths,wins,losses,sets = readins
 	tourneys,ids,p_info,records,skills,meta = dicts
 	if len(entrants.keys()) > 1:
 		if store_players(entrants,names,t_info,dicts):
 			if store_records(wins,losses,paths,sets,t_info,dicts):
 				if store_tourney(slug,t_info,names['groups'],entrants,sets,dicts):
-					if store_meta((tourneys,ids,p_info,records,skills,meta),t_info):
+					if store_meta((tourneys,ids,p_info,records,skills,meta),t_info,year):
 						return True
 	return False
 
@@ -268,6 +268,7 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 						#p_info[abs_id]['region'] = get_region(dicts,abs_id,granularity=2,to_calc=True)
 						for r_i in range(0,6):
 							p_info[abs_id]['region'][r_i] = get_region(dicts,abs_id,granularity=r_i,to_calc=True)
+							p_info[abs_id]['region_'+str(r_i)] = get_region(dicts,abs_id,granularity=r_i,to_calc=True) # store it separately too for firebase querying
 
 				# store smash.gg profile picture url
 				p_info[abs_id]['propic'] = entrants[e_id][4]
@@ -511,10 +512,14 @@ def store_tourney(slug,t_info,group_names,entrants,sets,dicts):
 		tourneys[t_id]['index'] = 0
 	else:
 		tourneys[t_id]['index'] = meta['numEvents']
+
+	tourneys[t_id]['imported'] = True
+	tourneys[t_id]['upcoming'] = False
 		
 	return True
 
-def store_meta(dicts,t_info):
+# stores db meta info
+def store_meta(dicts,t_info,year):
 	tourneys,ids,p_info,records,skills,meta = dicts
 	t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_size,t_images,t_coords = t_info
 
@@ -528,8 +533,19 @@ def store_meta(dicts,t_info):
 	meta['isArcadian'] = only_arcadians
 	meta['numEvents'] = len([temp_t_id for temp_t_id in tourneys if type(temp_t_id) is not str])
 	meta['numEventsActive'] = len([temp_t_id for temp_t_id in tourneys if type(temp_t_id) is not str if tourneys[temp_t_id]['active']])
+	today_date = datetime.datetime.now()
+	meta['dateBuilt'] = [today_date.year,today_date.month,today_date.day]
 	if 'emptyAccts' not in meta:
 		meta['emptyAccts'] = []
+	# activity history date tracking setup
+	if 'yearsActive' not in meta:
+		meta['yearsActive'] = []
+	if 'activityHistory' not in meta:
+		meta['activityHistory'] = {}
+	if t_date[0] not in meta['activityHistory']:
+		meta['activityHistory'][t_date[0]] = {}
+	if t_date[1] not in meta['activityHistory'][t_date[0]]:
+		meta['activityHistory'][t_date[0]][t_date[1]] = {}
 
 	# store info on last arguments
 	if 'args' not in meta:
@@ -571,11 +587,15 @@ def store_meta(dicts,t_info):
 		meta['top500']['glicko'] = {k:{} for k in range(501)}
 		meta['top500']['mainrank'] = {k:{} for k in range(501)}
 	n = 0
+	m = 0
 	for p_id in p_info:
 		n += 1
 		# check for account type (if nameDisplay is null, not a real user account)
 		if p_info[p_id]['name_display'] is None and p_id not in meta['emptyAccts']:
 			meta['emptyAccts'].append(p_id)
+		# check for activity level
+		if p_info[p_id]['active']:
+			m += 1
 		# check for min/max elo
 		p_elo = p_info[p_id]['elo']
 		if p_elo < elo_min:
@@ -596,7 +616,10 @@ def store_meta(dicts,t_info):
 			for skill_div in [500,100,10]:
 				# get skill values for top 10/50/100/500 cutoffs
 				if p_info[p_id][skill_rnk+'-rnk'] == skill_div:
-					meta[skill_rnk+'_'+str(skill_div)+'_cutoff'] = p_info[p_id][skill_rnk]
+					if skill_rnk == 'glicko':
+						meta[skill_rnk+'_'+str(skill_div)+'_cutoff'] = p_info[p_id][skill_rnk][0]
+					else:
+						meta[skill_rnk+'_'+str(skill_div)+'_cutoff'] = p_info[p_id][skill_rnk]
 				# store top 10/100/500 player ids by each skill rank, with rank as key
 				if p_info[p_id][skill_rnk+'-rnk'] <= skill_div:
 					meta['top'+str(skill_div)][skill_rnk][p_info[p_id][skill_rnk+'-rnk']] = p_id
@@ -607,7 +630,16 @@ def store_meta(dicts,t_info):
 	meta['glicko_min'] = glicko_min
 	meta['glicko_max'] = glicko_max
 
+	# activity metrics
 	meta['numPlayers'] = n
+	meta['numPlayersActive'] = m
+	meta['isActiveGame'] = m > 100 and meta['numEventsActive'] > 10
+	if meta['isActiveGame']:
+		meta['lastActiveYear'] = year
+		if year not in meta['yearsActive']:
+			meta['yearsActive'].append(year)
+	if t_date[0] not in meta['activityHistory'][t_date[0]][t_date[1]] or not meta['activityHistory'][t_date[0]][t_date[1]][t_date[0]]:
+		meta['activityHistory'][t_date[0]][t_date[1]][t_date[0]] = meta['isActiveGame']
 	meta['lastEvent'] = t_id
 
 	return dicts
