@@ -78,14 +78,18 @@ parser.add('-rr','--srank_score_mode',default = 'intsig', help= ' Choose scoring
 parser.add('-rm','--srank_seed_mode',default = 'last', help= ' Choose seeding method, from [last,winrate,placing,random,blank,normalized_skills]. Last or blank recommended. (default last)')
 
 parser.add('-ri','--srank_max_iter',default = 1000, help= ' Max iterations per update_sigmoids call. Recommended ~500-1000 for standard config, ~100 if running_bins are enabled. (default 1000)')
-parser.add('-rn','--srank_max_size',default = None, help= ' Max number of players to consider in ranking calculations. If None, all "active" players are considered.')
+parser.add('-rn','--srank_max_size',default = None, help= ' Max number of players to consider in ranking calculations. If None, all "active" players are considered. (default None)')
 parser.add('-rx','--srank_simbrack',default = False, help= ' Toggle scoring by simulated brackets rather than sigmoid fitting; deprecated (default False)')
 ## < show key sigmoids >
 
-## <character matchups // tier lists >
+# character matchups // tier lists
+parser.add('-mu','--character_matchups',action='store_true',help='toggle for generating character matchup charts (default False)')
+parser.add('-mm','--matchup_mode',default='default',help='set character matchup chart calculation mode')
+parser.add('-tl','--make_tier_list',action='store_true',help='toggle for generating character tier lists (default False)')
+parser.add('-tm','--tier_list_mode',default='default',help='set character tier list calculation mode')
 
 # web db args
-parser.add('-wu','--web_upload',action='store_true',help='toggle for pushing the game db to the online database')
+parser.add('-wu','--web_upload',action='store_true',help='toggle for pushing the game db to the online database (default False)')
 parser.add('-wk','--fb_key_path',default='../lib/Firebase_API_Key.json',help='path to the firebase api key json file for the web db')
 
 args,arglist = parser.parse_known_args()

@@ -62,6 +62,11 @@ srank_max_iter = 1000 			# Max iterations per update_sigmoids call. Recommended 
 srank_max_size = None 			# Max number of players to consider in ranking calculations. If None, all "active" players are considered.
 srank_simbrack = False 			# Toggle scoring by simulated brackets rather than sigmoid fitting; deprecated (default False)
 
+character_matchups = False 		# Toggle for generating character matchup charts (default False)
+matchup_mode = default 			# Set character matchup chart calculation mode
+make_tier_list = False 			# Toggle for generating character tier lists (default False)
+tier_list_mode = default 		# Set character tier list calculation mode
+
 web_upload = False 				# Toggle for pushing the db to the online Firebase instance (default False)
 fb_key_path = ../lib/Firebase_API_Key.json 		# Path to Firebase API Key json file"""
 

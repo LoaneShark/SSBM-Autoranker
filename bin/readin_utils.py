@@ -35,10 +35,11 @@ def get_slug(ss):
 	return full_url.split('/')[idx+1]
 
 # returns true if the description contains explicit mention of a given game (default melee/SSBM)
-#SSB = 4 	SSBM = 1	SSBB = 5 	P:M = 2		SSB4 = 3 	SSBU = 1386
+#SSB = 4 	SSBM = 1	SSBB = 5 	P:M = 2		SSB4 = 3 	SSBU = 1386 	RoA = 24
 def has_game(descr,game=1, gamemap={1: ['melee','ssbm','ssbmelee'], 2: ['P:M','project: m','project melee','project m','PM'], \
 				3: ['ssb4','smash 4','ssb wii u','smash wii u','for wii u','wii u','wiiu','sm4sh','smash4'], 4: ['smash 64','ssb64','64','n64'], \
-				5: ['brawl','ssbb'], 1386: ['ssbu','ultimate','sp','special','ssbs','smush','smultimate','5mash','5ma5h','sma5h','smash 5','smash5']}):
+				5: ['brawl','ssbb'], 1386: ['ssbu','ultimate','sp','special','ssbs','smush','smultimate','5mash','5ma5h','sma5h','smash 5','smash5'],\
+				24: ['rivals','aether','roa','rivahls']}):
 	if descr == None:
 		return False
 	else:
@@ -373,7 +374,7 @@ def save_character_dicts(games='smash',chars=None,to_load=True,force_new_icons=F
 	c_data = json.loads(c_file.decode('UTF-8'))
 
 	if games == 'smash':
-		games = [1,2,3,4,5,1386]
+		games = [1,2,3,4,5,1386,24]
 	elif games == 'all':
 		games = (load_dict('videogames',None,'../lib')).keys()
 	if type(games) is int:
@@ -397,9 +398,9 @@ def save_character_dicts(games='smash',chars=None,to_load=True,force_new_icons=F
 		return False
 
 # given the image data saved in a dict, converts them to folders of image files
-def save_stock_icons(games='all'):
+def save_stock_icons(games='smash'):
 	if games == 'smash':
-		games = [1,2,3,4,5,1386]
+		games = [1,2,3,4,5,1386,24]
 	elif games == 'all':
 		games = (load_dict('videogames',None,'../lib')).keys()
 	if type(games) is int:
@@ -430,7 +431,7 @@ def save_videogame_dicts(games='all',chars=None,to_load=True):
 	c_data = json.loads(c_file.decode('UTF-8'))
 
 	if games == 'smash':
-		games = [1,2,3,4,5,1386]
+		games = [1,2,3,4,5,1386,24]
 	elif games == 'all':
 		games = c_data['result']
 	if type(games) is int:
@@ -598,6 +599,10 @@ def print_results(res,names,entrants,losses,characters,game=1,max_place=64,trans
 	return res_s
 
 if __name__ == '__main__':
-	print(save_character_dicts(1386))
-	print(save_stock_icons(1386))
+	#print(save_character_dicts(1386))
+	#print(save_stock_icons(1386))
 	#write_blank_dict('meta')
+
+	save_videogame_dicts()
+	save_character_dicts()
+	save_stock_icons()

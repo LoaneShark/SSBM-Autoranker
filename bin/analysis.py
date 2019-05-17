@@ -307,11 +307,14 @@ def main():
 		update_db(dicts,db_str_key,force_update=True)
 	#update_db(dicts,db_str_key,force_update=False)
 
-	#generate_matchup_chart(dicts,game_idx,year,year_count,id_list=id_list,label_mode='ones',v=int(args.verbosity),infer_characters=True,n_bins=10000)
+
+	if args.character_matchups:
+		generate_matchup_chart(dicts,game_idx,year,year_count,id_list=id_list,label_mode='ones',v=int(args.verbosity),infer_characters=True,n_bins=10000)
 	
-	#tl = generate_tier_list(dicts,game_idx,year,year_count,id_list=id_list)
-	#for line in tl:
-	#	print(line)
+	if args.make_tier_list:
+		tl = generate_tier_list(dicts,game_idx,year,year_count,id_list=id_list)
+		for line in tl:
+			print(line)
 
 def main_read():
 	#set_db_args(args)

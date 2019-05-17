@@ -39,7 +39,7 @@ teamsize = int(args.teamsize)
 game = int(args.game)
 if args.force_game:
 	game = int(args.force_game)
-if game not in [1,2,3,4,5,1386] and not force_game:		#SSB = 4 	SSBM = 1	SSBB = 5 	P:M = 2		SSB4 = 3 	SSBU = 1386
+if game not in [1,2,3,4,5,1386,24] and not force_game:		#SSB = 4 	SSBM = 1	SSBB = 5 	P:M = 2		SSB4 = 3 	SSBU = 1386 	RoA = 24
 	print('Invalid game number provided. Forcing melee (id=1) instead.')
 	game = 1
 disp_num = int(args.display_size)
@@ -99,7 +99,7 @@ def set_readin_args(r_args):
 	force_first_event = r_args.force_first
 	teamsize = int(r_args.teamsize)
 	game = int(r_args.game)
-	if game not in [1,2,3,4,5,1386] and False:		#SSB = 4 	SSBM = 1	SSBB = 5 	P:M = 2		SSB4 = 3 	SSBU = 1386
+	if game not in [1,2,3,4,5,1386,24] and False:		#SSB = 4 	SSBM = 1	SSBB = 5 	P:M = 2		SSB4 = 3 	SSBU = 1386 	RoA = 24
 		print('Invalid game number provided. Forcing melee (id=1) instead.')
 		game = 1
 	disp_num = int(r_args.display_size)
@@ -361,6 +361,9 @@ def read_sets(data,phase_data,wins,losses,xpath,sets):
 		sets[set_id]['round_text_long'] = match['fullRoundText']
 		sets[set_id]['round_text_med'] = match['midRoundText']
 		sets[set_id]['round_text_short'] = match['shortRoundText']
+		# not sure which one of these matters
+		sets[set_id]['bestOf'] = match['bestOf']
+		sets[set_id]['bestOf'] = match['totalGames']
 		#sets[set_id]['games'] = None
 
 		if not is_bye:
@@ -464,7 +467,7 @@ def read_sets(data,phase_data,wins,losses,xpath,sets):
 # reads the phase data for a given tournament
 def read_phases(tourney):
 	gamemap = {1: ['melee','ssbm','ssbmelee'], 2: ['P:M','project: m','project melee','project m'], 3: ['ssb4','smash 4','ssb wii u','smash wii u','for wii u'], \
-				4: ['smash 64','ssb64','64'], 5: ['brawl','ssbb'], 1386: ['ssbu','ultimate','for switch','nintendo switch','switch']}
+				4: ['smash 64','ssb64','64'], 5: ['brawl','ssbb'], 1386: ['ssbu','ultimate','for switch','nintendo switch','switch'], 24: ['roa','rivals','of aether']}
 	waves = {}
 	#with open(filepath) as f:
 	#	data = json.loads(f.read())

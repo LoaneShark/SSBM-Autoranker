@@ -13,15 +13,20 @@ v = args.verbosity
 # scrapes the ssbwiki url links for each major tournament, and returns their smash.gg slug
 # requires a game and year
 def scrape(game,year,verb=v):
-	if game not in [1,2,3,4,5,1386]:
-		print('Error: Cannot scrape majors/slugs for this game ID (%d)'%game)
-		return False
-	v = verb
-	url = 'https://www.ssbwiki.com/List_of_national_tournaments'
-
 	if year < 2015:
 		print('Error: The earliest smash.gg tournament data is 2015. For best results, use 2017 and on')
 		return False
+
+	if game not in [1,2,3,4,5,1386]:
+		if game == 24:
+			return rivals_events(year)
+		else:
+			print('Error: Cannot scrape majors/slugs for this game ID (%d)'%game)
+			return False
+
+	v = verb
+	url = 'https://www.ssbwiki.com/List_of_national_tournaments'
+
 	if v >= 3:
 		temp = ""
 		if v >=4:
@@ -187,6 +192,10 @@ def get_rank_name(game,year,yr_half=-1):
 
 # scrapes PGR/SSBMRank/etc. from ssbwiki for given game/year
 def scrape_ranks(game,year,yr_half=-1):
+
+	if game not in [1,2,3,4,5,1386]:
+		return False
+
 	rank_name,yearstr = get_rank_name(game,year,yr_half)
 
 	if game == 3 or game == 2:
@@ -289,6 +298,35 @@ def check_ssbwiki(dicts,p_id,tag):
 		return None
 
 	return None
+
+# hardcode these in for now/testing purposes
+def rivals_events(year):
+	if year < 2016:
+		return False
+
+	if year == 2016:
+		return ['na-rcs-week-1','eu-rcs-week-1','na-rcs-week-2','eu-rcs-week-2','na-rcs-week-3','eu-rcs-week-3','na-rcs-week-4','garden-of-gods-a-rivals-of-aether-national',\
+				'eu-rcs-week-4','na-rcs-week-5','eu-rcs-week-5','na-rcs-week-6','eu-rcs-week-6','guts-4-game-underground-tournament-spectacular-4','toast','na-rcs-week-7',\
+				'eu-rcs-week-7','rewired-2016-1','na-rcs-week-8','eu-rcs-week-8','na-rcs-week-9','eu-rcs-week-9','na-rcs-week-10','eu-rcs-week-10','na-rcs-week-11',\
+				'eu-rcs-week-11','na-rcs-week-12','eu-rcs-week-12']
+	elif year == 2017:
+		return ['genesis-4','battle-arena-melbourne-9','road-to-shine-rivals','au-rcs-may-monthly','the-bigger-balc','eu-rcs-may-monthly','road-to-shine-rivals','eu-rcs-june-monthly',\
+				'au-rcs-june-monthly','na-rcs-july-monthly','au-rcs-july-monthly','eu-rcs-july-monthly','low-tier-city-5','rivals-super-smash-con','na-rcs-august-monthly',\
+				'shine-2017','eu-rcs-august-monthly','au-rcs-august-monthly','au-rcs-ohn15','na-rcs-september-monthly','heat-wave','eu-rcs-september-monthly','au-rcs-september-monthly',\
+				'gametyrant-expo-2017','na-rcs-october-monthly','au-rcs-october-monthly','eu-rcs-october-monthly','na-rcs-november-monthly','au-rcs-november-monthly','eu-rcs-november-monthly',\
+				'au-rcs-december-monthly','na-rcs-december-monthly','eu-rcs-december-monthly']
+	elif year == 2018:
+		return ['genesis-5','battle-arena-melbourne-10','na-rcs-season-3-may-monthly-2','smash-n-splash-4','na-rcs-season-3-june-monthly','eu-rcs-season-3-june-monthly-1',\
+				'andromeda-1','2gg-hyrule-saga','au-rcs-season-3-june-monthly','na-rcs-season-3-july-monthly','first-impact-2018','au-rcs-season-3-july-monthly',\
+				'eu-rcs-season-3-july-monthly','rivals-at-super-smash-con-2018','au-rcs-season-3-august-monthly','shine-2018','eu-rcs-season-3-august-monthly',\
+				'na-rcs-season-3-august-monthly','au-rcs-season-3-september-monthly','mega-metal-cavern','eu-rcs-season-3-september-monthly','na-rcs-season-3-september-monthly',\
+				'na-rcs-season-3-october-monthly','heat-wave-2','au-rcs-season-3-october-monthly','eu-rcs-season-3-october-monthly','gametyrant-expo-2018',\
+				'na-rcs-season-3-november-monthly','traction-4','eu-rcs-season-3-november-monthly','au-rcs-season-3-november-monthly','na-rcs-season-3-december-monthly',\
+				'au-rcs-season-3-december-monthly','don-t-park-on-the-grass-2018-1','eu-rcs-season-3-december-monthly']
+	elif year == 2019:
+		return ['genesis-6']
+	else:
+		return False
 
 if __name__ == '__main__':
 	#print(scrape(1386,2019,verb=9))
