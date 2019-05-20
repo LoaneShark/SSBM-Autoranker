@@ -49,6 +49,7 @@ function createPlayerSearchbar(gameId){
         }
       });
 
+      // progress icon BROKEN
       searchbarTypeahead.on('typeahead:initialized', function (event, data) {
          // After initializing, hide the progress icon.
          $('.tt-hint').css('background-image', '');
@@ -126,7 +127,7 @@ function populateSocialMedia(PlayerSnapshot, playerId){
         $('#player_social_div').removeClass('invisible')
       }
     }
-    // easter egg :3
+    // pi KAPOW er
     if (playerId == 16342){
       var showPizza = true;
       $('#player_social').append('<a href="//axe.pizza" target="_blank"><img src="/assets/images/social_icons/pizza-600px.png" alt="axe.pizza" style="width:32px;height:32px;padding:1px;" class="rounded img-fluid"></a>')
@@ -267,21 +268,36 @@ function drawSkillGraphs(RecordSnapshot, playerId, skillRefStr, tourneyRefStr){
 
 // Formatting function for H2H row details 
 function childFormat(childData,childOppId,eventMap) {
-	var tableHTML = '<table class="display">';
+	var tableHTML = '<table id="vs_'+childOppId+'" class="display" style="margin:0px;">';
+  tableHTML += '<thead><tr><th>Date</th><th>Result</th><th>Event</th><th>Group</th></tr></thead><tbody>'
 	if ('wins' in childData[childOppId]){
 		for (m=0,m_n=childData[childOppId]['wins'].length; m<m_n; m++){
-			//childData[childOppId]['wins'][m] = PlayerEvents.child(''+childData[childOppId]['wins'][m]+'/name').val();
-			tableHTML += '<tr><td class="bg-success font-weight-bold text-light">' + eventMap[childData[childOppId]['wins'][m]]['name'] + '</td></tr>';
+      var childEventId = childData[childOppId]['wins'][m];
+      //var eventDateStr = eventMap[childEventId]['date'].getFullYear()+'-'+eventMap[childEventId]['date'].getMonth()+'-'+eventMap[childEventId]['date'].getDay();
+      var eventDateStr = eventMap[childEventId]['date'].toISOString().slice(0,10);
+			tableHTML += '<tr>'+
+                    '<td>'+eventDateStr+'</td>' +
+                    '<td class="bg-success font-weight-bold text-light">W</td>' +
+                    '<td>' + eventMap[childEventId]['name'] + '</td>' +
+                    '<td></td>' +
+                    '</tr>';
 		}
 	}
 	if ('losses' in childData[childOppId]){
 		for (m=0,m_n=childData[childOppId]['losses'].length; m<m_n; m++){
-			//childData[childOppId]['losses'][m] = PlayerEvents.child(''+childData[childOppId]['losses'][m]+'/name').val();
-			tableHTML += '<tr><td class="bg-danger font-weight-bold text-light">' + eventMap[childData[childOppId]['losses'][m]]['name'] + '</td></tr>';
+      childEventId = childData[childOppId]['losses'][m]
+      //eventDateStr = eventMap[childEventId]['date'].getFullYear()+'-'+eventMap[childEventId]['date'].getMonth()+'-'+eventMap[childEventId]['date'].getDay();
+      eventDateStr = eventMap[childEventId]['date'].toISOString().slice(0,10);
+      tableHTML += '<tr>'+
+                    '<td>'+eventDateStr+'</td>' +
+                    '<td class="bg-danger font-weight-bold text-light">L</td>' +
+                    '<td>' + eventMap[childEventId]['name'] + '</td>' +
+                    '<td></td>' +
+                    '</tr>';
 		}
 	}
 
-	tableHTML += '</table>'
+	tableHTML += '</tbody></table>'
 
 	return tableHTML
 }
@@ -342,7 +358,7 @@ function populateH2H(PlayerSnapshot, RecordSnapshot, PlayerEvents, topPlayerRefS
                   if (oppSkillRank <= 10){
                     h2h['top10w'] += oppWinCount;
                     $('#top10_chart_body').append('<tr id="top10_row_' + oppSkillRank + '">'+
-                                                  '<td><i class="fas fa-plus-square-o"></i></td>' + 
+                                                  '<td><i class="fas fa-plus-square"></i></td>' + 
                                                   '<td>' + oppSkillRank + '</td>'+
                                                   '<td>' + childSnapshot.child('tag').val() + '</td>' +
                                                   '<td>' + oppId + '</td>' +
@@ -371,7 +387,7 @@ function populateH2H(PlayerSnapshot, RecordSnapshot, PlayerEvents, topPlayerRefS
                       $('#top10_row_'+oppSkillRank+'_losses').html(oppLossCount)
                     } else {
                       $('#top10_chart_body').append('<tr id="top10_row_' + oppSkillRank + '">'+
-                                                    '<td><i class="fas fa-plus-square-o"></i></td>' + 
+                                                    '<td><i class="fas fa-plus-square"></i></td>' + 
                                                     '<td>' + oppSkillRank + '</td>'+
                                                     '<td>' + childSnapshot.child('tag').val() + '</td>' +
                                                     '<td>' + oppId + '</td>' +
@@ -413,14 +429,14 @@ function populateH2H(PlayerSnapshot, RecordSnapshot, PlayerEvents, topPlayerRefS
           searching: false,
           info: false,
           autoWidth: false,
-          responsive: {
+          /*responsive: {
             details: {
               type: 'column'
             }
-          },
+          },*/
           order: [[1, 'asc']],
           "columns":[
-          {width: "7%", data: null, searchable: false, orderable: false, className: 'control', defaultContent: ''},
+          {width: "7%", data: null, searchable: false, orderable: false, className: 'control', defaultContent: '<i class="fas fa-plus-square"></i>'},
           {width: "10%"},
           {width: "45%"},
           {width: "0%", visible: false},
@@ -434,6 +450,8 @@ function populateH2H(PlayerSnapshot, RecordSnapshot, PlayerEvents, topPlayerRefS
 
         // event listener for opening and closing H2H table details
         $('#top10_chart tbody').on('click', 'td.control', function () {
+            // toggle icon state (plu/minus)
+            $(this).find('[data-fa-i2svg]').toggleClass('fa-plus-square').toggleClass('fa-minus-square');
             var tr = $(this).closest('tr');
             var row = top10h2hTable.row(tr);
             var childOppId = row.data()[3];
@@ -444,10 +462,40 @@ function populateH2H(PlayerSnapshot, RecordSnapshot, PlayerEvents, topPlayerRefS
                 tr.removeClass('shown');
             }
             else {
-                // Open this row
-                //row.child( childFormat(row.data()) ).show();
-				eventMap = formatPlayerEvents(PlayerEvents);
+				        eventMap = formatPlayerEvents(PlayerEvents);
                 row.child(childFormat(childData,childOppId,eventMap)).show();
+                // instantiate child table
+                
+                $('#vs_'+childOppId).DataTable({
+                  searching: false,
+                  info: false,
+                  order: [[0, 'asc']],
+                  "columns":[
+                  {},
+                  {orderable: false, className: "text-align-center"},
+                  {orderable: false},
+                  {}],
+                  // hide pagination if only 1 page needed
+                  initComplete: function() {
+                    if (this.api().page.info().pages === 1) {
+                      $('#vs_'+childOppId+'_length').hide();
+                      $('#vs_'+childOppId+'_paginate').hide();
+                      $('#vs_'+childOppId+'.dataTables_length').hide();
+                      $('#vs_'+childOppId+'.dataTables_paginate').hide();
+                    }
+                  }/*,
+                  fnDrawCallback: function (oSettings){
+                    //if(oSettings.fnRecordsDisplay() < oSettings._iDisplayLength){
+                    if (oSettings.fnRecordsTotal < 10){
+                      $('#vs_'+childOppId+'.dataTables_length').hide();
+                      $('#vs_'+childOppId+'.dataTables_paginate').hide();
+                    } else {
+                      $('#vs_'+childOppId+'.dataTables_length').show();
+                      $('#vs_'+childOppId+'.dataTables_paginate').show();
+                    }
+                  }*/
+                });
+
                 tr.addClass('shown');
             }
         });
@@ -471,7 +519,8 @@ function populateH2H(PlayerSnapshot, RecordSnapshot, PlayerEvents, topPlayerRefS
 // EVENT CARD FUNCTIONS
 
 // populates event cards with most recent event info, making them visible
-function populateEventCards(PlayerEvents, placements){
+function populateEventCards(PlayerSnapshot,PlayerEvents, placements, playerWins, playerLosses, pInfoRefStr){
+  console.log(playerWins)
   // sort chronologically
   PlayerEvents.sort(function(a,b){
     return b[1]-a[1];
@@ -488,7 +537,21 @@ function populateEventCards(PlayerEvents, placements){
     var eventRes = placements[i];
     if (eventRes != null){
       $('#event_card_'+i).removeClass('invisible')
-      var eventId = eventRes.key;
+      var eventId = parseInt(eventRes.key);
+      var eventWins = [];
+      var eventLosses = [];
+      var winKeys = Object.keys(playerWins);
+      var lossKeys = Object.keys(playerLosses);
+      for (j=0, w_n=winKeys.length;j<w_n;j++){
+        if (playerWins[winKeys[j]].includes(eventId)){
+          eventWins.push(winKeys[j])
+        }
+      }
+      for (j=0, l_n=lossKeys.length;j<l_n;j++){
+        if (playerLosses[lossKeys[j]].includes(eventId)){
+          eventLosses.push(lossKeys[j])
+        }
+      }
       // eventInfo = [eventName,eventDate,numEntrants,isActive,bannerUrl,slug,eventId]
       var eventInfo = PlayerEvents[i];
       var smashggUrl = 'http://www.smash.gg/tournament/'+eventInfo[5];
@@ -503,7 +566,99 @@ function populateEventCards(PlayerEvents, placements){
       if (!eventInfo[3]){
         $('#event_card_footer_text_'+i).addClass('text-danger');
       }
-      $('#event_card_text_'+i).html('<strong>'+eventRes.val+'</strong>'+' / '+ eventInfo[2]);
+      $('#event_card_text_'+i).html('<p><strong>'+eventRes.val+'</strong>'+' / '+ eventInfo[2]+'</p>');
+
+      // populate wins/losses in event cards
+      //// TODO: FIX THE FIREBASE CALL LOOP
+      if (eventWins.length > 0 || eventLosses.length > 0){
+        $('#event_card_text_'+i).append('<hr style="padding:0px;">')
+      } else {
+        $('#event_card_text_'+i).append('<p class="text-danger">DQ</p>')
+      }
+      var eventTags = getOppInfoFromRecords(eventWins,eventLosses,pInfoRefStr,i);
+      // populate wins
+      if (eventWins && eventWins.length > 0){
+        $('#event_card_text_'+i).append('<p>' +
+                                          '<a class="btn font-italic" data-toggle="collapse" role="button" onclick="$(\'#wins_'+i+'_collapsed_chevron\').toggleClass(\'fa-rotate-180\')" aria-expanded="false" href="#event_card_wins_'+i+'" style="box-shadow:none;">'+
+                                          '<i class="fas fa-chevron-circle-down" id="wins_'+i+'_collapsed_chevron" aria-hidden="true"></i>&nbsp;' +
+                                          'Wins</a></p>');
+        $('#event_card_text_'+i).append('<div class="collapse" id="event_card_wins_'+i+'"></div>');
+
+        Promise.all(eventTags['wins']).then(function(eventWinPromises){
+          //var win_card_idx = eventTags['i'];
+          var win_card_idx = eventWinPromises[0];
+          for (wi=1,ew_n=eventWinPromises.length; wi<ew_n; wi++){
+            if (eventWinPromises[wi]['rank'] < PlayerSnapshot.child('srank-rnk').val()){
+              var eventWinClass = '';
+              var eventWinIcon = '<span class="text-success"><i class="fas fa-exclamation-circle"></i></span>'
+            } else {
+              var eventWinClass = 'class="font-weight-light"';
+              var eventWinIcon = '<span class="invisible"><i class="fas fa-exclamation-circle"></i></span>'
+            }
+            $('#event_card_wins_'+win_card_idx).append('<p '+eventWinClass+'>'+eventWinIcon+'&nbsp;'+eventWinPromises[wi]['tag']+'</p>');
+          }
+        });
+
+      }
+
+      // populate losses
+      if (eventLosses && eventLosses.length > 0){
+        $('#event_card_text_'+i).append('<p>' +
+                                          '<a class="btn font-italic" data-toggle="collapse" role="button" onclick="$(\'#losses_'+i+'_collapsed_chevron\').toggleClass(\'fa-rotate-180\')" aria-expanded="false" href="#event_card_losses_'+i+'" style="box-shadow:none;">'+
+                                          '<i class="fas fa-chevron-circle-down" id="losses_'+i+'_collapsed_chevron" aria-hidden="true"></i>&nbsp;' +
+                                          'Losses</a></p>');
+        $('#event_card_text_'+i).append('<div class="collapse" id="event_card_losses_'+i+'"></div>');
+
+        Promise.all(eventTags['losses']).then(function(eventLossPromises){
+          var loss_card_idx = eventLossPromises[0];
+          for (li=1,el_n=eventLossPromises.length; li<el_n; li++){
+            if (eventLossPromises[li]['rank'] < PlayerSnapshot.child('srank-rnk').val()){
+              var eventLossClass = 'class="font-weight-light"';
+              var eventLossIcon = '<span class="invisible"><i class="fas fa-exclamation-circle"></i></span>'
+            } else {
+              var eventLossClass = '';
+              var eventLossIcon = '<span class="text-danger"><i class="fas fa-exclamation-circle"></i></span>'
+            }
+            $('#event_card_losses_'+loss_card_idx).append('<p '+eventLossClass+'>'+eventLossIcon+'&nbsp;'+eventLossPromises[li]['tag']+'</p>');
+          }
+        });
+      }
     }
   }
+}
+
+function getTagsFromIds(playerIds,refStr){
+  var returnArr = [];
+  //console.log('GETTING_TAGS__')
+  for (i=0,n=playerIds.length; i<n; i++){
+    //console.log('GETTING_TAGS__'+i)
+    var firebaseRef = firebase.database().ref(refStr+playerIds[i]+'/tag');
+    var firebaseQuery = firebaseRef.once('value').then(function(PlayerTag){
+      console.log('TAG_EXISTS__'+PlayerTag.val());
+      return PlayerTag.val();
+    });
+    returnArr.push(firebaseQuery);
+  }
+  return returnArr;
+}
+
+function getOppInfoFromRecords(playerWins,playerLosses,refStr,card_idx){
+  var returnObj = {'i':card_idx, 'wins':[card_idx], 'losses': [card_idx]};
+
+  for (w_i=0,w_n=playerWins.length; w_i<w_n; w_i++){
+    var firebaseWinRef = firebase.database().ref(refStr+playerWins[w_i]);
+    var firebaseWinQuery = firebaseWinRef.once('value').then(function(PlayerWin){
+      return {'tag': PlayerWin.child('tag').val(), 'rank': PlayerWin.child('srank-rnk').val()};
+    });
+    returnObj['wins'].push(firebaseWinQuery);
+  }
+
+  for (l_i=0,l_n=playerLosses.length; l_i<l_n; l_i++){
+    var firebaseLossRef = firebase.database().ref(refStr+playerLosses[l_i]);
+    var firebaseLossQuery = firebaseLossRef.once('value').then(function(PlayerLoss){
+      return {'tag': PlayerLoss.child('tag').val(), 'rank': PlayerLoss.child('srank-rnk').val()};
+    });
+    returnObj['losses'].push(firebaseLossQuery);
+  }
+  return returnObj;
 }

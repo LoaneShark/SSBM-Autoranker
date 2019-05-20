@@ -5,6 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="{{ "/assets/css/style.css?v=" | append: site.github.build_revision | relative_url }}">
+    {% include analytics_scripts.html %}
     {% include bootstrap_css.html %}
     {% include bootstrap_scripts.html %}
 
@@ -151,10 +152,11 @@ table.dataTable{
 
         // query db and populate profile
         if (currentDB){
-          var player_ref_str = "/"+gameId+"_2016_"+(curr_year-2016)+"_c/p_info/"+playerId;
+          var p_info_ref_str = "/"+gameId+"_2016_"+(curr_year-2016)+"_c/p_info/"
         } else {
-          var player_ref_str = "/"+gameId+"_2018_1/p_info/"+playerId;
+          var p_info_ref_str = "/"+gameId+"_2018_1/p_info/";
         }
+        var player_ref_str = p_info_ref_str+playerId;
         var player_ref = firebase.database().ref(player_ref_str);
         var player_query = player_ref.once('value').then(function(PlayerSnapshot) {
           if (PlayerSnapshot.exists()) {
@@ -207,7 +209,7 @@ table.dataTable{
                 Promise.all(eventPromises).then(function(PlayerEvents){
                   if (PlayerEvents.length>0){
                     // populate the cards
-                    populateEventCards(PlayerEvents,placements)
+                    populateEventCards(PlayerSnapshot,PlayerEvents,placements,playerWins,playerLosses, p_info_ref_str)
                     // populate h2h-at-a-glance
                     populateH2H(PlayerSnapshot, RecordSnapshot, PlayerEvents, topPlayerRefStr, playerWins, playerLosses)
                   }
@@ -295,9 +297,9 @@ table.dataTable{
 
         var trophyBox = $('#mainrank_trophy')[0];
         if (trophyBox){
-          trophyBox.style.display='inline-block';
+          trophyBox.style.display = 'inline-block';
           trophyBox.offsetHeight; // no need to store this anywhere, the reference is enough
-          trophyBox.style.display='';
+          trophyBox.style.display = '';
         }
       });
     </script>

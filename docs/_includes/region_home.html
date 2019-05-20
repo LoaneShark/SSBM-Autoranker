@@ -14,7 +14,7 @@
 <main class="page-content" aria-label="Content">
 	<div class="container">
 		<div class="row justify-content-center">
-			<div class="card border-dark" style="width:100%;height:10vw;">
+			<div class="card border-dark d-flex align-items-center" style="width:100%;height:10vw;">
 				<p class="text-center display-2" id="game_title"><span class="text-sr-primary">{{page.game}}</span> {{page.title}}</p>
 			</div>
 		</div>
@@ -85,17 +85,17 @@
 							<tr class='header'>
 								<th>Team</th>
 								<th>Player</th>
-								<th>{% if {{page.game}} == 'Ultimate'%}
-										PGR
-									{% elsif {{page.game}} == 'Melee' %}
+								<th>{% if page.game == 'Ultimate'%}
+										PGRU
+									{% elsif page.game == 'Melee' %}
 										MPGR
-									{% elsif {{page.game}} == 'PM' %}
+									{% elsif page.game == 'PM' %}
 										PMRank
-									{% elsif {{page.game}} == 'Smash4' %}
+									{% elsif page.game == 'Smash4' %}
 										PGR
-									{% elsif {{page.game}} == 'Brawl' %}
+									{% elsif page.game == 'Brawl' %}
 										SSBBRank
-									{% elsif {{page.game}} == '64' %}
+									{% elsif page.game == 64 %}
 										64LR
 									{% else %}
 										Rank
@@ -143,17 +143,17 @@
 							<tr class='header'>
 								<th>Team</th>
 								<th>Player</th>
-								<th>{% if {{page.game}} == 'Ultimate'%}
-										PGR
-									{% elsif {{page.game}} == 'Melee' %}
+								<th>{% if page.game == 'Ultimate'%}
+										PGRU
+									{% elsif page.game == 'Melee' %}
 										MPGR
-									{% elsif {{page.game}} == 'PM' %}
+									{% elsif page.game == 'PM' %}
 										PMRank
-									{% elsif {{page.game}} == 'Smash4' %}
+									{% elsif page.game == 'Smash4' %}
 										PGR
-									{% elsif {{page.game}} == 'Brawl' %}
+									{% elsif page.game == 'Brawl' %}
 										SSBBRank
-									{% elsif {{page.game}} == '64' %}
+									{% elsif page.game == 64 %}
 										64LR
 									{% else %}
 										Rank
@@ -201,17 +201,17 @@
 							<tr class='header'>
 								<th>Team</th>
 								<th>Player</th>
-								<th>{% if {{page.game}} == 'Ultimate'%}
-										PGR
-									{% elsif {{page.game}} == 'Melee' %}
+								<th>{% if page.game == 'Ultimate'%}
+										PGRU
+									{% elsif page.game == 'Melee' %}
 										MPGR
-									{% elsif {{page.game}} == 'PM' %}
+									{% elsif page.game == 'PM' %}
 										PMRank
-									{% elsif {{page.game}} == 'Smash4' %}
+									{% elsif page.game == 'Smash4' %}
 										PGR
-									{% elsif {{page.game}} == 'Brawl' %}
+									{% elsif page.game == 'Brawl' %}
 										SSBBRank
-									{% elsif {{page.game}} == '64' %}
+									{% elsif page.game == 64 %}
 										64LR
 									{% else %}
 										Rank
@@ -259,17 +259,17 @@
 							<tr class='header'>
 								<th>Team</th>
 								<th>Player</th>
-								<th>{% if {{page.game}} == 'Ultimate'%}
-										PGR
-									{% elsif {{page.game}} == 'Melee' %}
+								<th>{% if page.game == 'Ultimate'%}
+										PGRU
+									{% elsif page.game == 'Melee' %}
 										MPGR
-									{% elsif {{page.game}} == 'PM' %}
+									{% elsif page.game == 'PM' %}
 										PMRank
-									{% elsif {{page.game}} == 'Smash4' %}
+									{% elsif page.game == 'Smash4' %}
 										PGR
-									{% elsif {{page.game}} == 'Brawl' %}
+									{% elsif page.game == 'Brawl' %}
 										SSBBRank
-									{% elsif {{page.game}} == '64' %}
+									{% elsif page.game == 64 %}
 										64LR
 									{% else %}
 										Rank

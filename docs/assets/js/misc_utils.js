@@ -15,6 +15,9 @@ function getGameId(gameTitle){
 		case 'Brawl':
 			return 5;
 			break;
+		case 'Rivals':
+			return 24;
+			break;
 		case 'Ultimate':
 			return 1386;
 			break;
@@ -37,6 +40,9 @@ function getGameTitle(gameId){
 			break;
 		case 5:
 			return 'Brawl';
+			break;
+		case 24:
+			return 'Rivals';
 			break;
 		case 1386:
 			return 'Ultimate';
@@ -65,6 +71,9 @@ function getLastYearFromGame(gameId){
 		case 5:
 			return 2017;
 			break;
+		case 24:
+			return null;
+			break;
 		case 1386:
 			return null;
 			break;
@@ -87,6 +96,9 @@ function getGameIconPath(gameId){
 			break;
 		case 5:
 			return "/assets/images/game_icons/36px-SSBB_Icon.png";
+			break;
+		case 24:
+			return "/assets/images/game_icons/2000px-RoA_Icon.png";
 			break;
 		case 1386:
 			return "/assets/images/game_icons/36px-SSBU_Icon.png";
@@ -115,6 +127,7 @@ function snapshotToArray(snapshot,attr="val") {
 }
 
 function otherGameActivity(p_id,game_id){
+	//var gameIds = [1,2,3,4,5,24,1386];
 	var gameIds = [1,2,3,4,5,1386];
 	var gamePromises = [];
 	var otherGames = [];

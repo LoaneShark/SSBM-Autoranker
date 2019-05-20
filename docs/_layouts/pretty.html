@@ -7,7 +7,8 @@
     <meta name="description" content="A smash.gg data analytics resource and database. Extremely under construction.">
     <meta name="keywords" content="Smash,Ranks,Smashranks,Smash.gg,Rank,Ranking,Stats,Stat,Statistics,Super,Bros,SSB,Super Smash Bros,Smash Bros,Bros.,Elo,Glicko,Glicko-2,SRank,S-rank,Smashrank,Sigmoid,Trueskill,64,Melee,Brawl,Smash 4,For Wii U,Ultimate,PM,Project M,P:M,Project: M,Analysis,Analytics,Data,Database,Chart,Charts,Graph,Graphs,Head to head,H2h,Head2head,Head-to-head,Tournaments,Results,Bracket,Info,Information,History,Tracker,Player,Media">
     <meta name="google-site-verification" content="IhzgtAKNj8AhRZdou3u8clmTKBpoKXdT_NMnxUrXppM">
-{% seo %}
+    {% include analytics_scripts.html %}
+    {% seo %}
     <link rel="icon" href="/assets/images/site_icons/sr_logo_minimal.png">
     <link rel="apple-touch-icon" sizes="128x128" href="/assets/images/site_icons/sr_logo_touch_icon.png">
     <link rel="stylesheet" href="{{ "/assets/css/style.css?v=" | append: site.github.build_revision | relative_url }}">
@@ -62,16 +63,5 @@
     <!-- Mobile scaling fix -->
     <script src="{{ "/assets/js/scale.fix.js" | relative_url }}"></script>
 
-    <!-- Google Analytics shtuff -->
-    {% if site.google_analytics %}
-    <script>
-      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-      })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
-      ga('create', '{{ site.google_analytics }}', 'auto');
-      ga('send', 'pageview');
-    </script>
-    {% endif %}
   </body>
 </html>

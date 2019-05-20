@@ -1,6 +1,7 @@
 <!-- DB import/connection -->
 <script src="https://www.gstatic.com/firebasejs/6.0.2/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/6.0.2/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/6.0.2/firebase-performance.js"></script>
 
 <!-- unused sources: 
 <script src="https://www.gstatic.com/firebasejs/6.0.2/firebase-auth.js"></script>
@@ -21,4 +22,6 @@
     messagingSenderId: "1057783802681"
   };
   firebase.initializeApp(config);
+
+  var firebasePerf = firebase.performance();
 </script>
