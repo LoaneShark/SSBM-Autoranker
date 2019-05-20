@@ -205,7 +205,7 @@ function css( element, property ) {
     return window.getComputedStyle( element, null ).getPropertyValue( property );
 }
 
-// returs the ordinal suffix of a number (-st,-nd,-rd,-th)
+// returns the ordinal suffix of a number (-st,-nd,-rd,-th)
 function ordinalSuffixOf(i) {
     var j = i % 10,
         k = i % 100;
@@ -219,4 +219,22 @@ function ordinalSuffixOf(i) {
         return "rd";
     }
     return "th";
+}
+
+// returns the given tag, formatted for web (changing bracket type if is a 'transliterated cjk' tag)
+function handleTransTag(tag){
+	if (tag.includes('<')){
+	    return '『'+tag.slice(1,tag.length-1)+'』';
+	  } else {
+	  	return tag
+	  }
+}
+
+// returns the given tag, formatted for web (removing brackets if is a 'transliterated cjk' tag)
+function handleTransTagEN(tag){
+	if (tag.includes('<')){
+	    return tag.slice(1,tag.length-1);
+	  } else {
+	  	return tag
+	  }
 }

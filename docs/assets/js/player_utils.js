@@ -15,7 +15,7 @@ function createPlayerSearchbar(gameId){
         var returnTokens = nameTokens.concat(idTokens);
         returnTokens = returnTokens.concat(teamTokens);
         for (i=0;i<datum.aliases.length;i++){
-          returnTokens = returnTokens.concat(Bloodhound.tokenizers.whitespace(datum.aliases[i]))
+          returnTokens = returnTokens.concat(Bloodhound.tokenizers.whitespace(handleTransTagEN(datum.aliases[i])))
         }
         return returnTokens
       }
@@ -94,7 +94,22 @@ function populatePrimaryInfo(PlayerSnapshot){
       propic_url = "https://via.placeholder.com/100/81daea/f2f2f2?text="+p_tag.slice(0,1)
     }
     $('#player_propic_div').html('<img src="'+propic_url+'" alt="'+p_tag+'" class="rounded-circle"/>');
-    $('#player_name').html(PlayerSnapshot.child('firstname').val()+' '+PlayerSnapshot.child('lastname').val());
+    player_firstname = PlayerSnapshot.child('firstname').val();
+    player_lastname = PlayerSnapshot.child('lastname').val();
+    if (player_firstname){
+      if (player_lastname){
+        $('#player_name').html(player_firstname+' '+player_lastname);
+      } else {
+        $('#player_name').html(player_firstname);
+      }
+    } else {
+      if (player_lastname){
+        $('#player_name').html(player_lastname);
+      } else {
+        $('#player_name_div').addClass('invisible');
+      }
+    }
+    
     var player_active = PlayerSnapshot.child('active');
     if (player_active.exists()) {
       if (player_active.val()){
@@ -107,9 +122,14 @@ function populatePrimaryInfo(PlayerSnapshot){
     }
     var p_aliases = PlayerSnapshot.child('aliases').val();
     if (p_aliases.length > 1){
+      // filter out main tag from alias list
       p_aliases = p_aliases.filter(function(value, index, arr){
         return value != p_tag;
       });
+      // convert transliterated tags to compatible format
+      for (a_i=0,a_n=p_aliases.length; a_i<a_n; a_i++){
+        p_aliases[a_i] = handleTransTag(p_aliases[a_i]);
+      }
       $('#player_aliases').html(p_aliases.join());
       $('#player_aliases_div').removeClass('invisible');
     }
@@ -267,8 +287,8 @@ function drawSkillGraphs(RecordSnapshot, playerId, skillRefStr, tourneyRefStr){
 // HEAD TO HEAD TABLE FUNCTIONS //
 
 // Formatting function for H2H row details 
-function childFormat(childData,childOppId,eventMap) {
-	var tableHTML = '<table id="vs_'+childOppId+'" class="display" style="margin:0px;">';
+function childFormat(childData,childOppId,eventMap,tableLabel) {
+	var tableHTML = '<table id="'+tableLabel+'_vs_'+childOppId+'" class="display" style="margin:0px;">';
   tableHTML += '<thead><tr><th>Date</th><th>Result</th><th>Event</th><th>Group</th></tr></thead><tbody>'
 	if ('wins' in childData[childOppId]){
 		for (m=0,m_n=childData[childOppId]['wins'].length; m<m_n; m++){
@@ -317,25 +337,6 @@ function formatPlayerEvents(PlayerEvents){
 	return returnMap;
 }
 
-function oldChildFormat () {
-	console.log('FORMATTING')
-	// `d` is the original data object for the row
-	return '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;">'+
-	  '<tr>'+
-	      '<td>Full name:</td>'+
-	      '<td>'+NAME+'</td>'+
-	  '</tr>'+
-	  '<tr>'+
-	      '<td>Extension number:</td>'+
-	      '<td>'+EXTENSION+'</td>'+
-	  '</tr>'+
-	  '<tr>'+
-	      '<td>Extra info:</td>'+
-	      '<td>And any further details here (images etc)...</td>'+
-	  '</tr>'+
-	'</table>';
-}
-
 function populateH2H(PlayerSnapshot, RecordSnapshot, PlayerEvents, topPlayerRefStr, playerWins, playerLosses){
     var h2h = {'top10w':0,'top10l':0,'top100w':0,'top100l':0,'top500w':0,'top500l':0};
     var childData = {};
@@ -355,17 +356,10 @@ function populateH2H(PlayerSnapshot, RecordSnapshot, PlayerEvents, topPlayerRefS
                 h2h['top500w'] += oppWinCount;
                 if (oppSkillRank <= 100){
                   h2h['top100w'] += oppWinCount;
+                  addH2HRow('wins','top100',childSnapshot,oppId,oppSkillRank,oppWinCount);
                   if (oppSkillRank <= 10){
                     h2h['top10w'] += oppWinCount;
-                    $('#top10_chart_body').append('<tr id="top10_row_' + oppSkillRank + '">'+
-                                                  '<td><i class="fas fa-plus-square"></i></td>' + 
-                                                  '<td>' + oppSkillRank + '</td>'+
-                                                  '<td>' + childSnapshot.child('tag').val() + '</td>' +
-                                                  '<td>' + oppId + '</td>' +
-                                                  '<td id="top10_row_' + oppSkillRank + '_wins">' + oppWinCount + '</td>' +
-                                                  '<td id="top10_row_'+oppSkillRank+'_losses">0</td>' +
-                                                  '<td id="top10_row_' + oppSkillRank + '_winrate"></td>' + 
-                                                  '</tr>');
+                    addH2HRow('wins','top10',childSnapshot,oppId,oppSkillRank,oppWinCount);
                   }
                 }
               } else {
@@ -381,21 +375,10 @@ function populateH2H(PlayerSnapshot, RecordSnapshot, PlayerEvents, topPlayerRefS
                 h2h['top500l'] += oppLossCount;
                 if (oppSkillRank <= 100){
                   h2h['top100l'] += oppLossCount;
+                  addH2HRow('losses','top100',childSnapshot,oppId,oppSkillRank,oppLossCount);
                   if (oppSkillRank <= 10){
                     h2h['top10l'] += oppLossCount;
-                    if ($('#top10_row_'+oppSkillRank).length > 0){
-                      $('#top10_row_'+oppSkillRank+'_losses').html(oppLossCount)
-                    } else {
-                      $('#top10_chart_body').append('<tr id="top10_row_' + oppSkillRank + '">'+
-                                                    '<td><i class="fas fa-plus-square"></i></td>' + 
-                                                    '<td>' + oppSkillRank + '</td>'+
-                                                    '<td>' + childSnapshot.child('tag').val() + '</td>' +
-                                                    '<td>' + oppId + '</td>' +
-                                                    '<td id="top10_row_'+oppSkillRank+'_wins">0</td>' +
-                                                    '<td id="top10_row_' + oppSkillRank + '_losses">' + oppLossCount + '</td>' +
-                                                    '<td id="top10_row_' + oppSkillRank + '_winrate"></td>' + 
-                                                    '</tr>');
-                    }
+                    addH2HRow('losses','top10',childSnapshot,oppId,oppSkillRank,oppLossCount);
                   }
                 }
               } else {
@@ -405,7 +388,10 @@ function populateH2H(PlayerSnapshot, RecordSnapshot, PlayerEvents, topPlayerRefS
               var oppLossCount = 0;
             }
             if($('#top10_row_'+oppSkillRank).length > 0){
-              $('#top10_row_'+oppSkillRank+'_winrate').html(Math.round(10000*oppWinCount/(oppWinCount+oppLossCount))/100)
+              $('#top10_row_'+oppSkillRank+'_winrate').html(Math.round(10000*oppWinCount/(oppWinCount+oppLossCount))/100);
+            }
+            if($('#top100_row_'+oppSkillRank).length > 0){
+              $('#top100_row_'+oppSkillRank+'_winrate').html(Math.round(10000*oppWinCount/(oppWinCount+oppLossCount))/100);
             }
           });
           //$('#top500_h2h').html('<span class="text-success">'+h2h['top500w']+'</span>' +
@@ -424,87 +410,9 @@ function populateH2H(PlayerSnapshot, RecordSnapshot, PlayerEvents, topPlayerRefS
             $('#top100_h2h').addClass('disabled');
           }
         }
-        var top10h2hTable = $('#top10_chart').DataTable({
-          paging: false,
-          searching: false,
-          info: false,
-          autoWidth: false,
-          /*responsive: {
-            details: {
-              type: 'column'
-            }
-          },*/
-          order: [[1, 'asc']],
-          "columns":[
-          {width: "7%", data: null, searchable: false, orderable: false, className: 'control', defaultContent: '<i class="fas fa-plus-square"></i>'},
-          {width: "10%"},
-          {width: "45%"},
-          {width: "0%", visible: false},
-          {width: "10%"},
-          {width: "10%"},
-          {width: "15%"}]
-        });
-        //$($.fn.dataTable.tables(true)).css('width','100%');
-        $($.fn.dataTable.tables(true)).DataTable().columns.adjust().responsive.recalc();
-        top10h2hTable.columns.adjust().draw();
 
-        // event listener for opening and closing H2H table details
-        $('#top10_chart tbody').on('click', 'td.control', function () {
-            // toggle icon state (plu/minus)
-            $(this).find('[data-fa-i2svg]').toggleClass('fa-plus-square').toggleClass('fa-minus-square');
-            var tr = $(this).closest('tr');
-            var row = top10h2hTable.row(tr);
-            var childOppId = row.data()[3];
-     
-            if (row.child.isShown()) {
-                // This row is already open - close it
-                row.child.hide();
-                tr.removeClass('shown');
-            }
-            else {
-				        eventMap = formatPlayerEvents(PlayerEvents);
-                row.child(childFormat(childData,childOppId,eventMap)).show();
-                // instantiate child table
-                
-                $('#vs_'+childOppId).DataTable({
-                  searching: false,
-                  info: false,
-                  order: [[0, 'asc']],
-                  "columns":[
-                  {},
-                  {orderable: false, className: "text-align-center"},
-                  {orderable: false},
-                  {}],
-                  // hide pagination if only 1 page needed
-                  initComplete: function() {
-                    if (this.api().page.info().pages === 1) {
-                      $('#vs_'+childOppId+'_length').hide();
-                      $('#vs_'+childOppId+'_paginate').hide();
-                      $('#vs_'+childOppId+'.dataTables_length').hide();
-                      $('#vs_'+childOppId+'.dataTables_paginate').hide();
-                    }
-                  }/*,
-                  fnDrawCallback: function (oSettings){
-                    //if(oSettings.fnRecordsDisplay() < oSettings._iDisplayLength){
-                    if (oSettings.fnRecordsTotal < 10){
-                      $('#vs_'+childOppId+'.dataTables_length').hide();
-                      $('#vs_'+childOppId+'.dataTables_paginate').hide();
-                    } else {
-                      $('#vs_'+childOppId+'.dataTables_length').show();
-                      $('#vs_'+childOppId+'.dataTables_paginate').show();
-                    }
-                  }*/
-                });
-
-                tr.addClass('shown');
-            }
-        });
-        /*
-        // toggle collapse icons on click
-        $('.data-toggle').click(function() {
-          $('#top10_chart_container').toggle(1000);
-          $('i', this).toggleClass('fa-plus-square-o fa-minus-square-o');
-        });*/
+        generateH2HTable('top10',PlayerEvents,childData);
+        generateH2HTable('top100',PlayerEvents,childData);
 
       });
     } else {
@@ -514,6 +422,118 @@ function populateH2H(PlayerSnapshot, RecordSnapshot, PlayerEvents, topPlayerRefS
       //$('#top10_h2h_div').addClass('invisible');
       //$('#top100_h2h_div').addClass('invisible');
     }
+}
+
+function generateH2HTable(tableLabel,PlayerEvents,childData){
+
+  // make the table into a DataTable
+  var top10h2hTable = $('#'+tableLabel+'_chart').DataTable({
+    paging: false,
+    searching: false,
+    info: false,
+    autoWidth: false,
+    /*responsive: {
+      details: {
+        type: 'column'
+      }
+    },*/
+    order: [[1, 'asc']],
+    "columns":[
+    {width: "7%", data: null, searchable: false, orderable: false, className: 'control', defaultContent: '<i class="fas fa-plus-square"></i>'},
+    {width: "10%"},
+    {width: "45%"},
+    {width: "0%", visible: false},
+    {width: "10%"},
+    {width: "10%"},
+    {width: "15%"}]
+  });
+  //$($.fn.dataTable.tables(true)).css('width','100%');
+  $($.fn.dataTable.tables(true)).DataTable().columns.adjust().responsive.recalc();
+  top10h2hTable.columns.adjust().draw();
+
+  // event listener for opening and closing H2H table details
+  $('#'+tableLabel+'_chart tbody').on('click', 'td.control', function () {
+      // toggle icon state (plu/minus)
+      $(this).find('[data-fa-i2svg]').toggleClass('fa-plus-square').toggleClass('fa-minus-square');
+      var tr = $(this).closest('tr');
+      var row = top10h2hTable.row(tr);
+      var childOppId = row.data()[3];
+
+      if (row.child.isShown()) {
+          // This row is already open - close it
+          row.child.hide();
+          tr.removeClass('shown');
+      }
+      else {
+          eventMap = formatPlayerEvents(PlayerEvents);
+          row.child(childFormat(childData,childOppId,eventMap,tableLabel)).show();
+          // instantiate child table
+          
+          $('#'+tableLabel+'_vs_'+childOppId).DataTable({
+            searching: false,
+            info: false,
+            order: [[0, 'asc']],
+            "columns":[
+            {width: '15%'},
+            {width: '10%', orderable: false, className: "text-center"},
+            {orderable: false},
+            // change once I have group/phase data
+            {visible: false}],
+            // hide pagination if only 1 page needed
+            initComplete: function() {
+              if (this.api().page.info().pages === 1) {
+                $('#'+tableLabel+'_vs_'+childOppId+'_length').hide();
+                $('#'+tableLabel+'_vs_'+childOppId+'_paginate').hide();
+                $('#'+tableLabel+'_vs_'+childOppId+'.dataTables_length').hide();
+                $('#'+tableLabel+'_vs_'+childOppId+'.dataTables_paginate').hide();
+              }
+            }/*,
+            fnDrawCallback: function (oSettings){
+              //if(oSettings.fnRecordsDisplay() < oSettings._iDisplayLength){
+              if (oSettings.fnRecordsTotal < 10){
+                $('#vs_'+childOppId+'.dataTables_length').hide();
+                $('#vs_'+childOppId+'.dataTables_paginate').hide();
+              } else {
+                $('#vs_'+childOppId+'.dataTables_length').show();
+                $('#vs_'+childOppId+'.dataTables_paginate').show();
+              }
+            }*/
+          });
+
+          tr.addClass('shown');
+      }
+  });
+}
+
+function addH2HRow(rowType,tableLabel,childSnapshot,oppId,oppSkillRank,oppSetCount){
+  // add row to H2H at a glance table
+  if (rowType == 'wins'){
+    $('#'+tableLabel+'_chart_body').append('<tr id="'+tableLabel+'_row_' + oppSkillRank + '">'+
+                                  '<td><i class="fas fa-plus-square"></i></td>' + 
+                                  '<td>' + oppSkillRank + '</td>'+
+                                  '<td>' + childSnapshot.child('tag').val() + '</td>' +
+                                  '<td>' + oppId + '</td>' +
+                                  '<td id="'+tableLabel+'_row_' + oppSkillRank + '_wins">' + oppSetCount + '</td>' +
+                                  '<td id="'+tableLabel+'_row_'+oppSkillRank+'_losses">0</td>' +
+                                  '<td id="'+tableLabel+'_row_' + oppSkillRank + '_winrate"></td>' + 
+                                  '</tr>');
+  } else if (rowType == 'losses'){
+    if ($('#'+tableLabel+'_row_'+oppSkillRank).length > 0){
+      $('#'+tableLabel+'_row_'+oppSkillRank+'_losses').html(oppSetCount)
+    } else {
+      $('#'+tableLabel+'_chart_body').append('<tr id="'+tableLabel+'_row_' + oppSkillRank + '">'+
+                                    '<td><i class="fas fa-plus-square"></i></td>' + 
+                                    '<td>' + oppSkillRank + '</td>'+
+                                    '<td>' + childSnapshot.child('tag').val() + '</td>' +
+                                    '<td>' + oppId + '</td>' +
+                                    '<td id="'+tableLabel+'_row_'+oppSkillRank+'_wins">0</td>' +
+                                    '<td id="'+tableLabel+'_row_' + oppSkillRank + '_losses">' + oppSetCount + '</td>' +
+                                    '<td id="'+tableLabel+'_row_' + oppSkillRank + '_winrate"></td>' + 
+                                    '</tr>');
+    }
+  } else {
+    console.log('Invalid H2H rowType: '+rowType);
+  }
 }
 
 // EVENT CARD FUNCTIONS
@@ -533,6 +553,7 @@ function populateEventCards(PlayerSnapshot,PlayerEvents, placements, playerWins,
   placements.sort(function(a,b){
     return a.idx-b.idx;
   });
+  console.log(placements)
   for (i=0;i<4;i++){
     var eventRes = placements[i];
     if (eventRes != null){
@@ -540,8 +561,18 @@ function populateEventCards(PlayerSnapshot,PlayerEvents, placements, playerWins,
       var eventId = parseInt(eventRes.key);
       var eventWins = [];
       var eventLosses = [];
-      var winKeys = Object.keys(playerWins);
-      var lossKeys = Object.keys(playerLosses);
+
+      if (playerWins){
+       var winKeys = Object.keys(playerWins);
+      } else {
+        var winKeys = [];
+      }
+      if (playerLosses){
+       var lossKeys = Object.keys(playerLosses);
+      } else {
+        var lossKeys = [];
+      }
+
       for (j=0, w_n=winKeys.length;j<w_n;j++){
         if (playerWins[winKeys[j]].includes(eventId)){
           eventWins.push(winKeys[j])
@@ -595,7 +626,7 @@ function populateEventCards(PlayerSnapshot,PlayerEvents, placements, playerWins,
               var eventWinClass = 'class="font-weight-light"';
               var eventWinIcon = '<span class="invisible"><i class="fas fa-exclamation-circle"></i></span>'
             }
-            $('#event_card_wins_'+win_card_idx).append('<p '+eventWinClass+'>'+eventWinIcon+'&nbsp;'+eventWinPromises[wi]['tag']+'</p>');
+            $('#event_card_wins_'+win_card_idx).append('<p '+eventWinClass+' style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+eventWinIcon+'&nbsp;'+eventWinPromises[wi]['tag']+'</p>');
           }
         });
 
@@ -619,7 +650,7 @@ function populateEventCards(PlayerSnapshot,PlayerEvents, placements, playerWins,
               var eventLossClass = '';
               var eventLossIcon = '<span class="text-danger"><i class="fas fa-exclamation-circle"></i></span>'
             }
-            $('#event_card_losses_'+loss_card_idx).append('<p '+eventLossClass+'>'+eventLossIcon+'&nbsp;'+eventLossPromises[li]['tag']+'</p>');
+            $('#event_card_losses_'+loss_card_idx).append('<p '+eventLossClass+' style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+eventLossIcon+'&nbsp;'+eventLossPromises[li]['tag']+'</p>');
           }
         });
       }
@@ -648,7 +679,7 @@ function getOppInfoFromRecords(playerWins,playerLosses,refStr,card_idx){
   for (w_i=0,w_n=playerWins.length; w_i<w_n; w_i++){
     var firebaseWinRef = firebase.database().ref(refStr+playerWins[w_i]);
     var firebaseWinQuery = firebaseWinRef.once('value').then(function(PlayerWin){
-      return {'tag': PlayerWin.child('tag').val(), 'rank': PlayerWin.child('srank-rnk').val()};
+      return {'tag':handleTransTag(PlayerWin.child('tag').val()), 'rank':PlayerWin.child('srank-rnk').val(), 'id':PlayerWin.key};
     });
     returnObj['wins'].push(firebaseWinQuery);
   }
@@ -656,7 +687,7 @@ function getOppInfoFromRecords(playerWins,playerLosses,refStr,card_idx){
   for (l_i=0,l_n=playerLosses.length; l_i<l_n; l_i++){
     var firebaseLossRef = firebase.database().ref(refStr+playerLosses[l_i]);
     var firebaseLossQuery = firebaseLossRef.once('value').then(function(PlayerLoss){
-      return {'tag': PlayerLoss.child('tag').val(), 'rank': PlayerLoss.child('srank-rnk').val()};
+      return {'tag':handleTransTag(PlayerLoss.child('tag').val()), 'rank':PlayerLoss.child('srank-rnk').val(),'id':PlayerLoss.key};
     });
     returnObj['losses'].push(firebaseLossQuery);
   }
