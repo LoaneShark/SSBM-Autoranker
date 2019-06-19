@@ -191,17 +191,12 @@ def get_rank_name(game,year,yr_half=-1):
 	return rank_name,yearstr
 
 # scrapes PGR/SSBMRank/etc. from ssbwiki for given game/year
-def scrape_ranks(game,year,yr_half=-1):
+def scrape_ranks(game,year,rank_str,yearstr,yr_half=-1):
 
 	if game not in [1,2,3,4,5,1386]:
 		return False
 
-	rank_name,yearstr = get_rank_name(game,year,yr_half)
-
-	if game == 3 or game == 2:
-		rank_url = 'https://www.ssbwiki.com/'+rank_name+yearstr
-	else:
-		rank_url = 'https://www.ssbwiki.com/'+yearstr+rank_name
+	rank_url = 'https://www.ssbwiki.com/'+rank_str
 
 	# load page for ranks
 	try:
@@ -209,11 +204,14 @@ def scrape_ranks(game,year,yr_half=-1):
 		page = page.decode('UTF-8')
 		doc = BeautifulSoup(page,features='lxml')
 	except HTTPError:
-		if year < 2015:
+		if year < 2015 or (year < 2018 and game == 1386):
 			return False
 		else:
-			print('No ranks found for: %s, %d'%(rank_name,year))
-			return scrape_ranks(game,year-1)
+			print('No ranks found for: %s, %d'%(rank_str,year))
+			if year <= args.year:
+				return scrape_ranks(game,year-1,rank_str,yearstr,yr_half)
+			else:
+				return False
 
 	tags = []
 	ratings = []
@@ -324,7 +322,7 @@ def rivals_events(year):
 				'na-rcs-season-3-november-monthly','traction-4','eu-rcs-season-3-november-monthly','au-rcs-season-3-november-monthly','na-rcs-season-3-december-monthly',\
 				'au-rcs-season-3-december-monthly','don-t-park-on-the-grass-2018-1','eu-rcs-season-3-december-monthly']
 	elif year == 2019:
-		return ['genesis-6']
+		return ['genesis-6','frostbite-2019','road-to-season-4-online-qualifier','gote-4thekids-2019-charity-pro-am-sponsored-by-mortv','smash-n-splash-5']
 	else:
 		return False
 

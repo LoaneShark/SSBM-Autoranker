@@ -21,7 +21,7 @@ def get_scores(dicts,acc=3,scale_vals=False,activity=3):
 	scores = {}
 	for p_id in p_info:
 		if p_id in records and is_active(dicts,p_id,min_req=activity):
-			scores[p_id] = round(mean([score(dicts,records[p_id]['placings'][t_id],t_id) for t_id in tourneys if type(t_id) is int if tourneys[t_id]['active'] if t_id in records[p_id]['placings']]),acc)
+			scores[p_id] = round(mean([score(dicts,records[p_id]['placings'][t_id]['placing'],t_id) for t_id in tourneys if type(t_id) is int if tourneys[t_id]['active'] if t_id in records[p_id]['placings']]),acc)
 	if scale_vals:
 		maxval = max([scores[p_id] for p_id in scores])
 		minval = min([scores[p_id] for p_id in scores])
@@ -44,7 +44,7 @@ def get_elos(dicts,acc=3,scale_vals=False,activity=3):
 	elos = {}
 	for p_id in p_info:
 		if p_id in records and is_active(dicts,p_id,min_req=activity):
-			#elos[p_id] = mean([score(dicts,records[p_id]['placings'][t_id],t_id) for t_id in tourneys if type(t_id) is int if tourneys[t_id]['active'] if t_id in records[p_id]['placings']])
+			#elos[p_id] = mean([score(dicts,records[p_id]['placings'][t_id]['placing'],t_id) for t_id in tourneys if type(t_id) is int if tourneys[t_id]['active'] if t_id in records[p_id]['placings']])
 			elos[p_id] = round(p_info[p_id]['elo'],acc)
 	if scale_vals:
 		maxval = max([elos[p_id] for p_id in elos])
@@ -122,7 +122,7 @@ def get_best_performances(dicts,use_names=False,acc=3,scale_vals=False):
 			#print(records[p_id])
 			#print(skills['elo'][p_id],'\n',skills['glicko'][p_id],'\n',skills['sim'][p_id],'\n',skills['perf'][p_id])
 			best = -9999.
-			maxperf = [[round(skills['perf'][p_id][t_id],acc),t_id,records[p_id]['placings'][t_id], \
+			maxperf = [[round(skills['perf'][p_id][t_id],acc),t_id,records[p_id]['placings'][t_id]['placing'], \
 						round(skills['elo_del'][p_id][t_id],acc),round(skills['glicko_del'][p_id][t_id][0],acc)] for t_id in skills['perf'][p_id] if tourneys[t_id]['active']]
 			#print(skills['perf'][p_id])
 			maxperf = sorted(maxperf,key=lambda l: l[0],reverse=True)[0]

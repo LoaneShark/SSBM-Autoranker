@@ -19,12 +19,13 @@ display_size = 64 		# Number of players to print out for tournament readin resul
 ----------------
 [Storage configs]
 offline_mode = False 			# [WIP] Toggle whether to search online for information. Automatically enables all caching. (default False)
-cache_results = False 			# Toggle saving tournament phases and events locally. Recommended only if frequently rebuilding database. (default False)
+cache_results = True 			# Toggle saving tournament phases and events locally. Recommended only if frequently rebuilding database. (default True)
 cache_slugs = True 				# Toggle saving slugs from ssbwiki's List of National Tournaments. (default True)
-cache_mainranks = True 			# [WIP] Toggle saving mainrank results from ssbwiki. (default True)
-use_cached_ranks = False 		# [WIP] Use saved mapping between matched player_ids and cached mainranks. (default False)
-cache_social_media = False 		# [WIP] Toggle saving social media accounts // smash.gg player api direct calls. Recommended only if frequently rebuilding database. (default False)
-cache_region_mappings = True 	# [WIP] Toggle saving region lookups/data for players. (default True)
+cache_mainranks = True 			# Toggle saving mainrank results from ssbwiki. (default True)
+use_cached_ranks = False 		# Use saved mapping between matched player_ids and cached mainranks. (default False)
+cache_social_media = True 		# Toggle saving social media accounts // smash.gg player api direct calls. Recommended if frequently rebuilding database. (default True)
+cache_region_mappings = True 	# Toggle saving region lookups/data for players. (default True)
+pregenerate_website_searchbar = False # Toggle pregeneration of player searchbar content files for smashranks site (default False)
 
 ----------------
 [Analysis configs]
@@ -47,13 +48,14 @@ srank_alpha = 0.5 				# S-Rank learnrate (default 0.5)
 srank_beta = 0.9 				# S-Rank learning momentum coefficient; currently deprecated (default 0.9)
 srank_tol = 0.0001 				# S-Rank convergence tolerance. Recommended <= 0.0001 (default 0.0001)
 srank_learn_decay = True 		# Toggle learnrate decaying over time (default True)
-srank_use_bins = False 			# Toggle if sigmoids are fit to histogram records vs. individual h2h records (default False)
-srank_use_running_avg = False 	# Toggle if sigmoids are fit to local avg winrate vs. individual h2h records, overwrites use_bins (default False)
+srank_pad_zeros = False 		# Toggle padding of zeros to LHS of winprobs limit before fitting sigmoids (default False)
 srank_running_avg_sigma = 0.1 	# Sigma of Gaussian window, to capture and weight win probabilities (default 0.1)
 srank_running_avg_step = 0.05 	# Step size for sliding windows (default 0.05)
+srank_fit_corners = False 		# Toggle inclusion of expected boundary points in sigfit to help encourage normal sigmoid behavior (default False)
 srank_print_res = False 		# Print results of sigmoid fitting to console (default False)
 
 srank_sig_mode = alt 			# Change which sigmoid type is fit to data, from ['sigmoid','simple','alt']. sigmoid is fastest, alt is most accurate. (default alt)
+srank_fit_mode = winprobs 		# Change how the data is presented to the sigmoid fitting subroutine, from [winprobs,histogram,running_avg,mixed]. (default winprobs)
 srank_calc_mode = array			# Choose calculation mode, from ['array','dict']. Array is strongly recommended. (default array)
 srank_score_mode = intsig 		# Choose scoring method, from ['intsig','intercept','average']. Intsig required if sig_mode = alt. (default intsig)
 srank_seed_mode = last 			# Choose seeding method, from ['last','winrate','placing','random','blank','normalized_skills']. Last or blank recommended. (default last)
@@ -77,5 +79,12 @@ fb_key_path = ../lib/Firebase_API_Key.json 		# Path to Firebase API Key json fil
 	config_file.write(config_text)
 	config_file.close()
 
+# generates files necessary for a clean install // establishes necessary directories
+# WIP
+def setup_dirs():
+	return None
+
+
 if __name__ == '__main__':
 	print('I should set up something!')
+	setup_dirs()

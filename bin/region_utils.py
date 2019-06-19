@@ -14,7 +14,7 @@ from arg_utils import *
 # returns the region given a location and granularity
 # granularity: 1 = country/continent, 2 = region/country, 3 = state, 4 = county/municipality, 5 = city/suburb
 ## Need to find a better consistent solution for this; keep exceeding query limits for APIs
-def calc_region(country,state=None,city=None,granularity=2,force_new=False):
+def calc_region(country,state=None,city=None,granularity=2,force_new=False,use_cache=args.cache_region_mappings):
 	cc = coco.CountryConverter()
 
 	# handle empty/invalid inputs
@@ -116,33 +116,37 @@ def calc_region(country,state=None,city=None,granularity=2,force_new=False):
 		elif dictstr == ', ' or dictstr == ' ' or dictstr == '':
 			return 'N/A'
 
-	# load region dict to ease strain on geopy
-	if force_new:
-		locdict = {}
-	else:
-		locdict = load_city_dict(dictstr)
+	if use_cache:
+		# load region dict to ease strain on geopy
+		if force_new:
+			locdict = {}
+		else:
+			locdict = load_city_dict(dictstr)
+
 	# calculate and look up region if not found in dict
-	if locstr not in locdict:
+	if not use_cache or locstr not in locdict:
 		first_call_time = time.perf_counter()
 		geocoder_name = 'Nominatim'
 		try:
 			geoloc = Nominatim(user_agent='SSBM_Autoranker',timeout=5)
-			loc = geoloc.geocode(locstr,language='en',addressdetails=True)
+			loc_res = geoloc.geocode(locstr,language='en',addressdetails=True)
 		except (ValueError, GeocoderQuotaExceeded):
-			geoloc = PickPoint(user_agent='SSBM_Autoranker',timeout=5,api_key='yeaJ8X8QQoJtB7Uo4TsL')
-			loc = geoloc.geocode(locstr,language='en',addressdetails=True)
+			geoloc = PickPoint(user_agent='SSBM_Autoranker',timeout=5,api_key='HseGVog8zSydBkMnHTEN')
+			loc_res = geoloc.geocode(locstr,language='en',addressdetails=True)
 			geocoder_name = 'PickPoint'
 
-		if loc == None:
+		if loc_res == None:
 			temp_locstr = ', '.join(locstr.split(', ')[1:])
 			time.sleep(max(1.1-(time.perf_counter()-first_call_time),0.01))
-			loc = geoloc.geocode(temp_locstr,language='en',addressdetails=True)
-			if loc == None:
-				#print('Location not found: %s'%locstr)
-				locdict[locstr] = [city,state,None,country,cc.convert(names=[country],to='continent'),None]
-				save_city_dict(dictstr,locdict)
+			loc_res = geoloc.geocode(temp_locstr,language='en',addressdetails=True)
+			if loc_res == None:
+				if args.verbosity >= 8:
+					print('Location not found: %s'%locstr)
+				if use_cache:
+					locdict[locstr] = [city,state,None,country,cc.convert(names=[country],to='continent'),None]
+					save_city_dict(dictstr,locdict)
 				return 'N/A'
-		loc = loc.raw['address']
+		loc = loc_res.raw['address']
 		if 'city' in loc:
 			l_city = loc['city']
 		elif 'city_district' in loc:
@@ -177,11 +181,15 @@ def calc_region(country,state=None,city=None,granularity=2,force_new=False):
 		l_continent = cc.convert(names=[l_country],to='continent')
 		if 'latitude' in loc and 'longitude' in loc:
 			l_coords = (loc['latitude'],loc['longitude'])
+		elif 'lat' in loc_res.raw and 'lon' in loc_res.raw:
+			l_coords = (loc_res.raw['lat'],loc_res.raw['lon'])
 		else:
 			l_coords = None
-		locdict[locstr] = [l_city,l_state,l_county,l_country,l_continent,l_coords]
-		# save new location
-		save_city_dict(dictstr,locdict)
+
+		if use_cache:
+			locdict[locstr] = [l_city,l_state,l_county,l_country,l_continent,l_coords]
+			# save new location
+			save_city_dict(dictstr,locdict)
 	else:
 		[l_city,l_state,l_county,l_country,l_continent,l_coords] = locdict[locstr]
 
@@ -275,10 +283,10 @@ def calc_region(country,state=None,city=None,granularity=2,force_new=False):
 					#print('Calcuforniating... [%s]'%city)
 					try:
 						geolocator = Nominatim(user_agent='SSBM_Autoranker',timeout=5)
-						loc = geolocator.geocode(locstr,language='en')
+						#loc = geolocator.geocode(locstr,language='en')
 					except (ValueError, GeocoderQuotaExceeded):
 						geolocator = PickPoint(user_agent='SSBM_Autoranker',timeout=5,api_key='yeaJ8X8QQoJtB7Uo4TsL')
-						loc = geolocator.geocode(locstr,language='en')
+						#loc = geolocator.geocode(locstr,language='en')
 					city_loc = geolocator.geocode(city+', CA, USA')
 					#city_low = geolocator.geocode(city_l+', CA, USA')
 					if city_loc == None:
@@ -311,10 +319,10 @@ def calc_region(country,state=None,city=None,granularity=2,force_new=False):
 					#print('Calcuforniating... [%s]'%city)
 					try:
 						geolocator = Nominatim(user_agent='SSBM_Autoranker',timeout=5)
-						loc = geolocator.geocode(locstr,language='en')
+						#loc = geolocator.geocode(locstr,language='en')
 					except (ValueError, GeocoderQuotaExceeded):
 						geolocator = PickPoint(user_agent='SSBM_Autoranker',timeout=5,api_key='yeaJ8X8QQoJtB7Uo4TsL')
-						loc = geolocator.geocode(locstr,language='en')
+						#loc = geolocator.geocode(locstr,language='en')
 					city_loc = geolocator.geocode(city+', FL, USA')
 					#city_low = geolocator.geocode(city_l+', FL, USA')
 					if city_loc == None:
@@ -327,10 +335,10 @@ def calc_region(country,state=None,city=None,granularity=2,force_new=False):
 						save_city_dict('FL_cities',floridict,to_load=False)
 						return 'SFL'
 					else:
-						floridict[city] = 'CFL'
-						floridict[city_l] = 'CFL'
+						floridict[city] = 'CFL/NFL'
+						floridict[city_l] = 'CFL/NFL'
 						save_city_dict('FL_cities',floridict,to_load=False)
-						return 'CFL'
+						return 'CFL/NFL'
 			else:
 				return 'N/A'
 		else:
@@ -429,7 +437,7 @@ def update_regions(dicts,players,granularities=range(1,6)):
 
 # saves the given cities in additions, with the given classification (Socal, Norcal, or Misc)
 def save_city_dict(state,cities={},to_load=True,hard_cali_load=False):
-		#load_res = load_dict(state,'cities','obj')
+	# always use cache in event of NorCal/SoCal or SFL/CFL distinction
 	load_res = load_dict('cities',None,'..\\lib')
 
 	if to_load:
@@ -567,8 +575,12 @@ if __name__ == '__main__':
 
 	print(ca_dict['Los Angeles'])
 	print(fl_dict['Miami'])'''
-	for gran in range(1,6):
+
+	#geoloc = Nominatim(user_agent='SSBM_Autoranker',timeout=5)
+	#geoloc = PickPoint(user_agent='SSBM_Autoranker',timeout=5,api_key='yeaJ8X8QQoJtB7Uo4TsL')
+	#loc = geoloc.geocode('Norwalk, CA, USA',language='en',addressdetails=True,extratags=True)
+	for gran in range(0,6):
 		print(gran)
-		print(calc_region('Japan',city='Tokyo',granularity=gran))
+		print(calc_region('USA',state='CA',city='Norwalk',granularity=gran,use_cache=False))
 
 	#save_dict(cities,state,'cities','obj')

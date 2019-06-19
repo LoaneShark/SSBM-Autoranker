@@ -11,9 +11,11 @@ from copy import deepcopy as dcopy
 from arg_utils import *
 from readin_utils import *
 from region_utils import *
-from scraper import scrape_ranks,check_ssbwiki
+from scraper import scrape_ranks,check_ssbwiki,get_rank_name
 
 flatten = lambda l: [item for sublist in l for item in sublist] if type(l) is list else []
+
+args = get_args()
 
 # return the (filtered) result(s) for a tourney
 # format is a list of players sorted by final placement, with indexing:
@@ -28,24 +30,24 @@ def get_result(dicts,t_id,res_filt=None):
 	player_teams = [p_info[p_id]['team'] for p_id in player_ids]
 	player_tags = [p_info[p_id]['tag'] for p_id in player_ids]
 	player_paths = [records[p_id]['paths'][t_id] for p_id in player_ids]
-	player_places = [records[p_id]['placings'][t_id] for p_id in player_ids]
+	player_places = [records[p_id]['placings'][t_id]['placing'] for p_id in player_ids]
 	player_losses = []
 	player_wins = []
-	player_skills = [[round(skills['elo'][p_id][t_id],3),round(skills['glicko'][p_id][t_id][0],3),round(skills['srank'][p_id][t_id],3)] for p_id in player_ids]
+	player_skills = [[round(skills['elo'][p_id][t_id],3),round(skills['glicko'][p_id][t_id][0],3),round(skills['srank'][p_id][t_id]*100.,3)/100.] for p_id in player_ids]
 	#player_skills = [[skills[key][p_id][t_id] for key in ['elo','glicko','sim']] for p_id in player_ids]
 	player_chars = [sorted([p_char for p_char in p_info[p_id]['characters'] if sum(p_info[p_id]['characters'][p_char]) > 0],key=lambda c_id: sum(p_info[p_id]['characters'][c_id]),reverse=True)\
 							 for p_id in player_ids]
 	for p_id in player_ids:
 		temp_l = []
 		for l_id in records[p_id]['losses']:
-			for i in range(records[p_id]['losses'][l_id].count(t_id)):
+			for i in range(len([set_id for set_id in records[p_id]['losses'][l_id][t_id] if t_id in records[p_id]['losses']])):
 				temp_l.extend([l_id])
 		temp_l.reverse()
 		player_losses.extend([temp_l])
 	for p_id in player_ids:
 		temp_w = []
 		for w_id in records[p_id]['wins']:
-			for i in range(records[p_id]['wins'][w_id].count(t_id)):
+			for i in range(len([set_id for set_id in records[p_id]['wins'][w_id][t_id] if t_id in records[p_id]['wins']])):
 				temp_w.extend([w_id])
 		temp_w.reverse()
 		player_wins.extend([temp_w])
@@ -107,8 +109,8 @@ def get_result(dicts,t_id,res_filt=None):
 				if not res_filt['glicko'] < p_skills[1][0]:
 					players.remove(player)
 					continue
-			if 'simrank' in res_filt:
-				if not res_filt['simrank'] < p_skills[2]:
+			if 'srank' in res_filt:
+				if not res_filt['srank'] < p_skills[2]:
 					players.remove(player)
 					continue
 			if 'character' in res_filt:
@@ -228,7 +230,7 @@ def get_resume(dicts,p_id,tags=None,t_ids=None,team=None,slugs=None,chars=None):
 		res = [flatten([[t_id],get_result(dicts,t_id,res_filt={'player': p_id})]) for t_id in ids[p_id] if not get_result(dicts,t_id,res_filt={'player': p_id}) == []]
 
 		#t_losses = [records[p_id]['losses'][l_id] for l_id in records[p_id]['losses'] if t_id ]
-		#t_res = (records[p_id]['placings'][t_id],records[p_id]['paths'][t_id])
+		#t_res = (records[p_id]['placings'][t_id]['placing'],records[p_id]['paths'][t_id])
 	return res
 
 # returns player id given their tag in a string
@@ -245,7 +247,8 @@ def get_abs_id_from_tag(dicts,tag,first_only=True,sort_by_skill=False,leet_sense
 		if len(p_ids) > 1:
 			if sort_by_skill:
 				# sort by s-rank first, elo second
-				p_ids = sorted(p_ids,key=lambda p_id: (skills['srank'][p_id][p_info[p_id]['last_event']],skills['elo'][p_id][p_info[p_id]['last_event']]))
+				#p_ids = sorted(p_ids,key=lambda p_id: (skills['srank'][p_id][p_info[p_id]['last_event']],skills['elo'][p_id][p_info[p_id]['last_event']]))
+				p_ids = sorted(p_ids,key=lambda p_id: (p_info[p_id]['srank_last'],p_info[p_id]['elo']))
 		if first_only:
 			return p_ids[0]
 		else:
@@ -318,6 +321,34 @@ def get_players_by_character(dicts,character):
 	reps = [abs_id for abs_id in p_info if character in p_info['characters']]
 	return reps
 
+def get_character_usage_by_set(dicts,p_set,p_id,char_history={}):
+	tourneys,ids,p_info,records,skills,meta = dicts
+	if 'games' in p_set:
+		chars_used = char_history
+		if chars_used == None:
+			chars_used = {}
+		t_id = p_set['t_id']
+		for game_id in p_set['games']:
+			if 'characters' in p_set['games'][game_id]:
+
+				g_w_id = p_set['games'][game_id]['w_id']
+				g_l_id = p_set['games'][game_id]['l_id']
+
+				if g_w_id is not None and ids['t_'+str(t_id)][g_w_id] == p_id:
+					key_id = g_w_id
+				elif g_l_id is not None and ids['t_'+str(t_id)][g_l_id] == p_id:
+					key_id = g_l_id
+				else:
+					key_id = None
+
+				if key_id is not None:
+					if p_set['games'][game_id]['characters'] != {}:
+						char_id = p_set['games'][game_id]['characters'][key_id]
+						if char_id not in chars_used:
+							chars_used[char_id] = 1
+						else:
+							chars_used[char_id] += 1
+
 # lists all the tourneys in a given year/the entire dataset
 def list_tourneys(dicts,year=None,list_ids=False):
 	tourneys,ids,p_info,records,skills,meta = dicts
@@ -332,27 +363,67 @@ def list_tourneys(dicts,year=None,list_ids=False):
 		else:
 			return [tourneys[t_id]['name'] for t_id in tourneys if t_id != 'slugs' for t_date in tourney[t_id]['date'] if t_date[2] == year]
 
+# gets the sets played by a player at a given tournament
+def get_tournament_sets(dicts,p_id,t_id):
+	tourneys,ids,p_info,records,skills,meta = dicts
+	if t_id is not None:
+		return [sets[set_id] for set_id in records[p_info][set_history] if sets[set_id]['t_id'] == t_id]
+
 ## db_utils helpers
+# updates the main/official ranks for games (PGR, SSBMRank, etc.)
 def update_official_ranks(dicts,game,year,year_half=1,lookback=False):
 	tourneys,ids,p_info,records,skills,meta = dicts
+
+	# get the url slug for this game's ranking // unique cache key
+	rank_name_res = get_rank_name(game,year,year_half)
+	if rank_name_res:
+		rank_name,yearstr = rank_name_res
+	else:
+		return False
+	if game == 3 or game == 2:
+		rank_str = rank_name+yearstr
+	else:
+		rank_str = yearstr+rank_name
 
 	# update the previous year if it wasn't already there (for first import)
 	if lookback:
 		update_official_ranks(dicts,game,year-1,lookback=False)
 	# don't skip over winter-spring PGR
 	if game == 3 and year_half == 1:
-		update_official_ranks(dicts,game,year,year_half=0)
-	# scrape ranks if available
-	scrape_res = scrape_ranks(game,year,year_half)
+		update_official_ranks(dicts,game,year,year_half=0,lookback=False)
+	# load cache if enabled
+	if args.cache_mainranks:
+		rank_cache = load_dict(rank_str,ver=get_db_verstr(),loc='db')
+		if rank_cache:
+			tags = rank_cache['tags']
+			ratings = rank_cache['ratings']
+			yearkey = rank_cache['yearkey']
+			rank_list = rank_cache['p_list']
+			scrape_res = (tags,ratings,yearkey)
+		else:
+			# scrape ranks if available
+			scrape_res = scrape_ranks(game,year,rank_str,yearstr,year_half)
+	else:
+		# scrape ranks if available
+		scrape_res = scrape_ranks(game,year,rank_str,yearstr,year_half)
 	if not scrape_res:
 		return False
 	else:
 		tags,ratings,yearkey = scrape_res
-	if ratings is None:
-		ratings = [None for i in range(len(tags))]
+		if ratings is None:
+			ratings = [None for i in range(len(tags))]
 
-	# populate this ranking in the cache in a nice array format
-	skills['mainrank_readin'][yearkey] = [[i+1,rate_bundle[0],rate_bundle[1],get_abs_id_from_tag(dicts,rate_bundle[0],sort_by_skill=True,leet_sensetive=False)] for i,rate_bundle in enumerate(zip(tags,ratings))]
+	if args.cache_mainranks and rank_cache:
+		skills['mainrank_readin'][yearkey] = [[i+1,rate_bundle[0],rate_bundle[1],rank_list[i]] for i,rate_bundle in enumerate(zip(tags,ratings))]
+	else:
+		# populate this ranking in the cache in a nice array format
+		# attempt to match tags to players in db
+		skills['mainrank_readin'][yearkey] = [[i+1,rate_bundle[0],rate_bundle[1],get_abs_id_from_tag(dicts,rate_bundle[0],sort_by_skill=True,leet_sensetive=False)] for i,rate_bundle in enumerate(zip(tags,ratings))]
+
+		# save rank -> p_id mappings
+		if args.cache_mainranks:
+			p_list = [y_line[3] for y_line in skills['mainrank_readin'][yearkey]]
+			save_dict({'tags':tags,'ratings':ratings,'yearkey':yearkey,'p_list':p_list},rank_str,ver=get_db_verstr(),loc='db')
 
 	# remove all current 'mainranks' in p_info
 	for old_yearkey in skills['mainrank_readin']: # scan *all* previous years just to be safe
@@ -380,9 +451,10 @@ def update_official_ranks(dicts,game,year,year_half=1,lookback=False):
 			skills['mainrank'][p_id][year][yearkey] = [p_rank,p_rating]
 						
 			# p_info is updated to contain the latest ranks
-			p_info[p_id]['mainrank'] = p_rank
+			if p_id in p_info:
+				p_info[p_id]['mainrank'] = p_rank
 
-def update_percentiles(dicts):
+def update_percentiles(dicts,t_id=None):
 	tourneys,ids,p_info,records,skills,meta = dicts
 
 	for skill_key in ['elo','glicko','srank']:
@@ -410,11 +482,48 @@ def update_percentiles(dicts):
 		skillmin = float(p_rank_data[-1][2])
 
 		for p_line in p_rank_data:
+			# store rank
 			p_info[int(p_line[1])][skill_key+'-rnk'] = p_line[0]
+			# store precentile
 			if (skillmax-skillmin) == 0: # if there is no skill range (e.g. srank for first few events of db), hardcode to 0th percentile
 				p_info[int(p_line[1])][skill_key+'-pct'] = 0
 			else:
 				p_info[int(p_line[1])][skill_key+'-pct'] = int(((float(p_line[2])-skillmin)/(skillmax-skillmin))*100)
+
+			# store peak rank/percentile
+			if skill_key+'-rnk_peak' not in p_info[int(p_line[1])]:
+				p_info[int(p_line[1])][skill_key+'-rnk_peak'] = p_info[int(p_line[1])][skill_key+'-rnk']
+			if skill_key+'-pct_peak' not in p_info[int(p_line[1])]:
+				p_info[int(p_line[1])][skill_key+'-pct_peak'] = p_info[int(p_line[1])][skill_key+'-pct']
+			p_info[int(p_line[1])][skill_key+'-rnk_peak'] = min(p_info[int(p_line[1])][skill_key+'-rnk_peak'],9999999);
+			p_info[int(p_line[1])][skill_key+'-pct_peak'] = max(p_info[int(p_line[1])][skill_key+'-pct_peak'],0);
+
+			# store percentile/rank history in skills
+			if t_id:
+				skills[skill_key+'-rnk'][int(p_line[1])] = p_info[int(p_line[1])][skill_key+'-rnk']
+				skills[skill_key+'-pct'][int(p_line[1])] = p_info[int(p_line[1])][skill_key+'-pct']
+
+def update_top_h2h(dicts):
+	tourneys,ids,p_info,records,skills,meta = dicts
+
+	partial_set_list = lambda opp,set_res: [set_id for t_id in records[p_id][set_res][opp] for set_id in records[p_id][set_res][opp][t_id]] if opp in records[p_id][set_res] else []
+	set_list = lambda opp: partial_set_list(opp,'wins') + partial_set_list(opp,'losses')
+	#set_list = lambda opp: [set_data_w for set_data_w in records[p_id]['wins'][opp][t_id] for t_id in records[p_id]['wins'][opp] if opp in records[p_id]['wins'] if t_id in records[p_id]['wins'][opp]]  + \
+	#					   [set_data_l for set_data_l in records[p_id]['losses'][opp][t_id] for t_id in records[p_id]['losses'][opp] if opp in records[p_id]['losses'] if t_id in records[p_id]['losses'][opp]]
+	set_count = lambda opp,set_res: sum([len([set_id for set_id in records[p_id][set_res][opp][t_id]]) for t_id in records[p_id][set_res][opp] if t_id in records[p_id][set_res][opp]]) if opp in records[p_id][set_res] else 0
+	opp_list = lambda player_id: [opp_id_w for opp_id_w in records[player_id]['wins']] + [opp_id_l for opp_id_l in records[player_id]['losses']]
+
+	for p_id in p_info:
+		for nom in [10,100,500]:
+			'''print('H2H')
+			print(p_id)
+			print(records[p_id]['wins'])
+			print(opp_list(p_id))
+			print([set_list(opp) for opp in opp_list(p_id)])
+			print([set_count(opp,'wins') for opp in opp_list(p_id)])'''
+			h2h_list = {opp_id:{'id':opp_id, 'winCount':set_count(opp_id,'wins'), 'lossCount':set_count(opp_id,'losses'), 'sets':set_list(opp_id)} for opp_id in opp_list(p_id) if p_info[opp_id]['srank-rnk'] <= nom}
+
+			records[p_id]['top_'+str(nom)] = h2h_list
 
 # returns the number of times a player [p] used a given character [c] 
 # (by id values)
@@ -443,6 +552,9 @@ def get_social_media(dicts,p_id,getAcctType=True):
 		pfile = urlopen(player_url).read()
 		pdata = json.loads(pfile.decode('UTF-8'))
 		#print('opened file')
+		if args.verbosity >= 6:
+			print('Updating social media for:',p_info[p_id]['tag'],'|',p_id)
+
 		player_data = pdata['entities']['player']
 
 		if getAcctType and 'nameDisplay' in player_data:
@@ -481,13 +593,25 @@ def get_social_media(dicts,p_id,getAcctType=True):
 					if wiki_url is not None:
 						p_ssbwiki = wiki_url
 						break
+		if 'color' in player_data:
+			p_color = player_data['color']
+			if p_color:
+				p_color = p_color[1:]
+		else:
+			p_color = None
 
-		return [p_twitter,p_twitch,p_reddit,p_youtube,p_smashboards,p_ssbwiki,nameDisplay]
+		return {'twitter':p_twitter,'twitch':p_twitch,'reddit':p_reddit,'youtube':p_youtube,'smashboards':p_smashboards,\
+				'ssbwiki':p_ssbwiki,'name_display':nameDisplay,'color':p_color}
 	except HTTPError as e:
 		print('Connection Error::',e)
 		return False
 
-def update_social_media(dicts,p_ids=None,v=0):
+# Imports linked social media accounts and smash.gg palyer acct info that we don't already have
+
+# theoretically could be called at the end of a year instead of each tourney import, but
+# name_display ==> account type is a necessary metric, and since we already make the API
+# call, we might as well import social media too
+def update_social_media(dicts,p_ids=None,v=0,use_cached_accts=args.cache_social_media,save_cached_accts=True):
 	tourneys,ids,p_info,records,skills,meta = dicts
 
 	if p_ids == None:
@@ -497,25 +621,48 @@ def update_social_media(dicts,p_ids=None,v=0):
 	elif type(p_ids) is not list:
 		p_ids = [p_ids]
 
+	# cache is same regardless of db/game/year etc
+	if use_cached_accts:
+		social_dict = load_dict('socials',None,'..\\lib')
+
 	for abs_id in p_ids:
-		if v >= 6:
-			print('Updating social media for:',p_info[abs_id]['tag'],'|',abs_id)
-		#print(abs_id)
-		socials = get_social_media(dicts,abs_id)
+
+		if use_cached_accts:
+			# pull from cache if there
+			if abs_id in social_dict:
+				socials = social_dict[abs_id]
+				if type(socials) is list:
+					socials = get_social_media(dicts,abs_id)
+					social_dict[abs_id] = socials
+			else:
+				# if not, write to cache
+				socials = get_social_media(dicts,abs_id)
+				if socials:
+					social_dict[abs_id] = socials
+		else:
+			socials = get_social_media(dicts,abs_id)
+
 		# if the player doesn't exist (???)
 		if not socials:
 			print('Error: %d (%s) not found on smash.gg player API'%(abs_id,p_info[abs_id]['tag']))
-			return False
-		#print(p_id)
-		p_twitter,p_twitch,p_reddit,p_youtube,p_smashboards,p_ssbwiki,p_display = socials
-		p_info[abs_id]['twitter'] = p_twitter
-		p_info[abs_id]['twitch'] = p_twitch
-		p_info[abs_id]['reddit'] = p_reddit
-		p_info[abs_id]['youtube'] = p_youtube
-		p_info[abs_id]['smashboards'] = p_smashboards
-		p_info[abs_id]['ssbwiki'] = p_ssbwiki
-		p_info[abs_id]['discord'] = None
-		p_info[abs_id]['name_display'] = p_display
+		else:
+			#print(p_id)
+			for s_key in ['twitter','twitch','reddit','youtube','smashboards','ssbwiki','discord','name_display','color']:
+				if s_key in socials:
+					p_info[abs_id][s_key] = socials[s_key]
+
+	# save updated cache
+	if use_cached_accts and save_cached_accts:
+		save_dict(social_dict,'socials',None,'..\\lib')
+
+# labels retired/banned players, to filter them out
+def handle_player_status(p_id,activity='active'):
+	if p_id in [6189]:
+		return 'retired'
+	elif p_id in []:
+		return 'banned'
+	else:
+		return activity
 
 # print (filtered) results for a given tourney
 def print_result(dicts,t_id,res_filt=None,max_place=64):
@@ -734,7 +881,7 @@ def old_print_event(dicts,t_id,max_place=64,translate_cjk=True):
 	player_teams = [p_info[p_id]['team'] for p_id in player_ids]
 	player_tags = [p_info[p_id]['tag'] for p_id in player_ids]
 	player_paths = [records[p_id]['paths'][t_id] for p_id in player_ids]
-	player_places = [records[p_id]['placings'][t_id] for p_id in player_ids]
+	player_places = [records[p_id]['placings'][t_id]['placing'] for p_id in player_ids]
 	player_losses = []
 	for p_id in player_ids:
 		temp = []

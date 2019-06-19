@@ -20,11 +20,6 @@ from arg_utils import *
 
 ## OVERHEAD FUNCTIONS
 
-# generates files necessary for a clean install // establishes necessary directories
-# WIP
-def setup_dirs():
-	return None
-
 ## AUXILIARY FUNCTIONS
 # returns the full slug (needed to pull tourney data) given the short slug
 def get_slug(ss):
@@ -276,7 +271,7 @@ def load_dict(name,ver,loc='db'):
 			#t['groups'] = {}
 			save_dict(t,name,ver,loc)
 			return t
-		if name == 'meta':
+		elif name == 'meta':
 			m = {}
 			m['slugs'] = {}
 			save_dict(m,name,ver,loc)
@@ -472,7 +467,7 @@ def print_results(res,names,entrants,losses,characters,game=1,max_place=64,trans
 	maxlen = 0
 
 	res_l = [item for item in res.items()]
-	res_s = sorted(res_l, key=lambda l: (0-l[1][0],len(l[1][1])), reverse=True)
+	res_s = sorted(res_l, key=lambda l: (0-l[1]['placing'],len(l[1]['path'])), reverse=True)
 
 	chardict = load_dict('characters',None,loc='../lib')
 	chardict = chardict[game]
@@ -485,9 +480,9 @@ def print_results(res,names,entrants,losses,characters,game=1,max_place=64,trans
 	team_mult = max([len(names[plyr[0]][1]) for plyr in res_s])
 	#print(team_mult,names[res_s[0][0]])
 
-	num_rounds = len(res_s[0][1][1])
+	num_rounds = len(res_s[0][1]['path'])
 	#lsbuff = '\t'*(num_rounds-len(res_s[-1][1][1])+1)
-	roundnames = [names['groups'][group] for group in res_s[0][1][1]]
+	roundnames = [names['groups'][group] for group in res_s[0][1]['path']]
 	roundslen = sum([len(str(name)) for name in roundnames]) + 2*num_rounds
 	sp_slot = 13*team_mult
 	tag_slot = 24*team_mult
@@ -506,7 +501,7 @@ def print_results(res,names,entrants,losses,characters,game=1,max_place=64,trans
 		#else:
 		#	team = team_s
 		#for player in team:
-		if player[1][0] > max_place and max_place > 0:
+		if player[1]['placing'] > max_place and max_place > 0:
 			break
 		else:
 			playerstrings = []
@@ -586,15 +581,15 @@ def print_results(res,names,entrants,losses,characters,game=1,max_place=64,trans
 			#	lsbuff = '\t\t\t'
 			if len(playerstrings) == 1: #or len(playerstrings) >= 4:
 				print(('{:>%d.%d}'%(sp_slot,sp_slot)).format(sp),('{:<%d.%d}'%(tag_slot,tag_slot)).format(tag),('{:>%d.%d}'%(8*team_mult,8*team_mult)).format(' / '.join(str(n) for n in entrants[player[0]][1])), \
-				'  {:<5.5}'.format(str(player[1][0])),('{:<%d.%d}'%(roundslen+5,roundslen+5)).format('['+', '.join(str(i) for i in [names['groups'][group] for group in player[1][1]])+']'),'{:<16.16}'.format(main_str),ls)
+				'  {:<5.5}'.format(str(player[1]['placing'])),('{:<%d.%d}'%(roundslen+5,roundslen+5)).format('['+', '.join(str(i) for i in [names['groups'][group] for group in player[1]['path']])+']'),'{:<16.16}'.format(main_str),ls)
 			elif len(playerstrings) >= 4: #or len(playerstrings) >= 4:
 				team_name = entrants[player[0]][0][2]
 				print(('{:<%d.%d}'%(tag_slot,tag_slot)).format(team_name),('{:>%d.%d}'%(8*team_mult,8*team_mult)).format(' / '.join(str(n) for n in entrants[player[0]][1])), \
-				'  {:<5.5}'.format(str(player[1][0])),('{:<%d.%d}'%(roundslen+5,roundslen+5)).format('['+', '.join(str(i) for i in [names['groups'][group] for group in player[1][1]])+']'),ls)
+				'  {:<5.5}'.format(str(player[1]['placing'])),('{:<%d.%d}'%(roundslen+5,roundslen+5)).format('['+', '.join(str(i) for i in [names['groups'][group] for group in player[1]['path']])+']'),ls)
 			else:
 				print(('{:<%d.%d}'%(team_mult*(sp_slot+tag_slot),team_mult*(sp_slot+tag_slot))).format(' & '.join(('{:<%d.%d}'%(sp_slot+tag_slot,sp_slot+tag_slot)).format(('{:>%d.%d}'%(sp_slot,sp_slot)).format(sp)+' '+('{:<%d.%d}'%(tag_slot,tag_slot)).format(tag)) for sp,tag in playerstrings)), \
 					('{:>%d.%d}'%(8*team_mult,8*team_mult)).format('/'.join(str(n) for n in entrants[player[0]][1])), \
-				'  {:<5.5}'.format(str(player[1][0])),('{:<%d.%d}'%(roundslen+5,roundslen+5)).format('['+', '.join(str(i) for i in [names['groups'][group] for group in player[1][1]])+']'),ls)
+				'  {:<5.5}'.format(str(player[1]['placing'])),('{:<%d.%d}'%(roundslen+5,roundslen+5)).format('['+', '.join(str(i) for i in [names['groups'][group] for group in player[1]['path']])+']'),ls)
 
 	return res_s
 
@@ -603,6 +598,8 @@ if __name__ == '__main__':
 	#print(save_stock_icons(1386))
 	#write_blank_dict('meta')
 
-	save_videogame_dicts()
-	save_character_dicts()
-	save_stock_icons()
+	clean_data('./old/sns5setsraw.txt','./old/sns5setsclean.txt')
+
+	#save_videogame_dicts()
+	#save_character_dicts()
+	#save_stock_icons()

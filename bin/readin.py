@@ -67,7 +67,14 @@ def readin(tourney,t_type='slug'):
 		print('Error: invalid tourney identifier type')
 		return None
 
-	if slug == 'we-tech-those-3':
+	# PM Pools have a db breaking bug
+	if slug == 'we-tech-those-3' and game == 2:
+		return None
+	# Ultimate Pools have a db breaking bug
+	if slug == 'the-kid-the-goat-and-the-mang0' and game == 1386:
+		return None
+	# Filter out EVO 2016 Melee Doubles when not applicable
+	if slug == 'evo-2016-melee-doubles' and args.teamsize != 2:
 		return None
 
 	if v >= 2 and v < 4:
@@ -76,14 +83,14 @@ def readin(tourney,t_type='slug'):
 	out = read_phases(slug)
 
 	if out:
-		t,ps,pdata = out
-		t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_images,t_coords = t
-		es,ws,ls,rs,ns,ms = read_groups(t_id,ps,pdata)
+		t,gs,pdata,gdata = out
+		t_id,t_name,t_slug,t_ss,t_type,t_date,t_sdate,t_region,t_images,t_coords,t_bracket,t_social = t
+		es,ws,ls,rs,ns,ms = read_groups(t_id,gs,pdata)
 
 		if v >= 2 and v < 4:
 			print('{:.3f}'.format(timer()-start) + ' s')
 
-		t = (t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,len(es.keys()),t_images,t_coords)
+		t = (t_id,t_name,t_slug,t_ss,t_type,t_date,t_sdate,t_region,len(es.keys()),t_images,t_coords,t_bracket,t_social)
 		if print_res:
 			print_results(rs,ns,es,ls,ms,game=game,max_place=disp_num)
 		return t,es,ns,rs,ws,ls,ms
@@ -95,7 +102,7 @@ def set_readin_args(r_args):
 	# verbosity for save/load statements
 	lv = 6
 	save_res = r_args.save
-	load_res = r_args.load
+	load_res = r_args.cache_results
 	force_first_event = r_args.force_first
 	teamsize = int(r_args.teamsize)
 	game = int(r_args.game)
@@ -150,8 +157,8 @@ def read_groups(t_id,groups,phase_data,translate_cjk=True):
 				data = json.loads(pull_phase(group))
 
 			wave_id = data['entities']['groups']['phaseId']
-			is_exhibition = phase_data[wave_id][5]
-			phasename = phase_data[wave_id][0]
+			is_exhibition = phase_data[wave_id]['isExhibition']
+			phasename = phase_data[wave_id]['name']
 			groupname = data['entities']['groups']['displayIdentifier']
 			if translate_cjk:
 				if has_cjk(groupname):
@@ -192,6 +199,12 @@ def read_groups(t_id,groups,phase_data,translate_cjk=True):
 
 					if v >= 4:
 						print('{:.0f}'.format(1000*(timer()-pstart)) + ' ms')
+				else:
+					if v >= 6:
+						print('Ignoring %s | %s | %d: is Amateur/Arcadian'%(phasename,groupname,group))
+			else:
+				if v >= 6:
+					print('Ignoring %s | %s | %d: isExhibition'%(phasename,groupname,group))
 		# sort paths according to proper bracket structure
 		#for e_id in paths:
 
@@ -202,13 +215,13 @@ def read_entrants(data,phase_data,entrants,names,xpath):
 	group = data['entities']['groups']['id']
 	wave_id = data['entities']['groups']['phaseId']
 
-	phasename = phase_data[wave_id][0]
+	phasename = phase_data[wave_id]['name']
 	groupname = data['entities']['groups']['displayIdentifier']
-	num_groups = phase_data[wave_id][1]
-	phaseorder = phase_data[wave_id][2]
+	num_groups = phase_data[wave_id]['groupCount']
+	phaseorder = phase_data[wave_id]['phaseOrder']
 
 	# if not an exhibition wave
-	if not phase_data[wave_id][5]:
+	if not phase_data[wave_id]['isExhibition']:
 		if 'groups' not in names:
 			names['groups'] = {}
 		if str(groupname) == "1" and num_groups <= 1:
@@ -223,11 +236,13 @@ def read_entrants(data,phase_data,entrants,names,xpath):
 
 		for x in seedata:
 			e_id,abs_id,tag,prefix,metainfo,team_name = read_names(x)
+			#print(e_id,'|',abs_id,'|',tag,'|',prefix,'|',metainfo,'|',team_name)
 			#if type(abs_id) is list:
 			names[e_id] = (prefix,tag,team_name)
 			#else:
 			#	names[e_id] = [(pr,tg) for pr,tg in zip(prefix,tag)]
 
+			# store bracket placing/results
 			res = [x['placement']]
 			if v >= 8:
 				print(e_id,tag)
@@ -236,20 +251,23 @@ def read_entrants(data,phase_data,entrants,names,xpath):
 
 			if e_id in xpath:
 				if v >= 9:
-					print(xpath[e_id][1])
-				xpath[e_id][0] = res
-				xpath[e_id][1].extend([group])
+					print(xpath[e_id]['path'])
+				xpath[e_id]['placing'] = res
+				xpath[e_id]['path'].extend([group])
 			else:
-				xpath[e_id] = [res,[group]]
+				xpath[e_id] = {'placing':res, 'path':[group], 'seed':x['seedNum']}
 
-			#entrants[i] = (names[i], player_id[i])
-			player_images = x['mutations']['players'][str(abs_id[0])]['images']
-			propic = None
-			if len(player_images) >= 0:
-				for p_image in player_images:
-					if p_image['type'] == 'profile':
-						if p_image['height'] == 100:
-							propic = p_image['url']
+			# store player image metadata
+			if len(abs_id) >= 1:
+				player_images = x['mutations']['players'][str(abs_id[0])]['images']
+				propic = None
+				if len(player_images) >= 0:
+					for p_image in player_images:
+						if p_image['type'] == 'profile':
+							if p_image['height'] == 100:
+								propic = p_image['url']
+				else:
+					propic = None
 			else:
 				propic = None
 
@@ -320,7 +338,7 @@ def read_sets(data,phase_data,wins,losses,xpath,sets):
 	#print(phase_data)
 	#print(group)
 	wave_data = phase_data[data['entities']['groups']['phaseId']]
-	grp_count = wave_data[1]
+	grp_count = wave_data['groupCount']
 	if setdata != []:
 		grp_num_prog = data['entities']['groups']['numProgressing']
 
@@ -353,7 +371,7 @@ def read_sets(data,phase_data,wins,losses,xpath,sets):
 		sets[set_id]['l_id'] = l_id
 		sets[set_id]['w_dq'] = w_DQ
 		sets[set_id]['l_dq'] = l_DQ
-		sets[set_id]['t_id'] = wave_data[6]
+		sets[set_id]['t_id'] = wave_data['tourney']
 		sets[set_id]['w_placement'] = match['wOverallPlacement']
 		sets[set_id]['l_placement'] = match['lOverallPlacement']
 		sets[set_id]['is_winners'] = match['round'] > 0
@@ -363,8 +381,10 @@ def read_sets(data,phase_data,wins,losses,xpath,sets):
 		sets[set_id]['round_text_short'] = match['shortRoundText']
 		# not sure which one of these matters
 		sets[set_id]['bestOf'] = match['bestOf']
-		sets[set_id]['bestOf'] = match['totalGames']
+		#sets[set_id]['bestOf'] = match['totalGames']
 		#sets[set_id]['games'] = None
+		if v >= 8:
+			print(sets[set_id])
 
 		if not is_bye:
 			# populate character data if available
@@ -421,29 +441,29 @@ def read_sets(data,phase_data,wins,losses,xpath,sets):
 
 			# update final placement if it is further than their current one (people can't regress in bracket except for in GF)
 			if not match['wOverallPlacement'] == None:
-				if type(xpath[w_id][0]) is list:
-					xpath[w_id][0] = match['wOverallPlacement']
-				elif match['wOverallPlacement'] < xpath[w_id][0] or match['isGF']:
-					xpath[w_id][0] = match['wOverallPlacement']
+				if type(xpath[w_id]['placing']) is list:
+					xpath[w_id]['placing'] = match['wOverallPlacement']
+				elif match['wOverallPlacement'] < xpath[w_id]['placing'] or match['isGF']:
+					xpath[w_id]['placing'] = match['wOverallPlacement']
 			elif not match['wPlacement'] == None:
-				if type(xpath[w_id][0]) is list:
-					xpath[w_id][0] = match['wPlacement']
-				elif match['wPlacement'] < xpath[w_id][0] or match['isGF']:
-					xpath[w_id][0] = match['wPlacement']
+				if type(xpath[w_id]['placing']) is list:
+					xpath[w_id]['placing'] = match['wPlacement']
+				elif match['wPlacement'] < xpath[w_id]['placing'] or match['isGF']:
+					xpath[w_id]['placing'] = match['wPlacement']
 			else:
 				if v >= 7:
 					print('Error: Could not update winner placement (%d)'%w_id)
 
 			if not match['lOverallPlacement'] == None:
-				if type(xpath[l_id][0]) is list:
-					xpath[l_id][0] = match['lOverallPlacement']
-				elif match['lOverallPlacement'] < xpath[l_id][0] or match['isGF']:
-					xpath[l_id][0] = match['lOverallPlacement']
+				if type(xpath[l_id]['placing']) is list:
+					xpath[l_id]['placing'] = match['lOverallPlacement']
+				elif match['lOverallPlacement'] < xpath[l_id]['placing'] or match['isGF']:
+					xpath[l_id]['placing'] = match['lOverallPlacement']
 			elif not match['lPlacement'] == None:
-				if type(xpath[l_id][0]) is list:
-					xpath[l_id][0] = match['lPlacement']
-				elif match['lPlacement'] < xpath[l_id][0] or match['isGF']:
-					xpath[l_id][0] = match['lPlacement']
+				if type(xpath[l_id]['placing']) is list:
+					xpath[l_id]['placing'] = match['lPlacement']
+				elif match['lPlacement'] < xpath[l_id]['placing'] or match['isGF']:
+					xpath[l_id]['placing'] = match['lPlacement']
 			else:
 				if v >= 7:
 					print('Error: Could not update loser placement (%d)'%l_id)
@@ -452,15 +472,15 @@ def read_sets(data,phase_data,wins,losses,xpath,sets):
 				print(set_id,match['phaseGroupId'],match['identifier'],['bye','bye'],[e1,e2])
 
 	# populate overall final bracket placements if not already provided
-	for x_id in sorted([x['entrantId'] for x in data['entities']['seeds'] if type(xpath[x['entrantId']][0]) is list],key=lambda p_id: xpath[p_id][0][0]):
-		if type(xpath[x_id][0]) is list:
-			pool_place = xpath[x_id][0][0]
+	for x_id in sorted([x['entrantId'] for x in data['entities']['seeds'] if type(xpath[x['entrantId']]['placing']) is list],key=lambda p_id: xpath[p_id]['placing'][0]):
+		if type(xpath[x_id]['placing']) is list:
+			pool_place = xpath[x_id]['placing'][0]
 
 			spots_missed = max((pool_place-grp_num_prog)-1,0)
 			people_missed = grp_num_prog*grp_count
 
 			final_place = 1 + people_missed + spots_missed*grp_count
-			xpath[x_id][0] = final_place
+			xpath[x_id]['placing'] = final_place
 
 	return wins,losses,xpath,sets
 
@@ -484,10 +504,17 @@ def read_phases(tourney):
 		t_type = tdata['entities']['tournament']['tournamentType']
 		# date tuple in (year, month, day) format
 		t_date = time.localtime(tdata['entities']['tournament']['endAt'])[:3]
+		t_startdate = time.localtime(tdata['entities']['tournament']['startAt'])[:3]
 		t_region = (tdata['entities']['tournament']['addrState'],tdata['entities']['tournament']['countryCode'])
 		# 2-length list with the urls for the first profile image and banner images found (for the tourney)
 		t_propic = [img['url'] for img in tdata['entities']['tournament']['images'] if img['type'] == 'profile']
 		t_coords = [tdata['entities']['tournament']['lat'],tdata['entities']['tournament']['lng']]
+		# social media/contact info
+		t_email = tdata['entities']['tournament']['contactEmail']
+		t_twitter = tdata['entities']['tournament']['contactTwitter']
+		t_hashtag = tdata['entities']['tournament']['hashtag']
+		t_social = (t_email,t_twitter,t_hashtag)
+
 		if len(t_propic)>0:
 			t_propic = t_propic[0]
 		else:
@@ -498,7 +525,6 @@ def read_phases(tourney):
 		else:
 			t_bannerpic = None
 		t_images = [t_propic,t_bannerpic]
-		t_info = (t_id,t_name,t_slug,t_ss,t_type,t_date,t_region,t_images,t_coords)
 
 		if v >= 1:
 			print('Reading tournament: %s | %d'%(t_name,t_id))
@@ -582,19 +608,38 @@ def read_phases(tourney):
 		phase_ids = [phase['id'] for phase in tdata['entities']['phase'] if phase['eventId'] in event_ids]
 		# get all groups (pools) for each phase
 		group_ids = [(group['id'],group['phaseId']) for group in tdata['entities']['groups'] if group['phaseId'] in phase_ids]
+		groups = {group['id']:{keystr:group[keystr] if keystr in group else None \
+					for keystr in ['id','phaseId','groupTypeId','numRounds','numProgressing','identifier','displayIdentifier','state','winnersTargetPhaseId','losersTargetPhaseId']} \
+					for group in tdata['entities']['groups'] if group['phaseId'] in phase_ids}
 
 		for w in tdata['entities']['phase']:
 			if w['id'] not in waves:
-				waves[w['id']] = [w['name'],w['groupCount'],w['phaseOrder'],w['eventId'],w['typeId'],w['isExhibition'],t_id]
+				waves[w['id']] = {'id':w['id'], 'name': w['name'], 'groupCount':w['groupCount'], 'phaseOrder':w['phaseOrder'],\
+								  'eventId':w['eventId'], 'typeId':w['typeId'], 'isExhibition':w['isExhibition'], 'tourney':t_id}
 		# sort groups to be read in proper bracket structure order		
-		group_ids = sorted(group_ids,key=lambda l: waves[l[1]][2])
+		group_ids = sorted(group_ids,key=lambda l: waves[l[1]]['phaseOrder'])
 		group_ids = [group_id[0] for group_id in group_ids]
 		#print(t_id)
-		#print(event_ids)
-		#print(phase_ids)
-		#print(group_ids)
+		if v >= 6:
+			tdata_dict = {'events':{event_data['id']:event_data for event_data in tdata['entities']['event'] if event_data['id'] in event_ids},\
+						'phases':{phase_data['id']:phase_data for phase_data in tdata['entities']['phase'] if phase_data['id'] in phase_ids},\
+						'groups':{group_data['id']:group_data for group_data in tdata['entities']['groups'] if group_data['id'] in group_ids}}
+			print('Events')
+			for event_id in event_ids:
+				print('\t',event_id,'|',tdata_dict['events'][event_id]['name'])
+			print('Phases')
+			for phase_id in phase_ids:
+				phase_event_id = tdata_dict['phases'][phase_id]['eventId']
+				print('\t',phase_id,'|',tdata_dict['phases'][phase_id]['name'],'(',tdata_dict['events'][phase_event_id]['name'],')')
+			print('Groups')
+			for group_id in group_ids:
+				group_phase_id = tdata_dict['groups'][group_id]['phaseId']
+				group_event_id = tdata_dict['phases'][group_phase_id]['eventId']
+				print('\t',group_id,'|',tdata_dict['groups'][group_id]['displayIdentifier'],'(',tdata_dict['events'][group_event_id]['name'],'>',tdata_dict['phases'][group_phase_id]['name'],')')
+		t_bracket = {'events':event_ids, 'phases':waves, 'groups':groups}
 		
-		return (t_info,group_ids,waves)
+		t_info = (t_id,t_name,t_slug,t_ss,t_type,t_date,t_startdate,t_region,t_images,t_coords,t_bracket,t_social)
+		return (t_info,group_ids,waves,groups)
 
 	except HTTPError:
 		print('Error 404: tourney [%s] not found'%tourney)

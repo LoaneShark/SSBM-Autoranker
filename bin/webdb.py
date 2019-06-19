@@ -14,7 +14,7 @@ def main():
 	return True
 
 # update firebase db by setting all values to local db, for a given game/year/count
-def update_db(dicts,db_key,force_update=False,new_db=False):
+def update_db(dicts,db_key,force_update=False,new_db=False,make_searchbar=args.pregenerate_website_searchbar):
 	print('----------------------')
 	tourneys,ids,p_info,records,skills,meta = dicts
 	# load sets from db and add them to 'dicts'
@@ -25,6 +25,8 @@ def update_db(dicts,db_key,force_update=False,new_db=False):
 	sets = easy_load_db_sets(ver=str(split_key[0])+'/'+str(split_key[1])+yc_str)
 	dicts = (tourneys,ids,p_info,records,skills,meta,sets)
 
+	if make_searchbar:
+		generate_db_searchbar(dicts)
 	# open db
 	db = get_db_reference()
 	game_db = db.child(db_key)
@@ -43,6 +45,10 @@ def update_db(dicts,db_key,force_update=False,new_db=False):
 	# add directories for all the major information dicts
 	for dictname,dictdata in zip(['tourneys','ids','p_info','records','skills','meta','sets'],dicts):
 		print('pushing...',dictname)
+
+		if dictname == 'tourneys' and not is_clean_dict(dictdata,print_errs=False):
+			clean_tourneys(dictdata)
+
 		sub_db = game_db.child(dictname)
 		# import dict data to firebase db
 		if sub_db.get() is None or force_update:
@@ -99,7 +105,7 @@ def get_db_reference():
 	return fdb.reference(url='https://smashranks-db.firebaseio.com')
 
 # scans a dict and returns true if no numpy objects are stored
-def is_clean_dict(e_dict,e_key=None):
+def is_clean_dict(e_dict,e_key=None,print_errs=True):
 	if type(e_dict) is dict:
 		return all([is_clean_dict(e_dict[key],key) if type(key) in [str,int,float,list,tuple,None,type(None),datetime.date] else False for key in e_dict])
 	# base case
@@ -107,8 +113,9 @@ def is_clean_dict(e_dict,e_key=None):
 		if type(e_dict) in [str,int,float,list,tuple,None,type(None),bool,datetime.date]:
 			return True
 		else:
-			print('e_key:',e_key,'||','value:',type(e_dict))
-			print(e_dict)
+			if print_errs:
+				print('e_key:',e_key,'||','value:',type(e_dict))
+				print(e_dict)
 			return False
 
 # uploads a dict by chunks, in the event that it's too big to be pushed all at once
@@ -130,12 +137,38 @@ def batch_upload(big_dict,sub_db_ref,batch_size=500):
 
 		sub_db_ref.update(upload_dict)
 
+def generate_db_searchbar(dicts):
+	tourneys,ids,p_info,records,skills,meta = dicts
+
+	sbar = []
+	for p_id in p_info:
+		sbar.append({'name':p_info[p_id]['tag'],'id':p_id,'index':p_info[p_id]['srank-rnk_peak'],\
+					 'team':p_info[p_id]['team'],'fullname':p_info[p_id]['firstname']+' '+p_info[p_id]['lastname'],\
+					 'aliases':p_info[p_id]['aliases'],'region':p_info[p_id]['region'][2],'main':p_info[p_id]['main']})
+
+	sb_filename = '../docs/assets/js/prefetch'+generate_db_str()+'_prefetch.json'
+	with open(sb_filename,'w') as sb_file:
+		json.dump(sbar,sb_file)
+
+def clean_tourneys(t_dict):
+
+	print('Cleaning tourney scores...')
+	for t_id in t_dict:
+		if type(t_id) is not str and 'sigmoid' in t_dict[t_id]:
+			t_dict[t_id]['sigmoid'] = list(t_dict[t_id]['sigmoid'])
+		if type(t_id) is not str and 'rating' in t_dict[t_id]:
+			t_dict[t_id]['rating'] = float(t_dict[t_id]['rating'])
+
 if __name__ == '__main__':
+
+
 
 	#for user in auth.list_users().iterate_all():
 	#	print('User: ' + user.uid)
-	curr_db = get_db_reference()
-	for game in [1,2,3,4,5,1386]:
-		print(delete_sub_db(curr_db,game,2018,0))
-		print(delete_sub_db(curr_db,game,2018,1))
-		print(delete_sub_db(curr_db,game,2018,1,True))
+
+	if False:
+		curr_db = get_db_reference()
+		for game in [1,2,3,4,5,1386]:
+			#print(delete_sub_db(curr_db,game,2018,0))
+			#print(delete_sub_db(curr_db,game,2018,1))
+			print(delete_sub_db(curr_db,game,2016,3))
