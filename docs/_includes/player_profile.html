@@ -21,7 +21,7 @@
 				</div>
 				<div class="p-2 d-flex flex-grow-1 flex-row justify-content-center" id="player_tag_div">
 					<h1 id="player_team"></h1>
-					<h1 class="display-4" id="player_tag"></h1>
+					<h1 class="display-4 text-tag" id="player_tag"></h1>
 				</div>	
 				<div class="p-4 d-flex flex-column col-2 justify-content-end shadow invisible" id="player_region_div">
 					<p class="text-muted text-center small font-italic">
@@ -132,11 +132,11 @@
 				</a>
 			</div> <!-- skills -->
 			<div class="btn-group" role="group" aria-label="H2H at a glance" id="player_h2h_div">
-				<a class="btn btn-default" href="#top10_chart_container" data-toggle="collapse" role="button" aria-expanded="false" aria-controls="top-10-button" id="top10_h2h_div">
+				<a class="btn btn-default disabled" href="#top10_chart_container" data-toggle="collapse" role="button" aria-expanded="false" aria-controls="top-10-button" id="top10_h2h_div">
 					<p class="text-muted text-center font-italic">vs. Top 10 </p>
 					<p class="lead text-center" id="top10_h2h"></p>
 				</a>
-				<a class="btn" href="#top100_chart_container" data-toggle="collapse" role="button" aria-expanded="false" aria-controls="top-100-button" id="top100_h2h_div">
+				<a class="btn disabled" href="#top100_chart_container" data-toggle="collapse" role="button" aria-expanded="false" aria-controls="top-100-button" id="top100_h2h_div">
 					<p class="text-muted text-center font-italic">vs. Top 100 </p>
 					<p class="lead text-center" id="top100_h2h"></p>
 				</a>
@@ -152,7 +152,7 @@
 			<div class="text-muted small font-italic font-weight-light text-center" id="glicko_trophy" style="padding:0px;margin:0px;"></div>
 			<div class="text-muted small font-italic font-weight-light text-center" id="srank_trophy" style="padding:0px;margin:0px;"></div>
 			<div class="flex-grow-1 text-muted small font-italic font-weight-light" style="padding:0px;margin:0px;"></div>
-			<div class="col-2 text-muted small font-italic font-weight-light text-right" id="today_date" style="padding:0px;margin:0px;"></div>
+			<div class="col-2 text-muted small font-italic font-weight-light text-right" id="db_date" style="padding:0px;margin:0px;"></div>
 		</div> <!-- trophy case // date marker -->
 		<!-- data chart -->
 		<div id="mainrank_chart_container" class="chart-container collapse" style="position: relative;">

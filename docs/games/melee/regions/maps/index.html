@@ -4,8 +4,8 @@ game: Melee
 layout: pretty
 ---
 {% include region_css.html %}
-{% include region_maps.html %}
 
+{% include region_maps.html %}
 
 {% include region_scripts.html %}
 {% include firebase_scripts.html %}
@@ -14,8 +14,14 @@ layout: pretty
 <script type="text/javascript" src="/assets/js/region_utils.js"></script>
 <!--<script type="text/javascript" src="/assets/js/finch.min.js"></script>-->
 <script>
+
+	var gameId = getGameId("{{page.game}}");
+	var gameTitle = "{{page.game}}";
+	// get current year for db lookups
+	var currYear = new Date().getFullYear();
+
 	$().ready(function(){
-		generatePlayerMap();
+		generatePlayerMap(gameId);
 		generateRegionMap('NA');
 	});
 

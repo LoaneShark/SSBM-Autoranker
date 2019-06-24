@@ -1,0 +1,211 @@
+
+<link href="/assets/css/flags.css" rel=stylesheet type="text/css" defer>
+<link href="/assets/css/typeahead_bootstrap.css" rel="stylesheet" type="text/css" defer>
+<style>
+	.btn[aria-expanded="true"]{
+		font-weight: 600;
+	}
+</style>
+
+
+<!-- Searchbar -->
+<div class="container-fluid" style="padding:8px;">
+    <div class="row">
+        <form class="col-md-6 py-2">
+            <!--<h5>Player Search</h5>-->
+            <div class="input-group" id="event_searchbar">
+                <input type="text" class="form-control typeahead border border-secondary" id="query" placeholder="Search..." data-provide="typeahead" autocomplete="on">
+                <div class="input-group-append">
+                    <button type="submit" class="btn btn-outline-secondary">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Event Info -->
+
+<div class="container invisible border rounded border-sr-primary" id="event_container">
+	<div class="p-2 d-flex float-right" style="height:30px;width:36px;" id="game_icon_div"></div>
+	<div class="invisible">&nbsp;</div>
+
+	<!-- event name & link -->
+	<div class="d-flex flex-row" id="event_header_div">
+		<div class="flex-column col-2" id="event_propic_div">
+			
+		</div>
+		<div class="flex-column col-10" id="event_name_div">
+			<div class="flex-row row-10">
+				<span class="display-4" id="event_name"></span>
+			</div>
+			<div class="flex-row row-2">
+				<span id="event_smashgg_link"></span>
+			</div>
+		</div>
+	</div>
+	<div class="invisible">&nbsp;</div>
+	<!-- event primary info -->
+	<div class="d-flex flex-row justify-content-between" id="event_primary_info_div">
+		<div class="col" id="numEntrants_div">
+			<p id="numEntrants"></p>
+		</div>
+		<div class="col" id="event_region_div">
+			<p id="event_region"></p>
+		</div>
+		<div class="col" id="event_date_div">
+			<p id="event_date"></p>
+		</div>
+		<div class="col" id="event_status_div">
+			<p id="event_status"></p>
+		</div>
+	</div>
+	<!-- event secondary info (disabled for now)-->
+	<div class="d-flex flex-row justify-content-between invisible" id="event_secondary_info_div">
+		<div class="col" id="event_class_div">
+			<p id="event_class"></p>
+		</div>
+		<div class="col" id="event_games_div">
+			<p id="event_games"></p>
+		</div>
+	</div>
+
+	<!-- line break -->
+	<hr class="my-4" style="padding:0px;">
+
+	<!-- top 64 results -->
+	<p class="h3 text-sr-dark">Top 64 Results</p>
+	<div id="event_results_div">
+	</div>
+
+	<!-- line break -->
+	<hr class="my-4" style="padding:0px;">
+
+	<!-- bracket structure -->
+	<p class="h3 text-sr-dark">Bracket [WIP]</p>
+	<div id="event_bracket_div">
+
+</div>
+
+<!-- Warning Display -->
+<div id="warning_div" class="invisible">
+	Warning! Event not found in DB: <span id="warning_div_tourneyId" class="text-sr-primary font-weight-bold"></span>
+</div>
+
+
+{% include firebase_scripts.html %}
+{% include datatables_scripts.html %}
+<script type="text/javascript" src="/assets/js/finch.min.js"></script>
+<script type="text/javascript" src="/assets/js/typeahead.bundle.js"></script>
+<script type="text/javascript" src="/assets/js/misc_utils.js"></script>
+<!--<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.bundle.min.js" async></script>-->
+<!--<script type="text/javascript" src="/assets/js/graph_utils.js"></script>-->
+<script type="text/javascript" src="/assets/js/region_utils.js"></script>
+<script type="text/javascript" src="/assets/js/event_utils.js"></script>
+<!--<script type="text/javascript" src="/assets/js/player_utils.js"></script>-->
+
+<!-- Searchbar -->
+<script>
+  $('.typeahead').bind('typeahead:select', function(ev, suggestion) {
+    Finch.navigate(''+suggestion.id);
+  });
+
+  // add searchbar
+  var gameId = getGameId('{{page.game}}');
+  createTournamentSearchbar(gameId);
+</script>
+
+<!-- Event Breakdown -->
+<script>
+  var currentDB = true;
+
+  Finch.route('/', function(bindings){
+    console.log('No event selected');
+    $('#event_container').addClass('invisible');
+    $('#warning_div').addClass('invisible');
+  });
+  Finch.route('/:t_id', function(bindings){
+    console.log('Loading event page: '+bindings.t_id);
+    // draw player profile segment
+
+    $('#warning_div_tourneyId').html(bindings.t_id)
+
+    var tourneyId = bindings.t_id;
+    var gameId = getGameId('{{page.game}}');
+    var curr_year = new Date().getFullYear();
+    $('#game_icon_div').html('<img src="'+getGameIconPath(gameId)+'" alt="'+gameId+'" style="width:20px;height:20px;">');
+
+    // query db and populate breakdown
+    if (currentDB){
+      var tourneys_ref_str = '/'+gameId+'_2016_'+(curr_year-2016)+'_c/tourneys/'
+    } else {
+      var tourneys_ref_str = '/'+gameId+'_2018_1/tourneys/';
+    }
+    var event_ref_str = tourneys_ref_str+tourneyId;
+    var event_ref = firebase.database().ref(event_ref_str);
+    var event_query = event_ref.once('value').then(function(EventSnapshot) {
+      if (EventSnapshot.exists()) {
+        $('#warning_div').addClass('invisible');
+        $('#event_container').removeClass('invisible');
+
+        // populate header info
+        populatePrimaryEventInfo(EventSnapshot);
+
+	    // top 64 results
+	    //top64 = getEventResults(EventSnapshot,gameId,tourneyId,64);
+	    top64 = getEventResults(EventSnapshot,gameId,tourneyId,8);
+
+	    Promise.all(top64).then(function(resultSnapshot){
+	    	$('#event_results_div').html(
+	    			'<div class="d-flex flex-row">' +
+	    			  '<div class="flex-column col-1"><span class="font-weight-bold text-sr-primary">Placing</span></div>'+
+	    			  '<div class="flex-column col-1"><span class="font-weight-bold text-sr-primary">Seed</span></div>'+
+	    			  '<div class="flex-column col-3"><span class="font-weight-bold text-sr-primary">Player</span></div>'+
+	    			  '<div class="flex-column col-4"><span class="font-weight-bold text-sr-primary">Bracket Path</span></div>'+
+	    			  '<div class="flex-column col-2"><span class="font-weight-bold text-sr-primary">Losses</span></div>'+
+	    			'</div>')
+	    	//resultSnapshot.sort(function(a,b){
+	    	//	return a['placing']-b['placing']
+	    	//});
+	    	resultSnapshot.forEach(function(attResult){
+	    		console.log(attResult['p_info']['tag'])
+	    		console.log(attResult['losses'])
+	    		$('#event_results_div').append(
+	    			'<div class="d-flex flex-row">' +
+	    			  '<div class="flex-column col-1">'+attResult['placing']+'</div>'+
+	    			  '<div class="flex-column col-1">'+attResult['seed']+'</div>'+
+	    			  //'<div class="flex-column col-2">'+attResult['id']+'</div>'+
+	    			  '<div class="flex-column col-3"><span class="text-muted">'+attResult['p_info']['team']+
+	    			  		'  </span><strong><a style="color:inherit;" href="../../players/#'+attResult['id']+'"&nbsp;>&nbsp;'+attResult['p_info']['tag']+'</a></strong></div>'+
+	    			  '<div class="flex-column col-4">'+attResult['path'].join('>')+'</div>'+
+	    			  '<div class="flex-column col-2">'+attResult['losses']+'</div>'+
+	    			'</div>')
+	    	});
+	    });
+
+      } else {
+        $('#event_container').addClass('invisible');
+        $('#warning_div').removeClass('invisible');
+      }
+    });
+  });
+
+  Finch.listen();
+</script>
+
+
+
+<!-- Initialize Tooltips -->
+<script>
+  $(document).ready(function(){
+    $('[data-toggle="tooltip"]').tooltip({
+      animated: 'fade'
+    });
+  });
+
+
+  $(window).on('load', function(){
+    $.fn.dataTable.tables({visible: true, api: true}).columns.adjust();
+  });
+</script>

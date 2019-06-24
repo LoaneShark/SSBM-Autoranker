@@ -34,27 +34,37 @@
 .card-title {
 
 }
-.display-4 {
+.text-team {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.p-2 .propic {
+.text-tag {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
+/* remove table striping */
+table.table tbody tr:nth-of-type(odd) {
+  background-color: #f5f5f5;
+}
+table.table tbody tr:nth-of-type(even) {
+  background-color: #f5f5f5;
 }
 
 /* plus icon (to expand h2h sets) */
- table.dataTable td.details-control:before {
+/* table.dataTable td.details-control:before {
   font-family: "Font Awesome 5 Free";
   font-weight: 400;
   content: "\f067";
-}
+}*/
 /* minus icon (to collapse h2h sets) */
-table.dataTable tr.shown td.details-control:before {
+/*table.dataTable tr.shown td.details-control:before {
   font-family: "Font Awesome 5 Free";
   font-weight: 400;
   content: "\f068";
-}
+}*/
 /*
 table.dataTable{
   border-collapse: collapse !important;
@@ -81,14 +91,10 @@ table.dataTable{
     <div class="container" style="width:65vw">
       <header>
         {% include navigation.html %}
-        {% if page.url == "/" %}
-          <h1><a href="{{ "/" | absolute_url }}">{{ site.title | default: site.github.repository_name }}</a></h1>
-          {% endif %}
-        
-        {% if site.logo %}
-          <img src="{{site.logo | relative_url}}" alt="Logo" />
-        {% endif %}
       </header>
+      <section>
+        {% include page_heading.html %}
+      </section>
       <section>
 
       {{ content }}
@@ -123,20 +129,20 @@ table.dataTable{
 
       // add searchbar
       var gameId = getGameId('{{page.game}}')
-      createPlayerSearchbar(gameId)
+      buildPlayerSearchbar(gameId,false)
     </script>
 
     <!-- Player Profile -->
     <script>
       var currentDB = true;
 
-      Finch.route("/", function(bindings){
-        console.log("No player selected");
-        $('#player_card').addClass("invisible");
+      Finch.route('/', function(bindings){
+        console.log('No player selected');
+        $('#player_card').addClass('invisible');
       });
-      Finch.route("/:p_id", function(bindings){
-        console.log("Loading player page: "+bindings.p_id);
-        $('#player_card').removeClass("invisible");
+      Finch.route('/:p_id', function(bindings){
+        console.log('Loading player page: '+bindings.p_id);
+        $('#player_card').removeClass('invisible');
         // draw player profile segment
         $('#player_card').html(`{% include player_profile.html %}`);
 
@@ -145,16 +151,16 @@ table.dataTable{
         var curr_year = new Date().getFullYear();
         $('#game_icon_div').html('<img src="'+getGameIconPath(gameId)+'" alt="'+gameId+'" style="width:20px;height:20px;">');
 
-        $('#player_event_link').attr("href","full/#"+playerId);
-        $('#player_event_link_2').attr("href","full/#"+playerId);
-        $('#player_h2h_link').attr("href","lookup/#"+playerId);
-        $('#player_region_link').attr("href","../regions/");
+        $('#player_event_link').attr('href','stats/#'+playerId);
+        $('#player_event_link_2').attr('href','stats/#'+playerId);
+        $('#player_h2h_link').attr('href','lookup/#'+playerId);
+        $('#player_region_link').attr('href','../regions/');
 
         // query db and populate profile
         if (currentDB){
-          var p_info_ref_str = "/"+gameId+"_2016_"+(curr_year-2016)+"_c/p_info/"
+          var p_info_ref_str = '/'+gameId+'_2016_'+(curr_year-2016)+'_c/p_info/'
         } else {
-          var p_info_ref_str = "/"+gameId+"_2018_1/p_info/";
+          var p_info_ref_str = '/'+gameId+'_2018_1/p_info/';
         }
         var player_ref_str = p_info_ref_str+playerId;
         var player_ref = firebase.database().ref(player_ref_str);
@@ -204,14 +210,15 @@ table.dataTable{
                 var playerWins = RecordSnapshot.child('wins').val();
                 var playerLosses = RecordSnapshot.child('losses').val();
                 // get tournament data
-                var placements = snapshotToArray(RecordSnapshot.child('placings'),attr="both");
+                var placements = snapshotToArray(RecordSnapshot.child('placings'),attr='both');
                 var eventPromises = placementsToEvents(placements,gameId);
                 Promise.all(eventPromises).then(function(PlayerEvents){
                   if (PlayerEvents.length>0){
                     // populate the cards
                     populateEventCards(PlayerSnapshot,PlayerEvents,placements,playerWins,playerLosses, p_info_ref_str)
                     // populate h2h-at-a-glance
-                    populateH2H(PlayerSnapshot, RecordSnapshot, PlayerEvents, topPlayerRefStr, playerWins, playerLosses)
+                    populateH2H(10,PlayerSnapshot, RecordSnapshot, PlayerEvents, topPlayerRefStr, playerWins, playerLosses)
+                    populateH2H(100,PlayerSnapshot, RecordSnapshot, PlayerEvents, topPlayerRefStr, playerWins, playerLosses)
                   }
                 });
                 // draw skill graphs
@@ -266,8 +273,16 @@ table.dataTable{
             });
 
             // add today's date/watermark
-            var utc_date = new Date().toJSON().slice(0,10).replace(/-/g,'/');
-            $('#today_date').html(utc_date);
+            //var utc_date = new Date().toJSON().slice(0,10).replace(/-/g,'/');
+            if (currentDB){
+              var metaRefStr = '/'+gameId+'_2016_'+(curr_year-2016)+'_c/meta/dateBuilt'
+            } else {
+              var metaRefStr = '/'+gameId+'_2018_1/meta/dateBuilt'
+            }
+            var metaRef = firebase.database().ref(metaRefStr);
+            var metaQuery = metaRef.once('value').then(function(metaDate){
+              $('#db_date').html(''+metaDate.child(1).val()+'-'+metaDate.child(2).val()+'-'+metaDate.child(0).val());
+            });
 
             // make jumbotron visible (now that it's loaded)
             $('player_card').removeClass('invisible');

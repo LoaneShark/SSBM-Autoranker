@@ -48,9 +48,9 @@
 			var n_old = 0;
 			var firstDate = null;
 			var lastDate = null;
-			var eventList = Object.values(TourneySnapshot.val()); // convert to object, then array
-			eventList = eventList.slice(0,eventList.length-1) // remove 'slugs' child
-			console.log(eventList)
+			var eventList = snapshotToArray(TourneySnapshot,"insert"); // convert to object, then array
+			//eventList = eventList.slice(0,eventList.length-1) // remove 'slugs' child (DEPRECATED)
+			//console.log(eventList)
 			eventList.sort(function(a,b){
 				if (a.date[0] == b.date[0]){
 					if (a.date[1] == b.date[1]){
@@ -125,7 +125,7 @@
 					  event['numEntrants'] + ' Entrants   •   ' + event['region'] +
 					'</h6>' +
 					'<p class="card-text">' +
-						//'<a class="card-link" href="/full/#'+event.key+'">Details ⟶</a>' +
+						'<a class="card-link" href="full/#'+event['key']+'">Details ⟶</a>' +
 					'</p>'
 					);
 				$('#event_date_'+i).html(

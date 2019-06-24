@@ -24,17 +24,17 @@
 					<tr class='header'>
 						<th>Team</th>
 						<th>Player</th>
-						<th>{% if {{page.title}} == 'Ultimate'%}
+						<th>{% if {{page.game}} == 'Ultimate'%}
 								PGR
-							{% elsif {{page.title}} == 'Melee' %}
+							{% elsif {{page.game}} == 'Melee' %}
 								MPGR
-							{% elsif {{page.title}} == 'PM' %}
+							{% elsif {{page.game}} == 'PM' %}
 								PMRank
-							{% elsif {{page.title}} == 'Smash4' %}
+							{% elsif {{page.game}} == 'Smash4' %}
 								PGR
-							{% elsif {{page.title}} == 'Brawl' %}
+							{% elsif {{page.game}} == 'Brawl' %}
 								SSBBRank
-							{% elsif {{page.title}} == 64 %}
+							{% elsif {{page.game}} == 64 %}
 								64LR
 							{% else %}
 								Rank
@@ -82,17 +82,17 @@
 					<tr class='header'>
 						<th>Team</th>
 						<th>Player</th>
-						<th>{% if {{page.title}} == 'Ultimate'%}
+						<th>{% if {{page.game}} == 'Ultimate'%}
 								PGR
-							{% elsif {{page.title}} == 'Melee' %}
+							{% elsif {{page.game}} == 'Melee' %}
 								MPGR
-							{% elsif {{page.title}} == 'PM' %}
+							{% elsif {{page.game}} == 'PM' %}
 								PMRank
-							{% elsif {{page.title}} == 'Smash4' %}
+							{% elsif {{page.game}} == 'Smash4' %}
 								PGR
-							{% elsif {{page.title}} == 'Brawl' %}
+							{% elsif {{page.game}} == 'Brawl' %}
 								SSBBRank
-							{% elsif {{page.title}} == 64 %}
+							{% elsif {{page.game}} == 64 %}
 								64LR
 							{% else %}
 								Rank
@@ -140,17 +140,17 @@
 					<tr class='header'>
 						<th>Team</th>
 						<th>Player</th>
-						<th>{% if {{page.title}} == 'Ultimate'%}
+						<th>{% if {{page.game}} == 'Ultimate'%}
 								PGR
-							{% elsif {{page.title}} == 'Melee' %}
+							{% elsif {{page.game}} == 'Melee' %}
 								MPGR
-							{% elsif {{page.title}} == 'PM' %}
+							{% elsif {{page.game}} == 'PM' %}
 								PMRank
-							{% elsif {{page.title}} == 'Smash4' %}
+							{% elsif {{page.game}} == 'Smash4' %}
 								PGR
-							{% elsif {{page.title}} == 'Brawl' %}
+							{% elsif {{page.game}} == 'Brawl' %}
 								SSBBRank
-							{% elsif {{page.title}} == 64 %}
+							{% elsif {{page.game}} == 64 %}
 								64LR
 							{% else %}
 								Rank
@@ -199,8 +199,8 @@
 <script type="text/javascript" src="/assets/js/region_utils.js"></script>
 <script>
 	$().ready(function() {
-		var game_id = getGameId("{{page.title}}");
-		var gameTitle = "{{page.title}}"
+		var game_id = getGameId("{{page.game}}");
+		var gameTitle = "{{page.game}}"
 		// get current year for db lookups
 		var curr_year = new Date().getFullYear();
 		// label the past year's tab

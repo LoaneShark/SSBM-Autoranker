@@ -8,7 +8,7 @@ permalink: /about/
 	<img src="/assets/images/site_icons/sr_logo_lettered.png" height="120vw">
 </div>
 <div style="height:20px"></div>
-<h1 class="text-sr-primary"> SmashRanks </h1>
+<!-- <h1 class="text-sr-primary"> SmashRanks </h1> -->
 <h4> The Website </h4>
 <p class="text-dark">SmashRanks is a data analytics project and database, created by Iago in December of 2018. 
 						The website is still under construction, and is planned to enter Alpha release soon.</p>
@@ -51,7 +51,7 @@ permalink: /about/
 	<thead>
 		<tr class="header">
 			<th>Game</th>
-			<th>pre 2016</th>
+			<th>< 2016</th>
 			<th>2016</th>
 			<th>2017</th>
 			<th>2018</th>
@@ -78,7 +78,7 @@ permalink: /about/
 		<tr>
 			<td class="font-weight-bold">Brawl</td>
 			<td><a href="http://web.archive.org/web/20150209055943/http://clashtournaments.com/ssbbrank-1-3-the-grand-finale/">2014 SSBBRank<a></td>
-			<td colspan="2"><a href="https://smashboards.com/threads/ssbb-rank-2016-2017-by-the-brawl-community.452558/">1026-2017 SSBBRank</a></td>
+			<td colspan="2"><a href="https://smashboards.com/threads/ssbb-rank-2016-2017-by-the-brawl-community.452558/">2016-2017 SSBBRank</a></td>
 			<td></td>
 			<td></td>
 		</tr>
@@ -133,6 +133,7 @@ not final and subject to change. S-Ranks are recalculated for the entire playerb
 A player's S-Rank is essentially a measure of their probability to win against any given opponent in the database, expressed as a percentile.
 Therefore, a lower S-Rank corresponds to a higher skill, and S-Ranks are always bounded between 0 and 1. 
 A player with a theoretical S-Rank of 0 would be assumed to have a perfect record and win probability against any other player in the entire playerbase. 
+<br>
 Since S-Rank is calculated by analyzing a player's head-to-head record vs. the field, 
 a limit on what period of time needs to be considered must be imposed (in our case, 1 year out from the most recent event). 
 Additionally, players are required to attend a certain number of events before they are considered "active", or an accurate skill rating cannot be determined due to insufficient data. 
@@ -172,8 +173,11 @@ Players that have not met activity requirements are treated as having an S-Rank 
 	<a href="http://kuroganehammer.com/" target="_blank">
 		<img src="/assets/images/social_icons/kgh-bowser.png" class="img-thumbnail" style="height:128px;width:128px;" data-toggle="tooltip" title="Kurogane Hammer">
 	</a>
-	<a href="http://https://panda.gg/blogs/pgstats/" target="_blank">
+	<a href="https://panda.gg/blogs/pgstats/" target="_blank">
 		<img src="/assets/images/social_icons/pgstats_site_logo.png" class="img-thumbnail" style="height:128px;width:128px;" data-toggle="tooltip" title="PG Stats">
+	</a>
+	<a href="http://www.myhandshurt.com/" target="_blank">
+		<img src="/assets/images/social_icons/mhh-400px.png" class="img-thumbnail" style="height:128px;width:128px;" data-toggle="tooltip" title="MyHandsHurt">
 	</a>
 </div>
 <p class="text-dark">More helpful resources coming soon! </p>
@@ -191,17 +195,17 @@ Players that have not met activity requirements are treated as having an S-Rank 
 
 		var curr_year = new Date().getFullYear();
 
-		gameId_map = {0:4,1:1,2:5,3:3,4:1386,5:2}
-		year_map = {};
-		db_info = [];
+		var gameId_map = {0:4,1:1,2:5,3:3,4:1386,5:2}
+		var year_map = {};
+		var db_info = [];
 		for (k=0;k<6;k++){
-			gameId = gameId_map[k];
+			var gameId = gameId_map[k];
 
-			game_ref_str = '/'+gameId+'_2016_'+(curr_year-2016)+'_c/meta';
-			game_ref = firebase.database().ref(game_ref_str);
-			game_query = game_ref.once('value').then(function(MetaSnapshot){
+			var game_ref_str = '/'+gameId+'_2016_'+(curr_year-2016)+'_c/meta';
+			var game_ref = firebase.database().ref(game_ref_str);
+			var game_query = game_ref.once('value').then(function(MetaSnapshot){
 				if (MetaSnapshot.exists()){
-					game_db_info = []
+					var game_db_info = []
 					game_db_info.push(MetaSnapshot.child('numPlayers').val());
 					game_db_info.push(MetaSnapshot.child('numEvents').val());
 					//game_db_info.push(MetaSnapshot.child('lastActiveYear').val());

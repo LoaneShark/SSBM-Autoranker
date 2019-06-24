@@ -1,0 +1,153 @@
+
+<link href="/assets/css/flags.css" rel=stylesheet type="text/css" defer>
+<link href="/assets/css/typeahead_bootstrap.css" rel="stylesheet" type="text/css" defer>
+<style>
+.text-team {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.text-tag {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+</style>
+<section>
+	<div class="container border rounded border-sr-primary" id="player_container">
+		<div class="p-2 d-flex float-right" style="height:30px;width:36px;" id="game_icon_div"></div>
+		<div class="invisible">&nbsp;</div>
+		
+		<!-- header info -->
+		<div class="d-flex flex-row">
+			<div class="flex-column col-2">
+				<div class="p-2 propic" id="player_propic_div">
+				</div>
+			</div>
+			<div class="flex-column col-9">
+				<div class="d-flex flex-row justify-content-between" id="player_header_div">
+					<div class="p-2 d-flex flex-grow-1 flex-row justify-content-center" id="player_tag_div">
+						<h1 class="text-team" id="player_team"></h1>
+						<h1 class="display-4 text-tag" id="player_tag"></h1>
+					</div>
+				</div>
+				<div class="d-flex flex-row justify-content-center" id="player_name_div">
+					<span class="text-muted font-italic" id="player_name"></span>
+				</div>
+			</div>
+			<div class="flex-column col-1">
+				<img id="player_region_flag" src="/assets/images/blank.gif" class="flag"></img>
+			</div>
+		</div>
+
+		<!-- line break -->
+		<hr class="my-4" style="padding:0px;">
+
+
+		<div class="invisible">&nbsp;</div>
+
+		<!-- more info... TODO -->
+	</div>
+	<div class="card border border-danger invisible" id="warning_div">
+		<p class="text-secondary" id="warning_div_text">No such player in {{page.game}} DB: <span class="font-weight-bold" id="warning_div_playerId"></span></p>
+	</div>
+</section>
+
+<!-- REGION CUTOUT
+<div class="p-4 d-flex flex-column col-2 justify-content-end shadow invisible" id="player_region_div">
+	<p class="text-muted text-center small font-italic">
+		Region
+		<span class="text-left text-muted small">
+			<a id="player_region_link" style="text-decoration:none;"> ⟶</a>
+		</span>
+	</p>
+	<p class="text-center" id="player_region"></p>
+	<div class="d-flex flex-row justify-content-center">
+		<img id="player_region_flag" src="/assets/images/blank.gif" class="flag"></img>-->
+		<!--<img id="player_region_map" src="/assets/images/blank.gif" height="30" width="30"></img>--><!--
+	</div>
+</div>
+-->
+
+{% include firebase_scripts.html %}
+{% include datatables_scripts.html %}
+<script type="text/javascript" src="/assets/js/finch.min.js"></script>
+<script type="text/javascript" src="/assets/js/typeahead.bundle.js"></script>
+<script type="text/javascript" src="/assets/js/misc_utils.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.bundle.min.js" async></script>
+<script type="text/javascript" src="/assets/js/graph_utils.js"></script>
+<script type="text/javascript" src="/assets/js/region_utils.js"></script>
+<script type="text/javascript" src="/assets/js/player_utils.js"></script>
+<!-- Searchbar -->
+<script>
+  $('.typeahead').bind('typeahead:select', function(ev, suggestion) {
+    Finch.navigate(''+suggestion.id);
+  });
+
+  // add searchbar
+  var gameId = getGameId('{{page.game}}');
+  createPlayerSearchbar(gameId);
+</script>
+
+
+<!-- Player Profile -->
+<script>
+  var currentDB = true;
+
+  Finch.route('/', function(bindings){
+    console.log('No player selected');
+    $('#player_container').addClass('invisible');
+    $('#warning_div').addClass('invisible');
+  });
+  Finch.route('/:p_id', function(bindings){
+    console.log('Loading player page: '+bindings.p_id);
+    // draw player profile segment
+    $('#header_card').html('<div class="card-text text-sr-primary">'+bindings.p_id+'</div>');
+    $('#warning_div_playerId').html(bindings.p_id)
+
+    var playerId = bindings.p_id;
+    var gameId = getGameId('{{page.game}}');
+    var curr_year = new Date().getFullYear();
+    $('#game_icon_div').html('<img src="'+getGameIconPath(gameId)+'" alt="'+gameId+'" style="width:20px;height:20px;">');
+
+    // query db and populate profile
+    if (currentDB){
+      var p_info_ref_str = '/'+gameId+'_2016_'+(curr_year-2016)+'_c/p_info/'
+    } else {
+      var p_info_ref_str = '/'+gameId+'_2018_1/p_info/';
+    }
+    var player_ref_str = p_info_ref_str+playerId;
+    var player_ref = firebase.database().ref(player_ref_str);
+    var player_query = player_ref.once('value').then(function(PlayerSnapshot) {
+      if (PlayerSnapshot.exists()) {
+        $('#warning_div').addClass('invisible');
+    	$('#header_card').removeClass('invisible');
+
+    	populatePrimaryStatsInfo(PlayerSnapshot);
+
+      } else {
+    	$('#header_card').addClass('invisible');
+        $('#warning_div').removeClass('invisible');
+      }
+    });
+
+  });
+
+  Finch.listen();
+</script>
+
+<!-- Initialize Tooltips; adjust datatable columns -->
+<script>
+  $(document).ready(function(){
+    $('[data-toggle="tooltip"]').tooltip({
+      animated: 'fade'
+    });
+
+  });
+
+
+  $(window).on('load', function(){
+    $.fn.dataTable.tables({visible: true, api: true}).columns.adjust();
+
+  });
+</script>

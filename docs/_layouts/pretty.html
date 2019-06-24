@@ -47,11 +47,19 @@
           <li><a href="{{ site.github.repository_url }}">View On <strong>GitHub</strong></a></li>
         </ul>
         {% endif %}
+
       </header>
       <!-- line break -->
       <p class="invisible">
         &nbsp;
       </p>
+      <section>
+        {% if page.game %}
+          {% if page.title != 'Directory' and page.title != 'Home' and page.title != '{{page.game}}' %}
+            {% include page_heading.html %}
+          {% endif %}
+        {% endif %}
+      </section>
       <section>
 
       {{ content }}

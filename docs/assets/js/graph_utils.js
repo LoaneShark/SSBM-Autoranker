@@ -49,6 +49,7 @@ var funcPlugin = {
     }
 };
 
+// draw skill history chart
 function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='elo'){
 	var ctx = $('#'+type+'_chart')[0].getContext('2d');
 	//var ctx = $('#tempChart');
@@ -70,7 +71,7 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 
 				// prevents plotting of the same ranking twice -- needed until I fix my db
 				if (!skillset.some(e => e.label === rankName)) {
-					skillset.push({'t': jsDate, 'y': rankVal, 'label': rankName, 'present': true});
+					skillset.push({'t': jsDate, 'y': rankVal, 'label': rankName, 'present': true, 'idx':j});
 				}
 
 			}
@@ -94,11 +95,12 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 
 			var t_date = tourneySnapshot.child(t_id.toString()).child('date').val();
 			var t_name = tourneySnapshot.child(t_id.toString()).child('name').val();
+			var t_index = tourneySnapshot.child(t_id.toString()).child('index').val();
 			var jsDate = new Date(t_date[0],t_date[1]-1,t_date[2]);
 
 			// add to skillset
 			var attendance = placementArray.includes(t_id);
-			skillset.push({'t': jsDate, 'y': skillval, 'label':t_name, 'present':attendance});
+			skillset.push({'t': jsDate, 'y': skillval, 'label':t_name, 'present':attendance, 'idx':t_index});
 		}
 		//const skillsetCopy = Object.assign({},skillset);
 		//console.log(skillsetCopy)
@@ -113,10 +115,11 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 			}
 			var t_date = tourneySnapshot.child(t_id.toString()).child('date').val();
 			var t_name = tourneySnapshot.child(t_id.toString()).child('name').val();
+			var t_index = tourneySnapshot.child(t_id.toString()).child('index').val();
 			var jsDate = new Date(t_date[0],t_date[1]-1,t_date[2]);
 
 			// add to skillset
-			skillset.push({'t': jsDate, 'y': skillval, 'label':t_name, 'present':true});
+			skillset.push({'t': jsDate, 'y': skillval, 'label':t_name, 'present':true, 'idx':t_index});
 		});
 	}
 	// return null if player is inactive
@@ -124,7 +127,7 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 		return null;
 	}
 	skillset.sort(function(a,b){
-		return a.t-b.t;
+		return a.idx-b.idx;
 	})
 
 	var legendColors = chartColorsFromType(type);
@@ -320,7 +323,15 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 						return eventName+"\n"+currSkill;
 					},
 					label: function(tooltipItem,data){
-						//console.log(tooltipItem)
+						// avoid repeat tooltips where datasets transition (unranked -> ranked)
+						if (tooltipItem.datasetIndex == 3){
+							if (tooltipItem.index == data.datasets[3].data.length-1){
+								if (data.datasets[0].data.length >= 1){
+									return null;
+								}
+							}
+							return '[Unranked]'
+						}
 						if (tooltipItem.index == 0){
 							if (type == 'srank'){
 								var oldSkill = srankOldSkill;
@@ -332,15 +343,6 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 							}
 						} else {
 							var oldSkill = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index-1].y;
-						}
-						// avoid repeat tooltips where datasets transition (unranked -> ranked)
-						if (tooltipItem.datasetIndex == 3){
-							if (tooltipItem.index == data.datasets[3].data.length-1){
-								if (data.datasets[0].data.length >= 1){
-									return null;
-								}
-							}
-							return '[Unranked]'
 						}
 						var skillDel = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y - oldSkill;
 						if (type == 'srank'){
@@ -440,6 +442,7 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 	return myChart;
 }
 
+// draw winprobs/sigmoid regression chart
 function sigmoidChart(PlayerSnapshot,infoRefStr,sigmoid,winprobs,pSkill){
 	// sigmoid = [x0,g,c,k]
 	var ctx = $('#srank_sigmoid')[0].getContext('2d');
@@ -665,7 +668,6 @@ function getMainrankSize(gameId){
 			return 50;
 			break;
 	}
-
 }
 
 function getYAxisBounds(gameId,skillType){
@@ -705,8 +707,12 @@ function winprobsFromRecords(playerWins,playerLosses){
   	  var winOpp = wOppIds[j];
       if (!(h2hAll.hasOwnProperty(winOpp))){
         h2hAll[winOpp] = [0.0,0.0];
-      } 
-      h2hAll[winOpp][0] += playerWins[winOpp].length;
+      }
+      // for each event they've beaten opp at
+      Object.keys(playerWins[winOpp]).forEach(function(oppMatchupEventId){
+      	// add number of sets won
+      	h2hAll[winOpp][0] += Object.keys(playerWins[winOpp][oppMatchupEventId]).length;
+      });
   	}
   }
   if (playerLosses != null){
@@ -716,7 +722,11 @@ function winprobsFromRecords(playerWins,playerLosses){
       if (!(h2hAll.hasOwnProperty(lossOpp))){
         h2hAll[lossOpp] = [0.0,0.0];
       }
-      h2hAll[lossOpp][1] += playerLosses[lossOpp].length;
+      // for each event they've lost to opp at
+      Object.keys(playerLosses[lossOpp]).forEach(function(oppMatchupEventId){
+      	// add number of sets lost
+      	h2hAll[lossOpp][1] += Object.keys(playerLosses[lossOpp][oppMatchupEventId]).length;
+      });
   	}
   }
   return winprobsFromH2H(h2hAll);

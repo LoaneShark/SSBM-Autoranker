@@ -110,6 +110,42 @@ function getStockIconPath(gameId,charId){
 	return "/assets/images/stock_icons/"+gameId+"/"+charId+".png";
 }
 
+// returns a 3-tuple of the r,g,b values of a color given its hexstring
+function hexToRGB(hex) {
+  // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
+  var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+  hex = hex.replace(shorthandRegex, function(m, r, g, b) {
+    return r + r + g + g + b + b;
+  });
+
+  var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : null;
+}
+
+// returns black or white color hexstring, based on which has higher contrast w/ rgbColor
+function textColorFromBG(rgbColor){
+	//r,g,b = rgbColor
+	for (c_i=0;c_i<3;c_i++){
+	    rgbColor[c_i] /= 255.0;
+	    if (rgbColor[c_i] <= 0.03928){
+	    	rgbColor[c_i] /= 12.92;
+	    } else {
+		    rgbColor[c_i] = ((rgbColor[c_i]+0.055)/1.055) ^ 2.4;
+		}
+	L = 0.2126 * rgbColor[0] + 0.7152 * rgbColor[1] + 0.0722 * rgbColor[2];
+	}
+
+	if (L > 0.179){
+		return '010101';
+	} else {
+		return 'f2f2f2';
+	}
+}
+
 function snapshotToArray(snapshot,attr="val") {
     var returnArr = [];
     snapshot.forEach(function(childSnapshot) {
@@ -120,6 +156,9 @@ function snapshotToArray(snapshot,attr="val") {
         } else if (attr == "both") {
         	var item = {val: childSnapshot.val()};
         	item.key = childSnapshot.key;
+        } else if (attr == "insert"){
+        	var item = childSnapshot.val();
+        	item['key'] = childSnapshot.key;
         }
         returnArr.push(item);
     });
@@ -168,14 +207,17 @@ function getEventById(dbRefStr,tourneyId){
 	return eventQuery;
 }
 
-function placementsToEvents(placements,gameId){
+function placementsToEvents(placements,gameId,isCurrent=true){
 	var eventPromises = [];
 	for (i=0;i<placements.length;i++){
 		eventId = placements[i].key;
-		//var refStr = "/"+gameId+"_2018_1/tourneys/"+eventId;
-		var refStr = "/"+gameId+"_2016_3_c/tourneys/"+eventId;
+		if (isCurrent){
+			var refStr = '/'+gameId+'_2016_3_c/tourneys/'+eventId;
+		} else {
+			var refStr = '/'+gameId+'_2016_3/tourneys/'+eventId;
+		}
 
-		var eventRef = firebase.database().ref(refStr)
+		var eventRef = firebase.database().ref(refStr);
 		var eventQuery = eventRef.once('value').then(function(EventSnapshot){
 			pyDate = EventSnapshot.child('date').val()
 			jsDate = new Date(pyDate[0],pyDate[1]-1,pyDate[2])
@@ -184,20 +226,6 @@ function placementsToEvents(placements,gameId){
 		eventPromises.push(eventQuery);
 	}
 	return eventPromises;
-}
-
-function snapshotToSearchbar(snapshot){
-	var returnArr = [];
-	snapshot.forEach(function(childSnapshot) {
-		var player = {name: childSnapshot.child('tag').val(),
-					  id: childSnapshot.key,
-					  team: childSnapshot.child('team').val(),
-					  fullname: childSnapshot.child('firstname').val() + ' ' + childSnapshot.child('lastname').val(),
-					  aliases: childSnapshot.child('aliases').val()};
-
-		returnArr.push(player)
-	});
-	return returnArr;
 }
 
 // returns the specified css property of a given page element

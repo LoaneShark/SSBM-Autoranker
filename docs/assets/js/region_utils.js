@@ -1,40 +1,67 @@
-function generatePlayerMap(){
-	am4core.useTheme(am4themes_material);
-	am4core.useTheme(am4themes_animated);
+function generatePlayerMap(gameId){
+	playerCoords = playersToCoords(gameId);
+	console.log(playerCoords);
 
-	var chart = am4core.create("player_chart_div",am4maps.MapChart);
-	//chart.geodata = am4geodata_usaLow;
-	chart.geodata = am4geodata_usacanLow;
-	chart.projection = new am4maps.projections.Miller();
+		am4core.useTheme(am4themes_material);
+		am4core.useTheme(am4themes_animated);
 
-	setNav(chart);
+		var chart = am4core.create("player_chart_div",am4maps.MapChart);
+		//chart.geodata = am4geodata_usaLow;
+		chart.geodata = am4geodata_usacanLow;
+		chart.projection = new am4maps.projections.Miller();
 
-	var groupData = getNAMap(chart);
+		setNav(chart);
 
-	// The rest of the world.
-	var worldSeries = chart.series.push(new am4maps.MapPolygonSeries());
-	//var worldSeriesName = "world";
-	//worldSeries.name = worldSeriesName;
-	worldSeries.useGeodata = true;
-	//worldSeries.fillOpacity = 0.8;
-	worldSeries.hiddenInLegend = true;
-	//worldSeries.mapPolygons.template.nonScalingStroke = true;
+		var groupData = getNAMap(chart);
 
+		// The rest of the world.
+		var worldSeries = chart.series.push(new am4maps.MapPolygonSeries());
+		//var worldSeriesName = "world";
+		//worldSeries.name = worldSeriesName;
+		worldSeries.useGeodata = true;
+		//worldSeries.fillOpacity = 0.8;
+		worldSeries.hiddenInLegend = true;
+		//worldSeries.mapPolygons.template.nonScalingStroke = true;
 
-	// Create image series (for player dots)
-	var imageSeries = chart.series.push(new am4maps.MapImageSeries());
+		// Create image series (for player dots)
+		var imageSeries = chart.series.push(new am4maps.MapImageSeries());
 
-	// Create a template "image" for image series, using a circle
-	var imageSeriesTemplate = imageSeries.mapImages.template;
-	var circle = imageSeriesTemplate.createChild(am4core.Circle);
-	circle.radius = 4;
-	circle.fill = am4core.color("#B27799");
-	circle.stroke = am4core.color("#FFFFFF");
-	circle.strokeWidth = 2;
-	circle.nonScaling = true;
-	circle.tooltipText = "{title}";
+		// Create a template "image" for image series, using a circle
+		var imageSeriesTemplate = imageSeries.mapImages.template;
+		imageSeriesTemplate.propertyFields.latitude = 'latitude';
+		imageSeriesTemplate.propertyFields.longitude = 'longitude';
+		var circle = imageSeriesTemplate.createChild(am4core.Circle);
+		circle.radius = 4;
+		circle.fill = am4core.color('#B27799');
+		//circle.fill.alpha = 0.1;
+		circle.stroke = am4core.color('#FFFFFF');
+		//circle.stroke.alpha = 0.1;
+		circle.strokeWidth = 2;
+		circle.nonScaling = true;
+		circle.tooltipText = '{player}';
 
-	setLegend(chart);
+	Promise.resolve(playerCoords).then(function(playerLocs){
+		console.log(playerLocs)
+		imageSeries.data = playerLocs;
+		/*imageSeries.data = [{
+			  "latitude": 48.856614,
+			  "longitude": 2.352222,
+			  "title": "Paris"
+			}, {
+			  "latitude": 40.712775,
+			  "longitude": -74.005973,
+			  "title": "New York"
+			}, {
+			  "latitude": 49.282729,
+			  "longitude": -123.120738,
+			  "title": "Vancouver"
+			}];
+		console.log(imageSeries.data)*/
+
+		setLegend(chart);
+
+		console.log(chart)
+	});
 }
 
 function generateRegionMap(continent){
@@ -42,7 +69,7 @@ function generateRegionMap(continent){
 		am4core.useTheme(am4themes_material);
 		am4core.useTheme(am4themes_animated);
 
-		var chart = am4core.create("region_chart_div",am4maps.MapChart);
+		var chart = am4core.create('region_chart_div',am4maps.MapChart);
 		//chart.geodata = am4geodata_usaLow;
 		chart.geodata = am4geodata_usacanLow;
 		chart.projection = new am4maps.projections.Miller();
@@ -50,14 +77,14 @@ function generateRegionMap(continent){
 		chart.zoomControl = new am4maps.ZoomControl();
 
 		var homeButton = new am4core.Button();
-		homeButton.events.on("hit", function(){
+		homeButton.events.on('hit', function(){
 		  chart.goHome();
 		});
 
 		homeButton.icon = new am4core.Sprite();
 		homeButton.padding(7, 5, 7, 5);
 		homeButton.width = 30;
-		homeButton.icon.path = "M16,8 L14,8 L14,16 L10,16 L10,10 L6,10 L6,16 L2,16 L2,8 L0,8 L8,0 L16,8 Z M16,8";
+		homeButton.icon.path = 'M16,8 L14,8 L14,16 L10,16 L10,10 L6,10 L6,16 L2,16 L2,8 L0,8 L8,0 L16,8 Z M16,8';
 		homeButton.marginBottom = 10;
 		homeButton.parent = chart.zoomControl;
 		homeButton.insertBefore(chart.zoomControl.plusButton);
@@ -69,7 +96,7 @@ function generateRegionMap(continent){
 		var groupData = getNARegionMap(chart);
 
 		// This array will be populated with country IDs to exclude from the world series
-		var excludedCountries = ["AQ"];
+		var excludedCountries = ['AQ'];
 
 		// Create a series for each group, and populate the above array
 		groupData.forEach(function(group) {
@@ -89,7 +116,7 @@ function generateRegionMap(continent){
 		  // hover over the series itself, it will trigger the hover SpriteState of all
 		  // its countries (provided those countries have a hover SpriteState, too!).
 		  series.setStateOnChildren = true;
-		  var seriesHoverState = series.states.create("hover");  
+		  var seriesHoverState = series.states.create('hover');  
 		  
 		  // Country shape properties & behaviors
 		  var mapPolygonTemplate = series.mapPolygons.template;
@@ -99,11 +126,11 @@ function generateRegionMap(continent){
 		  mapPolygonTemplate.nonScalingStroke = true;
 		  
 		  // States  
-		  var hoverState = mapPolygonTemplate.states.create("hover");
-		  hoverState.properties.fill = am4core.color("#CC0000");
+		  var hoverState = mapPolygonTemplate.states.create('hover');
+		  hoverState.properties.fill = am4core.color('#CC0000');
 		  
 		  // Tooltip
-		  mapPolygonTemplate.tooltipText = "{customData} ({name})"; // enables tooltip
+		  mapPolygonTemplate.tooltipText = '{customData} ({name})'; // enables tooltip
 		  // series.tooltip.getFillFromObject = false; // prevents default colorization, which would make all tooltips red on hover
 		  // series.tooltip.background.fill = am4core.color(group.color);
 		  
@@ -116,7 +143,7 @@ function generateRegionMap(continent){
 
 		// The rest of the world.
 		var worldSeries = chart.series.push(new am4maps.MapPolygonSeries());
-		var worldSeriesName = "world";
+		var worldSeriesName = 'world';
 		worldSeries.name = worldSeriesName;
 		worldSeries.useGeodata = true;
 		worldSeries.exclude = excludedCountries;
@@ -125,7 +152,7 @@ function generateRegionMap(continent){
 		worldSeries.mapPolygons.template.nonScalingStroke = true;
 
 		// This auto-generates a legend according to each series' name and fill
-		var legendContainer = am4core.create("region_legend_div",am4core.Container);
+		var legendContainer = am4core.create('region_legend_div',am4core.Container);
 		legendContainer.width = am4core.percent(100);
 		legendContainer.height = am4core.percent(100);
 		chart.legend = new am4maps.Legend();
@@ -136,11 +163,11 @@ function generateRegionMap(continent){
 		chart.legend.paddingRight = 0;
 		chart.legend.marginBottom = 0;
 		chart.legend.marginTop = 0;
-		legendContainer.layout = "vertical";
+		legendContainer.layout = 'vertical';
 		//chart.legend.maxColumns = 1;
 		//chart.legend.width = am4core.percent(90);
-		chart.legend.valign = "bottom";
-		chart.legend.contentAlign = "left";
+		chart.legend.valign = 'bottom';
+		chart.legend.contentAlign = 'left';
 		//chart.legend.responsive = true;
 
 		// Legend items
@@ -152,14 +179,14 @@ function setNav(chart){
 	chart.zoomControl = new am4maps.ZoomControl();
 
 	var homeButton = new am4core.Button();
-	homeButton.events.on("hit", function(){
+	homeButton.events.on('hit', function(){
 	  chart.goHome();
 	});
 
 	homeButton.icon = new am4core.Sprite();
 	homeButton.padding(7, 5, 7, 5);
 	homeButton.width = 30;
-	homeButton.icon.path = "M16,8 L14,8 L14,16 L10,16 L10,10 L6,10 L6,16 L2,16 L2,8 L0,8 L8,0 L16,8 Z M16,8";
+	homeButton.icon.path = 'M16,8 L14,8 L14,16 L10,16 L10,10 L6,10 L6,16 L2,16 L2,8 L0,8 L8,0 L16,8 Z M16,8';
 	homeButton.marginBottom = 10;
 	homeButton.parent = chart.zoomControl;
 	homeButton.insertBefore(chart.zoomControl.plusButton);
@@ -171,7 +198,7 @@ function setNav(chart){
 
 function setLegend(chart){
 	// This auto-generates a legend according to each series' name and fill
-	var legendContainer = am4core.create("player_legend_div",am4core.Container);
+	var legendContainer = am4core.create('player_legend_div',am4core.Container);
 	legendContainer.width = am4core.percent(100);
 	legendContainer.height = am4core.percent(100);
 	chart.legend = new am4maps.Legend();
@@ -182,11 +209,11 @@ function setLegend(chart){
 	chart.legend.paddingRight = 0;
 	chart.legend.marginBottom = 0;
 	chart.legend.marginTop = 0;
-	legendContainer.layout = "vertical";
+	legendContainer.layout = 'vertical';
 	//chart.legend.maxColumns = 1;
 	//chart.legend.width = am4core.percent(90);
-	chart.legend.valign = "bottom";
-	chart.legend.contentAlign = "left";
+	chart.legend.valign = 'bottom';
+	chart.legend.contentAlign = 'left';
 	//chart.legend.responsive = true;
 
 	// Legend items
@@ -195,21 +222,27 @@ function setLegend(chart){
 
 function playersToCoords(gameId){
 	var currYear = new Date().getFullYear();
+	playerArr = [];
 
 	playerRefStr = '/'+gameId+'_2016_'+(currYear-2016)+'_c/p_info';
 	var playerRef = firebase.database().ref(playerRefStr);
-	var playerQuery = playerRef.orderByChild('srank').limitToFirst(100)
-	playerQuery.once('value').then(function(PlayerSnapshot) {
+	var playerQuery = playerRef.orderByChild('srank').limitToFirst(200)
+	var coordsPromise = playerQuery.once('value').then(function(PlayerSnapshot) {
 		if (PlayerSnapshot.exists()) {
-			playerArr = []
 			PlayerSnapshot.forEach(function(childSnapshot){
-				playerArr.push(childSnapshot.child('region').val());
+				var childRegion = childSnapshot.child('region');
+				var childCountry = childRegion.child('1').val();
+				if (childCountry == 'America' || childCountry == 'Mexico' || childCountry == 'Canada' || childCountry == 'Greenland' || childCountry == 'USA'){
+					playerArr.push({'latitude':parseFloat(childRegion.child('0/0').val()),'longitude':parseFloat(childRegion.child('0/1').val()),'title':childRegion.child('2').val(),'player':childSnapshot.child('tag').val()});
+				}
 			});
 			return playerArr;
 		} else {
+			console.log(playerRefStr+' does not exist')
 			return [];
 		}
 	});
+	return coordsPromise
 }
 
 function countryNameToCC(countryName){
