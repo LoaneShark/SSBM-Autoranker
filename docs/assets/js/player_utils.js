@@ -505,6 +505,14 @@ function populateH2H(nom=10,PlayerSnapshot, RecordSnapshot, PlayerEvents, player
         $('#top'+nom+'_h2h').html('<span class="text-success">'+h2h['top'+nom+'w']+'</span>' +
                               '<span class="text-secondary">-</span>' +
                               '<span class="text-danger">'+h2h['top'+nom+'l']+'</span>');
+        // populate the percentage subtext
+        var nom_winrate = h2h['top'+nom+'w']/(h2h['top'+nom+'w']+h2h['top'+nom+'l'])
+        if (nom_winrate >= 0.5){
+          var wr_color = 'text-success'
+        } else {
+          var wr_color = 'text-danger'
+        }
+        $('#top'+nom+'_wr').html('<span class="'+wr_color+'">'+Math.round(nom_winrate*1000)/10+'%</span>')
 
       // build the table
       Promise.all(topPlayerInfo).then(function(oppInfo){
