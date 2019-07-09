@@ -13,6 +13,7 @@ import scipy as sp
 from scipy.special import expit, logit
 import sklearn
 from math import *
+from statistics import *
 import scipy.optimize
 from random import *
 from sklearn.cluster import KMeans as km
@@ -90,7 +91,7 @@ def calc_tourney_stack_score(dicts,t_id,plot_res=False):
 		stack_srank = 1.-integrate_alt_sigmoid(final_guess,None)
 		is_succ = True
 	except RuntimeError:
-		print(x)*log2(tourneys[t_id]['numEntrants'])
+		print(x*log2(tourneys[t_id]['numEntrants']))
 		print(y)
 		plot_res = True
 		is_succ = False
@@ -115,6 +116,7 @@ def calc_tourney_stack_score(dicts,t_id,plot_res=False):
 	if is_succ:
 		return (stack_srank,list(final_guess))
 	else:
+		return (None,None)
 		raise RuntimeError('Could not fit sigmoid for: %s | %d'%(tourneys[t_id]['name'],t_id))
 
 ## ELO CALCULATION UTILS
@@ -365,7 +367,7 @@ def update_glicko(dicts,matches,t_info,tau=0.5,ranking_period=60):
 # calculates scores based on sigmoid curves fit to win probability distributions
 def calc_sigrank(dicts,max_iter=args.srank_max_iter,min_req=args.min_activity,verbosity=0,rank_size=args.srank_max_size,disp_size=100,\
 	alpha=args.srank_alpha,mode=args.srank_calc_mode,sig_mode=args.srank_sig_mode,seed=args.srank_seed_mode,score_by=args.srank_score_mode,\
-	print_res=False,learn_decay=args.srank_learn_decay,plot_ranks=True,fit_mode=args.srank_fit_mode,\
+	print_res=False,learn_decay=args.srank_learn_decay,plot_ranks=True,fit_mode=args.srank_fit_mode,combine_unranked=args.srank_combine_unranked,\
 	tolerance=args.srank_tol,pad_zeros=args.srank_pad_zeros,fit_corners=args.srank_fit_corners):
 	tourneys,ids,p_info,records,skills,meta = dicts
 
@@ -421,7 +423,9 @@ def calc_sigrank(dicts,max_iter=args.srank_max_iter,min_req=args.min_activity,ve
 		if verbosity >= 5:
 			print('[seeding by avg bracket placing]')
 		brack_score = lambda pl,N: 1.-float(int(log(N,2))-int(log(pl,2)))/float(int(log(N,2)))
-		data_dict = {p_id: [tag,np.mean([brack_score(records[p_id]['placings'][t_id]['placing'],tourneys[t_id]['numEntrants']) for t_id in records[p_id]['placings'] if tourneys[t_id]['active']])] for p_id,tag,_,_ in data}
+		data_dict = {p_id: [tag,np.mean([brack_score(records[p_id]['placings'][t_id]['placing'],tourneys[t_id]['numEntrants']) \
+							for t_id in records[p_id]['placings'] if tourneys[t_id]['active']])] \
+							for p_id,tag,_,_ in data}
 	elif seed == 'random':
 		if verbosity >= 5:
 			print('[seeding by rng]')
@@ -432,6 +436,13 @@ def calc_sigrank(dicts,max_iter=args.srank_max_iter,min_req=args.min_activity,ve
 			print('[blanked seeding]')
 		data_dict = {p_id: ([tag,0.5] if p_id in id_list else [tag,1.0]) for p_id,tag,_,_ in data}
 		#data_dict = {p_id: ([tag,1.0] if p_id in id_list else [tag,1.0]) for p_id,tag,_,_ in data}
+	elif seed == 'baselogreg':
+		if verbosity >= 5:
+			print('[seeding by logistic regression]')
+		data_dict = {p_id: [tag,1.-integrate_alt_sigmoid(safe_basereg(winps,id_list,p_id),n)] for p_id,tag,_,_ in data}
+		data_logreg_list = sorted([data_dict[p_id] for p_id in data_dict],key=lambda l:l[1])[:100]
+		for data_logreg_line in data_logreg_list:
+			print(data_logreg_line)
 
 	# use elo/glicko as skill seeds
 	else:
@@ -461,7 +472,7 @@ def calc_sigrank(dicts,max_iter=args.srank_max_iter,min_req=args.min_activity,ve
 	# call sigrank
 	new_data,sigs,data_hist,covs = sigrank(data_dict,winps,chis,id_list, \
 		max_iter=max_iter,v=verbosity,score_by=score_by,learn_rate=alpha,learn_decay=learn_decay,mode=mode,sig_mode=sig_mode,fit_mode=fit_mode,\
-		tol=tolerance,pad_zeros=pad_zeros)
+		tol=tolerance,pad_zeros=pad_zeros,merge_unranked=combine_unranked)
 
 	if mode == 'dict':
 		new_data_dict = dcopy(new_data)
@@ -631,7 +642,7 @@ def sigrank(data,winps,chis,id_list,max_iter=1000,v=0,learn_rate=0.5,beta=0.9,to
 			# swap over to running_avg calculation after 50% of max_iter, if no convergence
 			temp_fit_mode = 'winprobs'
 			if float(count)/float(max_iter) >= 0.5:
-				if temp_fit_mode == 'winprobs' and v >= 5:
+				if int(max_iter/2.) == int(count) and temp_fit_mode == 'winprobs' and v >= 5:
 					print('[switching to running_avg]')
 				temp_fit_mode = 'running_avg'
 		else:
@@ -642,7 +653,8 @@ def sigrank(data,winps,chis,id_list,max_iter=1000,v=0,learn_rate=0.5,beta=0.9,to
 			old_skills = dcopy(new_skills)
 
 			for p_id in id_list:
-				sigres = fitsig(new_skills,data,winps,chis,p_id,old_guess=sigs[p_id],mode=mode,sig_mode=sig_mode,fit_mode=temp_fit_mode,soft_limit=pad_zeros,fit_corners=fit_corners)
+				sigres = fitsig(new_skills,data,winps,chis,p_id,old_guess=sigs[p_id],mode=mode,sig_mode=sig_mode,\
+								fit_mode=temp_fit_mode,soft_limit=pad_zeros,fit_corners=fit_corners,merge_unranked=merge_unranked)
 				
 				sigs[p_id] = sigres[0]
 				covs[p_id] = sigres[1]
@@ -652,7 +664,8 @@ def sigrank(data,winps,chis,id_list,max_iter=1000,v=0,learn_rate=0.5,beta=0.9,to
 			wins = np.zeros((int(n),int(n)))
 			old_skills = np.array(new_skills,copy=True)
 
-			sigs,covs = fitsig(new_skills,data,winps,chis,np.array(id_list,dtype=int),old_guess=sigs,mode=mode,sig_mode=sig_mode,three_pass=True,fit_mode=temp_fit_mode,soft_limit=pad_zeros,fit_corners=fit_corners)
+			sigs,covs = fitsig(new_skills,data,winps,chis,np.array(id_list,dtype=int),old_guess=sigs,mode=mode,\
+								sig_mode=sig_mode,three_pass=True,fit_mode=temp_fit_mode,soft_limit=pad_zeros,fit_corners=fit_corners,merge_unranked=merge_unranked)
 			if any([type(sig) == type(None) for sig in sigs]):
 				return None
 
@@ -891,6 +904,24 @@ def update_sigmoids(dicts,t_info,sig='sigmoid',ranking_period=2,max_iterations=1
 		return False
 
 ## SIGRANK HELPER UTILS
+
+# seeds sigmoid fitting by single sigmoid regression performed on 3 points: [(0,0), (0.5,avg_winps (ranked)), (1.0,avg_winps (unranked))]
+def safe_basereg(winps,id_list,abs_id):
+	if args.verbosity >= 9:
+		print(abs_id)
+	wp_mean = lambda value_list,skill: mean(value_list) if len(value_list) >= 1 else 1. if skill >= 1. else 0.
+
+	r_list = [winps[abs_id][norm_key] for norm_key in winps[abs_id] if norm_key in id_list]
+	u_list = [winps[abs_id][norm_key] for norm_key in winps[abs_id] if norm_key not in id_list]
+	r_val = wp_mean(r_list,0.5)
+	u_val = wp_mean(u_list,1.)
+	basewinprobs = [0.,r_val,u_val]
+
+	try:
+		return sp.optimize.curve_fit(alt_sigmoid,[0.,0.5,1.],basewinprobs,p0=[0.5,0.,1.,1.],bounds=([-1.,0.,0.,0.],[1.,1.,1.,20.]),method='trf',tr_solver='lsmr')[0]
+	except RuntimeError:
+		return [1.,0.,0.,0.]
+
 # returns the h2h record for two given players (from p1's perspective)
 def h2h(dicts,p1_id,p2_id):
 	tourneys,ids,p_info,records,skills,meta = dicts
@@ -908,7 +939,7 @@ def h2h(dicts,p1_id,p2_id):
 
 # returns a dict with the probability that player A beats player B, based on h2h records
 # (stores -1 if no records exist)
-def winprobs(dicts,id_list=None,mode='array'):
+def winprobs(dicts,id_list=None,mode='array',weight_recency=False):
 	tourneys,ids,p_info,records,skills,meta = dicts
 	if id_list == None:
 		id_list = [p_id for p_id in records]
@@ -958,9 +989,9 @@ def winprobs(dicts,id_list=None,mode='array'):
 					if p_sigma == 0:
 						p_sigma = 0.5/np.sqrt(nw+nl-1.)
 					if mode == 'dict':
-						chis[abs_id][opp_id] = p_sigma
+						chis[abs_id][opp_id] = max(p_sigma,0.1)
 					else:
-						chis[abs_idx,opp_idx] = p_sigma
+						chis[abs_idx,opp_idx] = max(p_sigma,0.1)
 			if mode == 'dict':
 				winps[abs_id][opp_id] = prob
 			else:
@@ -1388,7 +1419,7 @@ def resize(arr,lower=0.0,upper=1.0):
 	return arr
 
 # fits a sigmoid function to the provided data, and then returns the parameters
-def fitsig(skill_ranks,data,winps,chis,id_list,old_guess=None,method='curve_fit',three_pass=False,soft_limit=False,fit_mode='winprobs',mode='array',sig_mode='sigmoid',fit_corners=False):
+def fitsig(skill_ranks,data,winps,chis,id_list,old_guess=None,method='curve_fit',three_pass=False,soft_limit=False,fit_mode='winprobs',mode='array',sig_mode='sigmoid',fit_corners=False,merge_unranked=False):
 	N = float(len(data.keys()))
 	if mode == 'dict':
 		n = 1.
@@ -1403,6 +1434,8 @@ def fitsig(skill_ranks,data,winps,chis,id_list,old_guess=None,method='curve_fit'
 		xs = []
 		ys = []
 		ss = []
+		field_y = []
+		field_s = []
 		# insert soft data points at the bounds to help fit realistic curves (between 0 and 1)
 		if fit_corners:
 			#xs = [1.,0.]
@@ -1421,14 +1454,18 @@ def fitsig(skill_ranks,data,winps,chis,id_list,old_guess=None,method='curve_fit'
 					ratio = float(winps[p_id][opp_id])
 					opp_skill = skill_ranks[opp_id][1]
 					if not np.isnan(opp_skill):
-						if ratio > 0:
-							xs.append(opp_skill)
-							ys.append(min(ratio,0.999))
-							ss.append(chis[p_id][opp_id])
-						if ratio == 0:
-							xs.append(opp_skill)
-							ys.append(0.001)
-							ss.append(chis[p_id][opp_id])
+						if merge_unranked and opp_skill >= 1.0:
+							field_y.append(max(min(ratio,0.999),0.001))
+							field_s.append(chis[p_id][opp_id])
+						else:
+							if ratio > 0:
+								xs.append(opp_skill)
+								ys.append(min(ratio,0.999))
+								ss.append(chis[p_id][opp_id])
+							if ratio == 0:
+								xs.append(opp_skill)
+								ys.append(0.001)
+								ss.append(chis[p_id][opp_id])
 		elif mode == 'array':
 			p_id = id_list[p_idx]
 			if fit_mode == 'running_avg':
@@ -1442,14 +1479,31 @@ def fitsig(skill_ranks,data,winps,chis,id_list,old_guess=None,method='curve_fit'
 					else:
 						opp_skill = data[opp_id][1]
 					if not np.isnan(opp_skill):
-						if ratio > 0:
-							xs.append(opp_skill)
-							ys.append(min(ratio,0.999))
-							ss.append(chis[p_id][opp_id])
-						if ratio == 0:
-							xs.append(opp_skill)
-							ys.append(0.001)
-							ss.append(chis[p_id][opp_id])
+						if merge_unranked and opp_skill >= 1.0:
+							field_y.append(max(min(ratio,0.999),0.001))
+							field_s.append(chis[p_id][opp_id])
+						else:
+							if ratio > 0:
+								xs.append(opp_skill)
+								ys.append(min(ratio,0.999))
+								ss.append(chis[p_id][opp_id])
+							if ratio == 0:
+								xs.append(opp_skill)
+								ys.append(0.001)
+								ss.append(chis[p_id][opp_id])
+
+		# consolidate the H2H vs the field and add as a final, singular data point
+		if merge_unranked and len(field_y) > 0:
+			if type(xs) is list:
+				xs.append(1.0)
+				#ys.append(np.average(field_y,weights=1.-field_s))
+				ys.append(np.average(field_y))
+				ss.append(0.05)
+			else:
+				xs = np.append(xs,[1.0])
+				#ys.append(np.average(field_y,weights=1.-field_s))
+				ys = np.append(ys,[np.average(field_y)])
+				ss = np.append(ss,0.05)
 
 		# pad LHS with 0s, high sigma
 		# (assume losing chance if they've never faced an opponenet of this caliber)
@@ -1462,9 +1516,14 @@ def fitsig(skill_ranks,data,winps,chis,id_list,old_guess=None,method='curve_fit'
 				#x_i = round(skill_min,1)
 				x_i = 0.
 				while x_i < x_min:
-					xs.append(x_i)
-					ys.append(0.0001)
-					ss.append(0.75)
+					if type(xs) is list:
+						xs.append(x_i)
+						ys.append(0.0001)
+						ss.append(0.75)
+					else:
+						xs = np.append(xs,[x_i])
+						ys = np.append(ys,[0.0001])
+						ss = np.append(ss,[0.75])
 					x_i += pad_tol
 			'''pad_tol = 0.1
 			skill_min = min(skill_ranks)

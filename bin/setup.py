@@ -52,6 +52,7 @@ srank_pad_zeros = False 		# Toggle padding of zeros to LHS of winprobs limit bef
 srank_running_avg_sigma = 0.1 	# Sigma of Gaussian window, to capture and weight win probabilities (default 0.1)
 srank_running_avg_step = 0.05 	# Step size for sliding windows (default 0.05)
 srank_fit_corners = False 		# Toggle inclusion of expected boundary points in sigfit to help encourage normal sigmoid behavior (default False)
+srank_combine_unranked = False 	# Toggle consolidation of unranked player winprobs for sigmoid fitting (default False)
 srank_print_res = False 		# Print results of sigmoid fitting to console (default False)
 
 srank_sig_mode = alt 			# Change which sigmoid type is fit to data, from ['sigmoid','simple','alt']. sigmoid is fastest, alt is most accurate. (default alt)

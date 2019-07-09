@@ -123,6 +123,8 @@ def main():
 	#print_resume(dicts,resume,g_key='player',s_key='event')
 	#print(get_social_media(dicts,1004))
 	
+	#print_tourney_ratings(dicts)
+
 	#if game_idx == 1:
 		#print(tourneys[6076])
 		#delete_tourney(dicts,6076)
@@ -151,12 +153,12 @@ def main():
 	if 1 < 0:
 		opts = find_opt_hyperparams(dicts,20,9,key_ids=[1000,19554])
 
-	to_calc_sigrank = False
+	to_calc_sigrank = True
 	if to_calc_sigrank:
 		array_t = timer()
 		if game_idx == 1:
-			iagorank_params = calc_sigrank(dicts,min_req=min_act,max_iter=500,learn_decay=False,disp_size=100,verbosity=5,print_res=True,plot_ranks=False,\
-				mode='array',seed='elo',sig_mode='alt',score_by='intsig',fit_mode='running_avg',alpha=0.5,fit_corners=False,pad_zeros=False)
+			iagorank_params = calc_sigrank(dicts,min_req=min_act,max_iter=100,learn_decay=True,disp_size=100,verbosity=5,print_res=True,plot_ranks=False,\
+				mode='array',seed='blank',sig_mode='alt',score_by='intsig',fit_mode='running_avg',alpha=0.5,fit_corners=False,pad_zeros=False,combine_unranked=True)
 		else:
 			iagorank_params = calc_sigrank(dicts,min_req=min_act,max_iter=1000,learn_decay=True,disp_size=300,verbosity=5,print_res=True,plot_ranks=False,\
 				mode='array',seed='blank',sig_mode='alt',score_by='intsig',fit_mode='winprobs')
@@ -171,7 +173,7 @@ def main():
 		else:
 			iagorank_params = None
 
-	if False:
+	if True:
 		iagoranks,winprobs,sigmoids,data_hist,id_list = iagorank_params
 		print('N: %d'%len(id_list))
 		if v >= 4:
@@ -187,6 +189,9 @@ def main():
 				data_res = [[iagoranks[p_id][0],round((iagoranks[p_id][2]+iagoranks[p_id][1])/2.,3),round(iagoranks[p_id][1],3),round(iagoranks[p_id][2],3),round(iagoranks[p_id][2]-iagoranks[p_id][1],3),p_id,len([opp_id for opp_id in winprobs[p_id]]),charmap[get_main(p_id,p_info)]] for p_id in id_list]
 				for line in sorted(data_res,key=lambda l: l[2])[:100]:
 					print('{:>3.3}'.format(str(i)),'|','  '.join([str(item) for item in line]))
+					if True and i <= 5:
+						plot_winprobs(iagoranks,winprobs,sigmoids,id_list,line[5],plot_tags=True,sig_mode='alt',plot_running_sigmoid=True)
+						plot_hist(data_hist,p_id=line[5],plot_delta=True)
 					i += 1
 					#print(line.join(' '))
 		iter_num = len(data_hist[id_list[0]])

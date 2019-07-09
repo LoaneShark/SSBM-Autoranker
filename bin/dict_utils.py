@@ -729,6 +729,15 @@ def print_events(dicts,t_ids,max_place=64):
 	else:
 		print_result(dicts,t_id,res_filt={'maxplace':max_place})
 
+# print the tournaments in db, sorted by how "stacked" they are
+def print_tourney_ratings(dicts):
+	tourneys,ids,p_info,records,skills,meta = dicts
+
+	tourneyRatings = sorted([[tourneys[t_id]['rating'],tourneys[t_id]['numEntrants'],tourneys[t_id]['name']] for t_id in tourneys if tourneys[t_id]['rating'] is not None],key=lambda l:l[0])
+	print ('Rating\tN\tName')
+	for line in tourneyRatings:
+		print('\t'.join([str(line_item) for line_item in line]))
+
 # prints the specified records, grouping by the g_key criteria
 def print_resume(dicts,res,g_key='player',s_key=None,disp_raw=False,disp_wins=True):
 	tourneys,ids,p_info,records,skills,meta = dicts

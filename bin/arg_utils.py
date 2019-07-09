@@ -71,6 +71,7 @@ parser.add('-rz','--srank_pad_zeros',action = 'store_true', help='Toggle padding
 parser.add('-rw','--srank_running_avg_sigma', default = 0.1, help='Gaussian window sigma for running average weighting (default 0.1)', type=float)
 parser.add('-rl','--srank_running_avg_step', default = 0.05, help='Step size for gaussian windows in running average calculation (default 0.05)', type=float)
 parser.add('-ro','--srank_fit_corners',action='store_true',help='Toggle inclusion of data points (0,0) and (1,1) to help fit expected sigmoid shape (default False)')
+parser.add('-ru','--srank_combine_unranked',action='store_true',help='Toggle consolidation of unranked player winprobs // "the field" (default False)')
 parser.add('-rp','--srank_print_res',action = 'store_true', help='Print results of sigmoid fitting to console (default False)')
 
 parser.add('-rs','--srank_sig_mode',default = 'alt', help='Change which sigmoid type is fit to data, from [sigmoid,simple,alt]. sigmoid is fastest, alt is most accurate. (default alt)')

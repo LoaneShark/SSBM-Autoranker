@@ -571,8 +571,11 @@ def store_tourney(slug,t_info,group_names,entrants,sets,dicts):
 	tourneys[t_id]['upcoming'] = False
 
 	t_rating,t_sigmoid = calc_tourney_stack_score(dicts,t_id)
-	tourneys[t_id]['rating'] = float(t_rating)
-	tourneys[t_id]['sigmoid'] = list(t_sigmoid)
+	tourneys[t_id]['rating'] = t_rating
+	if t_sigmoid is None:
+		tourneys[t_id]['sigmoid'] = None
+	else:
+		tourneys[t_id]['sigmoid'] = list(t_sigmoid)
 		
 	return True
 
