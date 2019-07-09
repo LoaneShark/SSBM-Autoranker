@@ -123,7 +123,8 @@ function populatePrimaryInfo(PlayerSnapshot){
       var propic_color = PlayerSnapshot.child('color').val();
       if (!propic_color){
         //propic_color = '81daea';
-        propic_color = '40e0d0';
+        //propic_color = '40e0d0';
+        propic_color = '8DB0C0';
       } else {
         if (propic_color.slice(0,1) == '#'){
           propic_color = propic_color.substr(1);
@@ -616,6 +617,8 @@ function generateH2HTable(tableLabel,PlayerEvents,childData){
           });
 
           tr.addClass('shown');
+
+          $($.fn.dataTable.tables(true)).DataTable().columns.adjust().responsive.recalc();
       }
   });
 }

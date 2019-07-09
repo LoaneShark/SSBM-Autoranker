@@ -184,15 +184,48 @@ function getEventResults(EventSnapshot,gameId,tourneyId,N=64){
 }
 
 function getEventRecordsFromSnapshot(PlayerSnapshot,tourneyId,resType='losses'){
-  playerRecords = PlayerSnapshot.child(resType).val();
-  playerRecIds = Object.keys(playerRecords);
-  eventRecords = [];
+  var playerRecords = PlayerSnapshot.child(resType).val();
+  if (playerRecords){
+    var playerRecIds = Object.keys(playerRecords);
+    var eventRecords = [];
 
-  playerRecIds.forEach(function(oppId){
-    if (tourneyId in playerRecords[oppId]){
-     eventRecords.push({'id':oppId,'sets':playerRecords[oppId][tourneyId]});
-    }
-  });
+    playerRecIds.forEach(function(oppId){
+      if (tourneyId in playerRecords[oppId]){
+       eventRecords.push({'id':oppId,'sets':playerRecords[oppId][tourneyId]});
+      }
+    });
+    return eventRecords;
+  } else {
+    return [];
+  }
+}
 
-  return eventRecords;
+function attendeeResultToLosses(gameId,attResult){
+  var playerId = attResult['id'];
+  var playerLosses = attResult['losses'];
+  var lossTags = [];
+  if (playerLosses){
+    playerLosses.forEach(function(lossObj){
+      var lossId = lossObj['id'];
+      var lossTagRefStr = '/'+gameId+'_2016_3_c/p_info/'+lossId+'/tag/';
+      var lossTagRef = firebase.database().ref(lossTagRefStr);
+      var lossTagQuery = lossTagRef.once('value').then(function(lossTagSnapshot){
+        if ($.trim($('#'+playerId+'_res_losses').html()).length){ // append comma if not first item in list
+          $('#'+playerId+'_res_losses').append(', ');
+        }
+        $('#'+playerId+'_res_losses').append('<a href="../../players/#'+lossId+'" style="text-decoration:none;">'+lossTagSnapshot.val()+'</a>');
+      });
+    });
+  } 
+}
+
+function pathChildFormat(playerId,pathMap){
+  return pathMap[playerId].join('>');
+
+  /*'<div class="collapse" id="path_'+attResult['id']+'_collapse"><div class="d-flex flex-row">' +
+              '<div class="flex-column col-2"></div>'+'<div class="flex-column col-8">'++'</div>'+
+            '</div></div>' +
+            '<div class="collapse" id="losses_'+attResult['id']+'_collapse">' +
+              '' +
+            '</div>'*/
 }

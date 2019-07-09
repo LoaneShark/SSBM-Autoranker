@@ -75,7 +75,7 @@
 	<hr class="my-4" style="padding:0px;">
 
 	<!-- top 64 results -->
-	<p class="h3 text-sr-dark">Top 64 Results</p>
+	<p class="h3 text-sr-dark">Results</p>
 	<div id="event_results_div">
 	</div>
 
@@ -154,36 +154,105 @@
 
 	    // top 64 results
 	    //top64 = getEventResults(EventSnapshot,gameId,tourneyId,64);
-	    top64 = getEventResults(EventSnapshot,gameId,tourneyId,8);
+	    // top N results
+	    var eventN = EventSnapshot.child('numEntrants').val();
+	    var top64 = getEventResults(EventSnapshot,gameId,tourneyId,eventN);
 
 	    Promise.all(top64).then(function(resultSnapshot){
+	    	var pathMap = {};
+	    	// generate blank results table
 	    	$('#event_results_div').html(
-	    			'<div class="d-flex flex-row">' +
-	    			  '<div class="flex-column col-1"><span class="font-weight-bold text-sr-primary">Placing</span></div>'+
-	    			  '<div class="flex-column col-1"><span class="font-weight-bold text-sr-primary">Seed</span></div>'+
-	    			  '<div class="flex-column col-3"><span class="font-weight-bold text-sr-primary">Player</span></div>'+
-	    			  '<div class="flex-column col-4"><span class="font-weight-bold text-sr-primary">Bracket Path</span></div>'+
-	    			  '<div class="flex-column col-2"><span class="font-weight-bold text-sr-primary">Losses</span></div>'+
-	    			'</div>')
+	    			'<table id="result_table" class="display table nowrap" style="width:100%">'+
+						'<thead>'+
+							'<tr>'+
+								'<th></th>'+
+								'<th>Placing</th>'+
+								'<th>Seed</th>'+
+								'<th>Team</th>'+
+								'<th>Tag</th>'+
+								'<th>Path</th>'+
+								'<th>Losses</th>'+
+							'</tr>'+
+						'</thead>'+
+						'<tbody id="result_table_body">'+
+						'</tbody>'+
+					'</table>')
+
 	    	//resultSnapshot.sort(function(a,b){
 	    	//	return a['placing']-b['placing']
 	    	//});
 	    	resultSnapshot.forEach(function(attResult){
-	    		console.log(attResult['p_info']['tag'])
-	    		console.log(attResult['losses'])
-	    		$('#event_results_div').append(
-	    			'<div class="d-flex flex-row">' +
-	    			  '<div class="flex-column col-1">'+attResult['placing']+'</div>'+
-	    			  '<div class="flex-column col-1">'+attResult['seed']+'</div>'+
+	    		//console.log(attResult['p_info']['tag'])
+	    		//console.log(attResult['losses'])
+	    		// populate table row
+	    		$('#result_table_body').append(
+	    			'<tr id="'+attResult['id']+'">' +
+	    			  '<td>'+attResult['id']+'</td>'+
+	    			  '<td>'+attResult['placing']+'</td>'+
+	    			  '<td>'+attResult['seed']+'</td>'+
 	    			  //'<div class="flex-column col-2">'+attResult['id']+'</div>'+
-	    			  '<div class="flex-column col-3"><span class="text-muted">'+attResult['p_info']['team']+
-	    			  		'  </span><strong><a style="color:inherit;" href="../../players/#'+attResult['id']+'"&nbsp;>&nbsp;'+attResult['p_info']['tag']+'</a></strong></div>'+
-	    			  '<div class="flex-column col-4">'+attResult['path'].join('>')+'</div>'+
-	    			  '<div class="flex-column col-2">'+attResult['losses']+'</div>'+
-	    			'</div>')
+	    			  '<td><span class="text-muted">'+attResult['p_info']['team']+'</span></td>'+
+	    			  '<td><strong><a style="color:inherit;" href="../../players/#'+attResult['id']+'"&nbsp;>&nbsp;'+attResult['p_info']['tag']+'</a></strong></td>'+
+	    			  //'<td>'+'<a href="#path_'+attResult['id']+'_collapse" data-toggle="collapse"><i class="fas fa-plus-square"></i></a>'+'</td>'+
+	    			  '<td>'+'<i class="fas fa-plus-square"></i>'+'</td>'+
+	    			  '<td id="'+attResult['id']+'_res_losses"></td>'+
+	    			'</tr>');
+	    		// populate pathMap with player path
+	    		pathMap[attResult['id']] = attResult['path'];
+	    		// populate/link player losses
+	    		attendeeResultToLosses(gameId,attResult);
 	    	});
-	    });
 
+	    	// generate DataTable
+	    	var resultTable = $('#result_table').DataTable({
+	    		responsive: true,
+			    paging: true,
+			    searching: true,
+			    info: true,
+			    autoWidth: false,
+			    stripeClasses: [],
+			    /*responsive: {
+			      details: {
+			        type: 'column'
+			      }
+			    },*/
+			    order: [[1, 'asc']],
+			    "columns":[
+			    {width: "0%", visible: false},
+			    {width: "7%"},
+			    {width: "7%"},
+			    {width: "20%"},
+			    {width: "40%"},
+			    {width: "7%", data: null, searchable: false, orderable: false, className: 'control', defaultContent: '<i class="fas fa-plus-square"></i>'},
+			    {width: "15%"}]
+			  });
+			  $($.fn.dataTable.tables(true)).DataTable().columns.adjust().responsive.recalc();
+			  resultTable.columns.adjust().draw();
+
+			  // event listener for opening and closing result table details
+			  $('#result_table tbody').on('click', 'td.control', function () {
+			      // toggle icon state (plu/minus)
+			      $(this).find('[data-fa-i2svg]').toggleClass('fa-plus-square').toggleClass('fa-minus-square');
+			      var tr = $(this).closest('tr');
+			      var row = resultTable.row(tr);
+			      var childId = row.data()[0];
+
+			      if (row.child.isShown()) {
+			          // This row is already open - close it
+			          row.child.hide();
+			          tr.removeClass('shown');
+			      }
+			      else {
+			      	  // generate bracket path child row
+			          row.child(pathChildFormat(childId,pathMap)).show();
+
+			          tr.addClass('shown');
+
+			          $($.fn.dataTable.tables(true)).DataTable().columns.adjust().responsive.recalc();
+			      }
+			  });
+
+	    });
       } else {
         $('#event_container').addClass('invisible');
         $('#warning_div').removeClass('invisible');
