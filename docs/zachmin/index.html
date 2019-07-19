@@ -1,0 +1,50 @@
+---
+layout: pretty
+title: Zachmin Debug
+---
+<!-- bg color toggler -->
+<div class="btn-group d-flex flex-row" role="group" aria-label="Basic example">
+  <button type="button" class="btn" style="height:5vw; background-color:white; border-color:lightgray"></button>
+  <button type="button" class="btn btn-sr-light"></button>
+  <button type="button" class="btn btn-sr-light-2"></button>
+  <button type="button" class="btn btn-sr-primary"></button>
+  <button type="button" class="btn btn-sr-link"></button>
+  <button type="button" class="btn btn-sr-secondary"></button>
+  <button type="button" class="btn btn-sr-dark"></button>
+  <button type="button" class="btn" style="background-color:black;"></button>
+</div>
+<div class="p-3 invisible">~</div>
+<!-- test icons -->
+<div class="container rounded" id="test_container">
+	<div class="p-3 invisible">~</div>
+	<div class="d-flex flex-row justify-content-around">
+		<img src="/assets/images/site_icons/sr_logo_bordered.png" height="240vw">
+		<img src="/assets/images/site_icons/sr_logo_minimal.png" height="240vw">
+	</div>
+	<div class="p-3 invisible">~</div>
+	<div class="d-flex flex-row justify-content-around">
+		<img src="/assets/images/site_icons/sr_logo_bordered.png" height="120vw">
+		<img src="/assets/images/site_icons/sr_logo_minimal.png" height="120vw">
+	</div>
+	<div class="p-3 invisible">~</div>
+	<div class="d-flex flex-row justify-content-around">
+		<img src="/assets/images/site_icons/sr_logo_bordered.png" height="60vw">
+		<img src="/assets/images/site_icons/sr_logo_minimal.png" height="60vw">
+	</div>
+	<div class="p-3 invisible">~</div>
+	<div class="d-flex flex-row justify-content-around">
+		<img src="/assets/images/site_icons/sr_logo_bordered.png" height="30vw">
+		<img src="/assets/images/site_icons/sr_logo_minimal.png" height="30vw">
+	</div>
+	<div class="p-3 invisible">~</div>
+</div>
+
+<script>
+  $(document).ready(function(){
+    $('.btn').click(function(){
+      $('#test_container').css("background-color",$(this).css("background-color"));
+      console.log($(this).css("background-color"));
+    });
+
+  });
+</script>
