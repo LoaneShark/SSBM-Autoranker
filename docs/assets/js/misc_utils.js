@@ -221,7 +221,9 @@ function placementsToEvents(placements,gameId,isCurrent=true){
 		var eventQuery = eventRef.once('value').then(function(EventSnapshot){
 			pyDate = EventSnapshot.child('date').val()
 			jsDate = new Date(pyDate[0],pyDate[1]-1,pyDate[2])
-			return [EventSnapshot.child('name').val(),jsDate,EventSnapshot.child('numEntrants').val(),EventSnapshot.child('active').val(),EventSnapshot.child('url_banner').val(),EventSnapshot.child('slug').val(),EventSnapshot.key];
+			return {'name':EventSnapshot.child('name').val(),'date':jsDate,'numEntrants':EventSnapshot.child('numEntrants').val(),'active':EventSnapshot.child('active').val(),
+					'url_banner':EventSnapshot.child('url_banner').val(),'url_propic':EventSnapshot.child('url_prof'),'slug':EventSnapshot.child('slug').val(),'id':EventSnapshot.key,
+					'groupNames':EventSnapshot.child('group_names').val(),'imported':EventSnapshot.child('imported').val(),'region':EventSnapshot.child('region').val()};
 		});
 		eventPromises.push(eventQuery);
 	}

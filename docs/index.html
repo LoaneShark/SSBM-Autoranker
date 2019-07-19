@@ -6,7 +6,8 @@ title: Home
 <section class="h-card">
 	<div class="d-flex row justify-content-between">
 		<p class="display-2"><span class="text-sr-dark" id="title1">Smash</span><span class="text-sr-primary" id="title2">Ranks</span></p>
-		<img src="/assets/images/site_icons/sr_logo_new.png" height="120vw">
+		<img src="/assets/images/site_icons/sr_logo_bordered.png" height="120vw">
+		<img src="/assets/images/site_icons/sr_logo_minimal.png" height="120vw">
 	</div>
 	<p class="text-muted"> A smash.gg data analytics resource and database. Extremely under construction.
 	</p>
@@ -131,7 +132,8 @@ title: Home
 		var curr_year = new Date().getFullYear();
 
 		// get top 10 melee players
-		var melee_meta_ref_str = "/1_2016_" + (curr_year-2016)+ "_c" + "/meta/top10/srank";
+		var melee_meta_ref_str = "/1_2016_" + (curr_year-2016)+ "_c" + "/meta/top10/glicko";
+		//var melee_meta_ref_str = "/1_2016_" + (curr_year-2016)+ "_c" + "/meta/top10/srank";
 		var melee_meta_ref = firebase.database().ref(melee_meta_ref_str);
 		var melee_meta_query = melee_meta_ref.once('value').then(function(TopPlayerSnapshot) {
 			if (TopPlayerSnapshot.exists()){
@@ -176,7 +178,8 @@ title: Home
 		});
 
 		// get top 10 ultimate players
-		var ultimate_meta_ref_str = "/1386_2016_" + (curr_year-2016)+ "_c" + "/meta/top10/srank";
+		var ultimate_meta_ref_str = "/1386_2016_" + (curr_year-2016)+ "_c" + "/meta/top10/glicko";
+		//var ultimate_meta_ref_str = "/1386_2016_" + (curr_year-2016)+ "_c" + "/meta/top10/srank";
 		var ultimate_meta_ref = firebase.database().ref(ultimate_meta_ref_str);
 		var ultimate_meta_query = ultimate_meta_ref.once('value').then(function(TopPlayerSnapshot) {
 			if (TopPlayerSnapshot.exists()){
@@ -215,15 +218,10 @@ title: Home
 									{targets: 2, type: 'num'}
 									]
 					});
-					$('#ult-tab').tab('show')
+					//$('#ult-tab').tab('show')
 					$($.fn.dataTable.tables(true)).DataTable().columns.adjust().responsive.recalc();	
 				});		
 			}
-		});
-
-		$('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
-			$($.fn.dataTable.tables(true)).css('width','100%');
-			$($.fn.dataTable.tables(true)).DataTable().columns.adjust().responsive.recalc();
 		});
 
 		/* 
@@ -243,5 +241,12 @@ title: Home
 			}
 		}); */
 
+	});
+
+    $(window).on('load', function(){
+		$('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+			$($.fn.dataTable.tables(true)).css('width','100%');
+			$($.fn.dataTable.tables(true)).DataTable().columns.adjust().responsive.recalc();
+		});
 	});
 </script>

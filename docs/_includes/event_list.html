@@ -8,8 +8,10 @@
 <div class="accordion" id="current_event_accordion">
 	<div class="card border">
 		<div class="card-header font-weight-bold" id="current_event_header">
-			<a data-toggle="collapse" class="btn" href="#current_event_accordion_span" onclick="$('#curr_collapsed_chevron').toggleClass('fa-rotate-180')" aria-label="Expand/Collapse Inactive Events" aria-expanded="true" role="button" style="box-shadow:none;">
-				<i class="fas fa-chevron-circle-up" id="curr_collapsed_chevron" aria-hidden="true"></i>
+			<a data-toggle="collapse" class="btn" href="#current_event_accordion_span" 
+			  onclick="$('#curr_collapsed_chevron').toggleClass('fa-chevron-circle-right').toggleClass('fa-chevron-circle-down')"
+			  aria-label="Expand/Collapse Inactive Events" aria-expanded="true" role="button" style="box-shadow:none;">
+				<i class="fas fa-chevron-circle-down" id="curr_collapsed_chevron" aria-hidden="true"></i>
 			</a>
 			CURRENT EVENTS
 		</div>
@@ -24,8 +26,10 @@
 <div class="accordion invisible" id="old_event_accordion">
 	<div class="card border">
 		<div class="card-header font-weight-bold" id="old_event_header">
-			<a data-toggle="collapse" class="collapsed btn" href="#old_event_accordion_span" onclick="$('#old_collapsed_chevron').toggleClass('fa-rotate-180')" aria-label="Expand/Collapse Inactive Events" aria-expanded="false" role="button" style="box-shadow:none;">
-				<i class="fas fa-chevron-circle-down" id="old_collapsed_chevron" aria-hidden="true"></i>
+			<a data-toggle="collapse" class="collapsed btn" href="#old_event_accordion_span" 
+			  onclick="$('#old_collapsed_chevron').toggleClass('fa-chevron-circle-right').toggleClass('fa-chevron-circle-down')" 
+			  aria-label="Expand/Collapse Inactive Events" aria-expanded="false" role="button" style="box-shadow:none;">
+				<i class="fas fa-chevron-circle-right" id="old_collapsed_chevron" aria-hidden="true"></i>
 			</a>
 			INACTIVE EVENTS
 		</div>

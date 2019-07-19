@@ -173,7 +173,7 @@ function populatePrimaryInfo(PlayerSnapshot){
       for (a_i=0,a_n=p_aliases.length; a_i<a_n; a_i++){
         p_aliases[a_i] = handleTransTag(p_aliases[a_i]);
       }
-      $('#player_aliases').html(p_aliases.join());
+      $('#player_aliases').html(p_aliases.join(', '));
       $('#player_aliases_div').removeClass('invisible');
     }
 }
@@ -187,10 +187,13 @@ function populatePrimaryStatsInfo(PlayerSnapshot){
   var propic_url = PlayerSnapshot.child('propic').val();
   var propic_color = PlayerSnapshot.child('color').val();
   if (!propic_color){
-    propic_color = 'f2f2f2'
+    propic_color = '8DB0C0';
+    propic_text_color = 'f2f2f2';
+  } else {
+    propic_text_color = textColorFromBG(hexToRGB(propic_color));
   }
   if (propic_url == null){
-    propic_url = 'https://via.placeholder.com/100/81daea/'+propic_color+'?text='+p_tag.slice(0,1)
+    propic_url = 'https://via.placeholder.com/100/'+propic_color+'/'+propic_text_color+'?text='+p_tag.slice(0,1);
   }
   $('#player_propic_div').html('<img src="'+propic_url+'" alt="'+p_tag+'" class="rounded-circle"/>');
   // populate real name info
@@ -335,14 +338,70 @@ function populateSkills(PlayerSnapshot, playerId, eloVal, eloRnkVal, glickoVal, 
         var rank_i = skillRankVals[i];
         var tier_k = skillRankTiers[k];
 
-        if (tier_k <= 1){
-          var icon_name = 'fa-award'
+        if (rank_i <= 1){
+          var icon_name = 'fa-trophy'
         } else {
           var icon_name = 'fa-star'
         }
 
         if (rank_i <= tier_k){
-          $('#'+skillRankNames[i]+'_trophy').html('<i class="fas fa-xs '+icon_name+' text-sr-top'+tier_k+'"></i> Top '+tier_k);
+          if (rank_i <= 1){
+            $('#'+skillRankNames[i]+'_trophy').html('<i class="fas fa-xs '+icon_name+' text-sr-top'+tier_k+'"></i> #1');
+          } else {
+            $('#'+skillRankNames[i]+'_trophy').html('<i class="fas fa-xs '+icon_name+' text-sr-top'+tier_k+'"></i> Top '+tier_k);
+          }
+          break;
+        }
+      }
+    }
+}
+
+function populateStatsSkills(PlayerSnapshot, playerId, skillVals, skillRankVals, skillRankText, skillPctVals){
+    var [eloVal,glickoVal,srankVal] = skillVals;
+    var [eloRnkText,glickoRnkText,srankRnkText,mainrankText] = skillRankText;
+    var [eloRnkVal,glickoRnkVal,srankRnkVal,mainrankVal] = skillRankVals;
+    var [eloPctVal,glickoPctVal,srankPctVal] = skillPctVals;
+    $('#player_elo').html(eloVal);
+    $('#player_glicko').html(glickoVal);
+    $('#player_srank').html(srankVal);
+    $('#player_mainrank').html(mainrankText);
+
+    $('#player_elo_rank').html(eloRnkText)
+    $('#player_glicko_rank').html(glickoRnkText)
+    $('#player_srank_rank').html(srankRnkText)
+    $('#player_elo_pct').html(''+eloPctVal+'<sup>'+ordinalSuffixOf(eloPctVal)+'</sup><span class="text-muted"> percentile</span>')
+    $('#player_glicko_pct').html(''+glickoPctVal+'<sup>'+ordinalSuffixOf(glickoPctVal)+'</sup><span class="text-muted"> percentile</span>');
+    $('#player_srank_pct').html(''+srankPctVal+'<sup>'+ordinalSuffixOf(srankPctVal)+'</sup><span class="text-muted"> percentile</span>')
+    //$('#player_trueskill').html(Math.round(PlayerSnapshot.child('trueskill').val()));
+
+    // highlight skill button if top 10/100/500
+    $('#mainrank_trophy').css('width',$('#player_mainrank_button').css('width'));
+    $('#elo_trophy').css('width',$('#player_elo_button').css('width'));
+    $('#glicko_trophy').css('width',$('#player_glicko_button').css('width'));
+    $('#srank_trophy').css('width',$('#player_srank_button').css('width'));
+
+    var skillRankNames = ['elo','glicko','srank','mainrank'];
+    var skillRankTiers = [5,10,20,50,100,500];
+    for (i=0, n_i=skillRankVals.length;i<n_i;i++){
+      for (k=0,n_k=skillRankTiers.length;k<n_k;k++){
+        var rank_i = skillRankVals[i];
+        var tier_k = skillRankTiers[k];
+
+        if (rank_i <= 1){
+          var icon_name = 'fa-trophy'
+        } else {
+          var icon_name = 'fa-star'
+        }
+
+        if (rank_i <= tier_k){
+          if (rank_i <= 1){
+            $('#'+skillRankNames[i]+'_trophy').html('<i class="fas fa-xs '+icon_name+'" style="color:white;"></i> #1');
+          } else {
+            $('#'+skillRankNames[i]+'_trophy').html('<i class="fas fa-xs '+icon_name+'" style="color:white;"></i> Top '+tier_k);
+          }
+          $('#'+skillRankNames[i]+'_card').addClass('border-sr-top'+tier_k);
+          $('#'+skillRankNames[i]+'_card_header').addClass('bg-sr-top'+tier_k);
+          $('#'+skillRankNames[i]+'_card_footer').addClass('bg-sr-top'+tier_k);
           break;
         }
       }
@@ -385,54 +444,145 @@ function drawSkillGraphs(RecordSnapshot, playerId, skillRefStr, tourneyRefStr){
 
 // HEAD TO HEAD TABLE FUNCTIONS //
 
+
+// processes set/game info per child row
+function childSetInfo(childData,childEventId,childOppId,resultType,set_idx=0){
+  var eventSets = childData[childOppId][resultType][childEventId];
+  var eventSetIds = Object.keys(eventSets);
+  var eventSet = eventSets[eventSetIds[set_idx]];
+
+  var setGroupId = eventSet['group_id'];
+  var setGameInfo = childGameInfo(eventSet);
+  var setGameCountText = childSetCountText(eventSet,resultType);
+
+  return [setGroupId,setGameInfo,setGameCountText];
+}
+
+// returns the set count display string (e.g. 3-1) given a set object
+function childSetCountText(eventSet,resultType){
+  if ('games' in eventSet){
+    var eventSetGameIds = Object.keys(eventSet['games']);
+    var gameWins = {};
+    eventSetGameIds.forEach(function(gameId){
+      if (eventSet['games'][gameId]['w_id'] in gameWins){
+        gameWins[eventSet['games'][gameId]['w_id']] += 1
+      } else {
+        gameWins[eventSet['games'][gameId]['w_id']] = 1
+      }
+    });
+    var gameWinCounts = Object.values(gameWins)
+    if (gameWinCounts.length == 1){
+      gameWinCounts.push(0);
+    }
+    gameWinCounts.sort(function(a,b){return a-b});
+    if (resultType == 'wins'){
+      gameWinCounts.reverse();
+    }
+    return gameWinCounts.join(' - ')
+  } else {
+    if (resultType == 'losses'){
+      return 'L';
+    } else if (resultType == 'wins'){
+      return 'W';
+    } else {
+      return null;
+    }
+  }
+}
+
+// get the game info (stage, characters, etc) given the set object
+function childGameInfo(eventSet){
+  if ('games' in eventSet){
+    var eventSetGameIds = Object.keys(eventSet['games']);
+    var setInfo = {};
+    var i = 0;
+    eventSetGameIds.forEach(function(gameId){
+      var gameInfo = eventSet['games'][gameId]
+      if ('characters' in gameInfo){
+        var w_charInfo = gameInfo['characters'][gameInfo['w_id']]
+        var l_charInfo = gameInfo['characters'][gameInfo['l_id']]
+      } else {
+        var w_charInfo = null;
+        var l_charInfo = null;
+      }
+      var w_gameInfo = {'id':gameInfo['w_id'],'char':w_charInfo}
+      var l_gameInfo = {'id':gameInfo['l_id'],'char':l_charInfo}
+      var gameStage = gameInfo['stage_id']
+      setInfo[i] = {'w':w_gameInfo,'l':l_gameInfo,'stage':gameStage}
+
+      i += 1;
+    });
+
+    return setInfo;
+  } else {
+    return null;
+  }
+}
 // Formatting function for H2H row details 
 function childFormat(childData,childOppId,eventMap,tableLabel) {
-	var tableHTML = '<table id="'+tableLabel+'_vs_'+childOppId+'" class="display" style="margin:0px;">';
+  var tableHTML = '<table id="'+tableLabel+'_vs_'+childOppId+'" class="display" style="margin:0px;">';
   tableHTML += '<thead><tr><th>Date</th><th>Result</th><th>Event</th><th>Group</th></tr></thead><tbody>'
-	if ('wins' in childData[childOppId]){
+  if ('wins' in childData[childOppId]){
     var childEventIds = Object.keys(childData[childOppId]['wins']);
-		for (m=0,m_n=childEventIds.length; m<m_n; m++){
+    var set_idx = 0;
+    for (m=0,m_n=childEventIds.length; m<m_n; m++){
+      if (m > 0 && childEventIds[m-1] == childEventIds[m]){
+        set_idx += 1
+      } else {
+        set_idx = 0
+      }
       var childEventId = childEventIds[m];
+      var childGroupId, childGameInfo, childGameScore;
+      [childGroupId,childGameInfo,childGameScore] = childSetInfo(childData,childEventId,childOppId,'wins',set_idx);
       //var eventDateStr = eventMap[childEventId]['date'].getFullYear()+'-'+eventMap[childEventId]['date'].getMonth()+'-'+eventMap[childEventId]['date'].getDay();
       var eventDateStr = eventMap[childEventId]['date'].toISOString().slice(0,10);
-			tableHTML += '<tr>'+
-                    '<td>'+eventDateStr+'</td>' +
-                    '<td class="bg-success font-weight-bold text-light">W</td>' +
-                    '<td>' + eventMap[childEventId]['name'] + '</td>' +
-                    '<td></td>' +
-                    '</tr>';
-		}
-	}
-	if ('losses' in childData[childOppId]){
-    var childEventIds = Object.keys(childData[childOppId]['losses']);
-		for (m=0,m_n=childEventIds.length; m<m_n; m++){
-      childEventId = childEventIds[m];
-      //eventDateStr = eventMap[childEventId]['date'].getFullYear()+'-'+eventMap[childEventId]['date'].getMonth()+'-'+eventMap[childEventId]['date'].getDay();
-      eventDateStr = eventMap[childEventId]['date'].toISOString().slice(0,10);
       tableHTML += '<tr>'+
                     '<td>'+eventDateStr+'</td>' +
-                    '<td class="bg-danger font-weight-bold text-light">L</td>' +
+                    '<td class="bg-success font-weight-bold text-light">'+childGameScore+'</td>' +
                     '<td>' + eventMap[childEventId]['name'] + '</td>' +
-                    '<td></td>' +
+                    '<td>'+eventMap[childEventId]['groupNames'][childGroupId]['name']+'</td>' +
                     '</tr>';
-		}
-	}
+    }
+  }
+  if ('losses' in childData[childOppId]){
+    var childEventIds = Object.keys(childData[childOppId]['losses']);
+    var set_idx = 0
+    for (m=0,m_n=childEventIds.length; m<m_n; m++){
+      if (m > 0 && childEventIds[m-1] == childEventIds[m]){
+        set_idx += 1
+      } else {
+        set_idx = 0
+      }
+      var childEventId = childEventIds[m];
+      var childGroupId, childGameInfo, childGameScore;
+      [childGroupId,childGameInfo,childGameScore] = childSetInfo(childData,childEventId,childOppId,'losses',set_idx);
+      //eventDateStr = eventMap[childEventId]['date'].getFullYear()+'-'+eventMap[childEventId]['date'].getMonth()+'-'+eventMap[childEventId]['date'].getDay();
+      var eventDateStr = eventMap[childEventId]['date'].toISOString().slice(0,10);
+      tableHTML += '<tr>'+
+                    '<td>'+eventDateStr+'</td>' +
+                    '<td class="bg-danger font-weight-bold text-light">'+childGameScore+'</td>' +
+                    '<td>' + eventMap[childEventId]['name'] + '</td>' +
+                    '<td>'+eventMap[childEventId]['groupNames'][childGroupId]['name']+'</td>' +
+                    '</tr>';
+    }
+  }
 
-	tableHTML += '</tbody></table>'
+  tableHTML += '</tbody></table>'
 
-	return tableHTML
+  return tableHTML
 }
 
 function formatPlayerEvents(PlayerEvents){
 	var returnMap = {};
 	for (i=0, n=PlayerEvents.length; i<n; i++){
-		tourneyId = PlayerEvents[i][6];
+		tourneyId = PlayerEvents[i]['id'];
 		returnMap[tourneyId] = {};
 
-		returnMap[tourneyId]['name'] = PlayerEvents[i][0];
-		returnMap[tourneyId]['date'] = PlayerEvents[i][1];
-		returnMap[tourneyId]['active'] = PlayerEvents[i][3];
-		returnMap[tourneyId]['propic'] = PlayerEvents[i][4];
+		returnMap[tourneyId]['name'] = PlayerEvents[i]['name'];
+		returnMap[tourneyId]['date'] = PlayerEvents[i]['date'];
+		returnMap[tourneyId]['active'] = PlayerEvents[i]['active'];
+		returnMap[tourneyId]['propic'] = PlayerEvents[i]['url_propic'];
+    returnMap[tourneyId]['groupNames'] = PlayerEvents[i]['groupNames'];
 
 	}
 	return returnMap;
@@ -538,8 +688,6 @@ function populateH2H(nom=10,PlayerSnapshot, RecordSnapshot, PlayerEvents, player
 
 // make generated html table into a DataTable, with child rows etc
 function generateH2HTable(tableLabel,PlayerEvents,childData){
-  console.log(tableLabel)
-  console.log(childData)
   // make the table into a DataTable
   var topPlayerH2HTable = $('#'+tableLabel+'_chart').DataTable({
     paging: false,
@@ -594,7 +742,7 @@ function generateH2HTable(tableLabel,PlayerEvents,childData){
             {width: '10%', orderable: false, className: "text-center"},
             {orderable: false},
             // change once I have group/phase data
-            {visible: false}],
+            {visible: true}],
             // hide pagination if only 1 page needed
             initComplete: function() {
               if (this.api().page.info().pages === 1) {
@@ -671,11 +819,11 @@ function populateEventCards(PlayerSnapshot,PlayerEvents, placements, playerWins,
   console.log(playerWins)
   // sort chronologically
   PlayerEvents.sort(function(a,b){
-    return b[1]-a[1];
+    return b['date']-a['date'];
   });
   for (i=0, n=placements.length;i<n;i++){
     placements[i].idx = PlayerEvents.findIndex(function(p_event){
-      return p_event[6] == placements[i].key
+      return p_event['id'] == placements[i].key
     });
   }
   placements.sort(function(a,b){
@@ -717,16 +865,19 @@ function populateEventCards(PlayerSnapshot,PlayerEvents, placements, playerWins,
       }
       // eventInfo = [eventName,eventDate,numEntrants,isActive,bannerUrl,slug,eventId]
       var eventInfo = PlayerEvents[i];
-      var smashggUrl = 'http://www.smash.gg/tournament/'+eventInfo[5];
+      var smashggUrl = 'http://www.smash.gg/tournament/'+eventInfo['slug'];
       
-      $('#event_card_title_'+i).html('<a style="color:inherit;" href="../events/full/#'+eventId+'">'+eventInfo[0]+'</a>');
-      $('#event_card_image_'+i).attr('src',eventInfo[4]);
+      $('#event_card_title_'+i).html('<a style="color:inherit;" href="../events/full/#'+eventId+'">'+eventInfo['name']+'</a>');
+      $('#event_card_image_'+i).attr('src',eventInfo['url_banner']);
       $('#event_card_image_'+i).attr('alt',eventId);
       $('#event_card_image_link_'+i).attr('href',smashggUrl);
-      eventDate = new Date(eventInfo[1]).toJSON().slice(0,10).replace(/-/g,'/');
+      eventDate = new Date(eventInfo['date']).toJSON().slice(0,10).replace(/-/g,'/');
       eventDate = eventDate.slice(5,10)+'/'+eventDate.slice(0,4);
       $('#event_card_footer_text_'+i).html(eventDate);
-      if (!eventInfo[3]){
+      if (!eventInfo['imported']){
+        $('#event_card_footer_text_'+i).addClass('text-warning');
+      }
+      else if (!eventInfo['active']){
         $('#event_card_footer_text_'+i).addClass('text-danger');
       }
       if ('seedNum' in eventRes.val){
@@ -734,7 +885,7 @@ function populateEventCards(PlayerSnapshot,PlayerEvents, placements, playerWins,
       } else {
         var eventSeedText = ''
       }
-      $('#event_card_text_'+i).html('<p><strong>'+eventRes.val.placing+'</strong>'+' / '+ eventInfo[2]+'</p>'+eventSeedText);
+      $('#event_card_text_'+i).html('<p><strong>'+eventRes.val.placing+'</strong>'+' / '+ eventInfo['numEntrants']+'</p>'+eventSeedText);
 
       // populate wins/losses in event cards
       if (eventWins.length > 0 || eventLosses.length > 0){
