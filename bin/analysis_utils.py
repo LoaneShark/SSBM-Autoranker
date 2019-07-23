@@ -186,8 +186,8 @@ def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,winprobs=No
 						g_w_id = sets[set_id]['games'][game_id]['w_id']
 						g_l_id = sets[set_id]['games'][game_id]['l_id']
 						if g_w_id is not None and g_l_id is not None:
-							w_skill = 1.-p_info[ids['t_'+str(t_id)][g_w_id]]['srank']
-							l_skill = 1.-p_info[ids['t_'+str(t_id)][g_l_id]]['srank']
+							w_skill = 1.-p_info[g_w_id]['srank']
+							l_skill = 1.-p_info[g_l_id]['srank']
 							# scale skill ratio so that even skilled players ~ 0.5, still in [0,1]
 							w_skill_bin = int(((w_skill-l_skill)/2. + 0.5)*n_bins)
 							l_skill_bin = int(((l_skill-w_skill)/2. + 0.5)*n_bins)
@@ -197,11 +197,11 @@ def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,winprobs=No
 										g_w_char_id = char_id_map[sets[set_id]['games'][game_id]['characters'][g_w_id]]
 										g_l_char_id = char_id_map[sets[set_id]['games'][game_id]['characters'][g_l_id]]
 							elif infer_characters:
-								g_w_main = get_main(ids['t_'+str(t_id)][g_w_id],p_info)
-								g_l_main = get_main(ids['t_'+str(t_id)][g_l_id],p_info)
+								g_w_main = get_main(g_w_id,p_info)
+								g_l_main = get_main(g_l_id,p_info)
 								if not (g_w_main == '' or g_l_main == ''):
-									g_w_char_id = char_id_map[get_main(ids['t_'+str(t_id)][g_w_id],p_info)]
-									g_l_char_id = char_id_map[get_main(ids['t_'+str(t_id)][g_l_id],p_info)]
+									g_w_char_id = char_id_map[g_w_main]
+									g_l_char_id = char_id_map[g_l_main]
 							else:
 								g_w_char_id = None; g_l_char_id = None
 							if g_w_char_id is not None and g_l_char_id is not None:
@@ -215,23 +215,23 @@ def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,winprobs=No
 								if l_skill-w_skill < -0.75:
 									print(w_skill)
 									print(l_skill)
-									print('UPSET: %s (%s) over %s (%s) at %s'%(p_info[ids['t_'+str(t_id)][g_w_id]]['tag'],char_labels[g_w_char_id],p_info[ids['t_'+str(t_id)][g_l_id]]['tag'],char_labels[g_l_char_id],tourneys[t_id]['name']))
+									print('UPSET: %s (%s) over %s (%s) at %s'%(p_info[g_w_id]['tag'],char_labels[g_w_char_id],p_info[g_l_id]['tag'],char_labels[g_l_char_id],tourneys[t_id]['name']))
 				# if no game data is reported
 				else:
 					if not (sets[set_id]['w_dq'] or sets[set_id]['l_dq'] or sets[set_id]['is_bye']):
 						s_w_id = sets[set_id]['w_id']
 						s_l_id = sets[set_id]['l_id']
-						w_skill = 1.-p_info[ids['t_'+str(t_id)][s_w_id]]['srank']
-						l_skill = 1.-p_info[ids['t_'+str(t_id)][s_l_id]]['srank']
+						w_skill = 1.-p_info[s_w_id]['srank']
+						l_skill = 1.-p_info[s_l_id]['srank']
 						# scale skill ratio so that even skilled players ~ 0.5, still in [0,1]
 						w_skill_bin = int(((w_skill-l_skill)/2. + 0.5)*n_bins)
 						l_skill_bin = int(((l_skill-w_skill)/2. + 0.5)*n_bins)
 
-						s_w_main = get_main(ids['t_'+str(t_id)][s_w_id],p_info)
-						s_l_main = get_main(ids['t_'+str(t_id)][s_l_id],p_info)
+						s_w_main = get_main(s_w_id,p_info)
+						s_l_main = get_main(s_l_id,p_info)
 						if not (s_w_main == '' or s_l_main == ''):
-							s_w_char_id = char_id_map[get_main(ids['t_'+str(t_id)][s_w_id],p_info)]
-							s_l_char_id = char_id_map[get_main(ids['t_'+str(t_id)][s_l_id],p_info)]
+							s_w_char_id = char_id_map[s_w_main]
+							s_l_char_id = char_id_map[s_l_main]
 						else:
 							s_w_char_id = None; s_l_char_id = None
 						if s_w_char_id is not None and s_l_char_id is not None:
@@ -436,8 +436,8 @@ def generate_tier_list(dicts,game,year,year_count,id_list=None,skill_weight=True
 								if g_w_id != None and g_l_id != None:
 									g_w_char_id = char_id_map[sets[set_id]['games'][game_id]['characters'][g_w_id]]
 									g_l_char_id = char_id_map[sets[set_id]['games'][game_id]['characters'][g_l_id]]
-									w_skill_bin = int(p_info[ids['t_'+str(t_id)][g_w_id]]['iagorank'] * n_bins)
-									l_skill_bin = int(p_info[ids['t_'+str(t_id)][g_l_id]]['iagorank'] * n_bins)
+									w_skill_bin = int(p_info[g_w_id]['iagorank'] * n_bins)
+									l_skill_bin = int(p_info[g_l_id]['iagorank'] * n_bins)
 									if char_h2h[g_w_char_id,l_skill_bin] == None:
 										char_h2h[g_w_char_id,l_skill_bin] = [0,0]
 									if char_h2h[g_l_char_id,w_skill_bin] == None:
@@ -504,7 +504,6 @@ def generate_tier_list(dicts,game,year,year_count,id_list=None,skill_weight=True
 
 	return sorted([[char_labels[char_id],char_skills[char_id]] for char_id in range(char_n)],key=lambda t: (9999. if type(t[1]) is str else t[1],t[1]))
 
-
 def disp_all(dicts,dispnum=20,key='elo',trans_cjk=True,avg_perf=False,scale_vals=False,min_activity=3,tier_tol=-1,plot_skills=False):
 	tourneys,ids,p_info,records,skills,meta = dicts
 	key_idx = 1
@@ -529,7 +528,7 @@ def disp_all(dicts,dispnum=20,key='elo',trans_cjk=True,avg_perf=False,scale_vals
 		key_idx = 1
 	if key == 'performance':
 		key_idx = 4
-	if key == 'simbrac':
+	if key == 'srank':
 		key_idx = None #5
 	if key == 'glicko':
 		key_idx = 2

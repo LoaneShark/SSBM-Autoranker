@@ -65,7 +65,7 @@ parser.add('-gs','--glicko_init_sigma',help='initial sigma value to be used by G
 
 parser.add('-ra','--srank_alpha',default = 0.5, help='S-Rank learnrate (default 0.5)', type=float)
 parser.add('-rb','--srank_beta',default = 0.9, help='S-Rank learning momentum coefficient; currently deprecated (default 0.9)', type=float)
-parser.add('-rt','--srank_tol',default = 0.0001, help='S-Rank convergence tolerance. Recommended <= 0.0001 (default 0.0001)', type=float)
+parser.add('-rv','--srank_tol',default = 0.0001, help='S-Rank convergence tolerance. Recommended <= 0.0001 (default 0.0001)', type=float)
 parser.add('-rd','--srank_learn_decay',action = 'store_false', help='Toggle learnrate decaying over time (default True)')
 parser.add('-rz','--srank_pad_zeros',action = 'store_true', help='Toggle padding of zeros to LHS of top win (default False)')
 parser.add('-rw','--srank_running_avg_sigma', default = 0.1, help='Gaussian window sigma for running average weighting (default 0.1)', type=float)
@@ -73,6 +73,7 @@ parser.add('-rl','--srank_running_avg_step', default = 0.05, help='Step size for
 parser.add('-ro','--srank_fit_corners',action='store_true',help='Toggle inclusion of data points (0,0) and (1,1) to help fit expected sigmoid shape (default False)')
 parser.add('-ru','--srank_combine_unranked',action='store_true',help='Toggle consolidation of unranked player winprobs // "the field" (default False)')
 parser.add('-rp','--srank_print_res',action = 'store_true', help='Print results of sigmoid fitting to console (default False)')
+parser.add('-rt','--srank_ranking_period',default = 12,help='Duration of S-Rank "current" ranking period, in months (default 12)',type=int)
 
 parser.add('-rs','--srank_sig_mode',default = 'alt', help='Change which sigmoid type is fit to data, from [sigmoid,simple,alt]. sigmoid is fastest, alt is most accurate. (default alt)')
 parser.add('-rf','--srank_fit_mode',default = 'winprobs', help='Change how the data is presented to the sigmoid fitting subroutine, from [winprobs,histogram,running_avg,mixed]. (default winprobs)')

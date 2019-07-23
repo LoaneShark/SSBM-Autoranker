@@ -54,6 +54,7 @@ srank_running_avg_step = 0.05 	# Step size for sliding windows (default 0.05)
 srank_fit_corners = False 		# Toggle inclusion of expected boundary points in sigfit to help encourage normal sigmoid behavior (default False)
 srank_combine_unranked = False 	# Toggle consolidation of unranked player winprobs for sigmoid fitting (default False)
 srank_print_res = False 		# Print results of sigmoid fitting to console (default False)
+srank_ranking_period = 12		# Duration of S-Rank "current" ranking period, in months (default 12)
 
 srank_sig_mode = alt 			# Change which sigmoid type is fit to data, from ['sigmoid','simple','alt']. sigmoid is fastest, alt is most accurate. (default alt)
 srank_fit_mode = winprobs 		# Change how the data is presented to the sigmoid fitting subroutine, from [winprobs,histogram,running_avg,mixed]. (default winprobs)

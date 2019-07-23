@@ -175,7 +175,10 @@ def calc_region(country,state=None,city=None,granularity=2,force_new=False,use_c
 		if 'continent' in loc and loc['continent'] == 'Antarctica':
 			l_country = None
 		else:
-			l_country = loc['country']
+			if 'country' in loc:
+				l_country = loc['country']
+			else:
+				l_country = None
 		if l_country == 'America':
 			l_country = 'United States'
 		l_continent = cc.convert(names=[l_country],to='continent')

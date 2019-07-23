@@ -363,6 +363,29 @@ def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_up
 	sigmoid_history = skills['srank_sig']
 	#performance_history = skills['perf']
 
+	# convert all entrant ids in set data to abs ids
+	for set_id in sets:
+		if 'w_id' in sets[set_id] and type(sets[set_id]['w_id']) is int:
+			sets[set_id]['w_id'] = ids['t_'+str(t_id)][sets[set_id]['w_id']]
+		if 'l_id' in sets[set_id] and type(sets[set_id]['l_id']) is int:
+			sets[set_id]['l_id'] = ids['t_'+str(t_id)][sets[set_id]['l_id']]
+
+		if 'games' in sets[set_id]:
+			for game_id in sets[set_id]['games']:
+				if 'w_id' in sets[set_id]['games'][game_id] and type(sets[set_id]['games'][game_id]['w_id']) is int:
+					sets[set_id]['games'][game_id]['w_id'] = ids['t_'+str(t_id)][sets[set_id]['games'][game_id]['w_id']]
+				if 'l_id' in sets[set_id]['games'][game_id] and type(sets[set_id]['games'][game_id]['l_id']) is int:
+					sets[set_id]['games'][game_id]['l_id'] = ids['t_'+str(t_id)][sets[set_id]['games'][game_id]['l_id']]
+
+				if 'characters' in sets[set_id]['games'][game_id]:
+					temp_excluded_ids = []
+					for temp_e_id in sets[set_id]['games'][game_id]['characters']:
+						if temp_e_id not in temp_excluded_ids:
+							temp_abs_id = ids['t_'+str(t_id)][temp_e_id]
+							temp_excluded_ids.append(temp_abs_id)
+							sets[set_id]['games'][game_id]['characters'][temp_abs_id] = sets[set_id]['games'][game_id]['characters'][temp_e_id]
+							del sets[set_id]['games'][game_id]['characters'][temp_e_id]
+
 	#print(t_id)
 	for abs_id in ids:
 		if not (type(abs_id) is str or abs_id == 't_'+str(t_id)):			# ignore id for present or past tournaments
@@ -398,13 +421,13 @@ def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_up
 						group_id = win[1][1]
 						set_games = None
 						records[abs_id]['set_history'].extend([set_id])
-						if 'games' in sets[records[abs_id]['set_history'][-1]]:
+						if 'games' in sets[set_id]:
 							set_games = {}
 							for game_id in sets[records[abs_id]['set_history'][-1]]['games']:
 								game_data = sets[records[abs_id]['set_history'][-1]]['games'][game_id]
 								set_games[game_id] = game_data
 								if 'characters' in game_data:
-									p_info[abs_id]['characters'][game_data['characters'][ids[abs_id][t_id]]][0] += 1
+									p_info[abs_id]['characters'][game_data['characters'][abs_id]][0] += 1
 						# store opponent & event
 						l_id = ids['t_'+str(t_id)][win[0]]
 						if l_id not in records[abs_id]['wins']:
@@ -431,7 +454,7 @@ def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_up
 								game_data = sets[records[abs_id]['set_history'][-1]]['games'][game_id]
 								set_games[game_id] = game_data
 								if 'characters' in game_data:
-									p_info[abs_id]['characters'][game_data['characters'][ids[abs_id][t_id]]][1] += 1
+									p_info[abs_id]['characters'][game_data['characters'][abs_id]][1] += 1
 						# store opponent & event
 						w_id = ids['t_'+str(t_id)][loss[0]]
 						if w_id not in records[abs_id]['losses']:
@@ -546,12 +569,12 @@ def store_tourney(slug,t_info,group_names,entrants,sets,dicts):
 	for set_id in sets:
 		tourneys[t_id]['setIds'].append(set_id)
 		if 'w_id' in sets[set_id] and sets[set_id]['w_id'] is not None:
-			w_id = ids['t_'+str(t_id)][sets[set_id]['w_id']]
+			w_id = sets[set_id]['w_id']
 			tourneys[t_id]['attendees'][w_id]['setsPlayed'].append(set_id)
 			tourneys[t_id]['attendees'][w_id]['charactersUsed'] = get_character_usage_by_set(dicts,sets[set_id],w_id,char_history=tourneys[t_id]['attendees'][w_id]['charactersUsed'])
 
 		if 'l_id' in sets[set_id] and sets[set_id]['l_id'] is not None:
-			l_id = ids['t_'+str(t_id)][sets[set_id]['l_id']]
+			l_id = sets[set_id]['l_id']
 			tourneys[t_id]['attendees'][l_id]['setsPlayed'].append(set_id)
 			tourneys[t_id]['attendees'][l_id]['charactersUsed'] = get_character_usage_by_set(dicts,sets[set_id],l_id,char_history=tourneys[t_id]['attendees'][l_id]['charactersUsed'])
 	tourneys[t_id]['numSets'] = len(tourneys[t_id]['setIds'])
@@ -571,7 +594,10 @@ def store_tourney(slug,t_info,group_names,entrants,sets,dicts):
 	tourneys[t_id]['upcoming'] = False
 
 	t_rating,t_sigmoid = calc_tourney_stack_score(dicts,t_id)
-	tourneys[t_id]['rating'] = t_rating
+	if t_rating is None:
+		tourneys[t_id]['rating'] = None
+	else:
+		tourneys[t_id]['rating'] = float(t_rating)
 	if t_sigmoid is None:
 		tourneys[t_id]['sigmoid'] = None
 	else:
@@ -636,6 +662,12 @@ def store_meta(dicts,t_info,year):
 		meta['top10']['elo'] = {k:{} for k in range(11)}
 		meta['top10']['glicko'] = {k:{} for k in range(11)}
 		meta['top10']['mainrank'] = {k:{} for k in range(11)}
+	if 'top50' not in meta:
+		meta['top50'] = {}
+		meta['top50']['srank'] = {k:{} for k in range(51)}
+		meta['top50']['elo'] = {k:{} for k in range(51)}
+		meta['top50']['glicko'] = {k:{} for k in range(51)}
+		meta['top50']['mainrank'] = {k:{} for k in range(51)}
 	if 'top100' not in meta:
 		meta['top100'] = {}
 		meta['top100']['srank'] = {k:{} for k in range(101)}
@@ -675,16 +707,20 @@ def store_meta(dicts,t_info,year):
 			srank_min = p_info[p_id]['srank']
 		# store top 10/100/500 player ids (by each skill)
 		for skill_rnk in ['elo','glicko','srank']:
-			for skill_div in [500,100,10]:
-				# get skill values for top 10/50/100/500 cutoffs
+			for skill_div in [500,100,50,20,10]:
+				# get skill values for top 10/20/50/100/500 cutoffs
 				if p_info[p_id][skill_rnk+'-rnk'] == skill_div:
 					if skill_rnk == 'glicko':
 						meta[skill_rnk+'_'+str(skill_div)+'_cutoff'] = p_info[p_id][skill_rnk][0]
 					else:
 						meta[skill_rnk+'_'+str(skill_div)+'_cutoff'] = p_info[p_id][skill_rnk]
 				# store top 10/100/500 player ids by each skill rank, with rank as key
-				if p_info[p_id][skill_rnk+'-rnk'] <= skill_div:
-					meta['top'+str(skill_div)][skill_rnk][p_info[p_id][skill_rnk+'-rnk']] = p_id
+				if skill_div in [500,100,50,10] and p_info[p_id][skill_rnk+'-rnk'] <= skill_div:
+					# delete this after all dbs rebuilt
+					if type(meta['top'+str(skill_div)][skill_rnk][p_info[p_id][skill_rnk+'-rnk']]) is int:
+						meta['top'+str(skill_div)][skill_rnk][p_info[p_id][skill_rnk+'-rnk']] = {}
+					meta['top'+str(skill_div)][skill_rnk][p_info[p_id][skill_rnk+'-rnk']]['id'] = p_id
+					meta['top'+str(skill_div)][skill_rnk][p_info[p_id][skill_rnk+'-rnk']]['tag'] = p_info[p_id]['tag']
 	# store new max/mins
 	meta['srank_min'] = srank_min
 	meta['elo_min'] = elo_min
@@ -757,18 +793,16 @@ def delete_tourney(dicts,t_id,slug=None,clean_slugs=False,clean_tourneys=True,cl
 					for set_id in tourney_sets:
 						if 'games' in sets[set_id]:
 							for game_id in sets[set_id]['games']:
-								g_w_e_id = sets[set_id]['games'][game_id]['w_id']
-								g_l_e_id = sets[set_id]['games'][game_id]['l_id']
-								if g_w_e_id is not None and g_l_e_id is not None:
-									g_w_id = ids['t_'+str(t_id)][g_w_e_id]
-									g_l_id = ids['t_'+str(t_id)][g_l_e_id]
+								g_w_id = sets[set_id]['games'][game_id]['w_id']
+								g_l_id = sets[set_id]['games'][game_id]['l_id']
+								if g_w_id is not None and g_l_id is not None:
 									if 'characters' in sets[set_id]['games'][game_id]:
 										if sets[set_id]['games'][game_id]['characters'] != {}:
-											g_w_char_id = sets[set_id]['games'][game_id]['characters'][g_w_e_id]
-											g_l_char_id = sets[set_id]['games'][game_id]['characters'][g_l_e_id]
+											g_w_char_id = sets[set_id]['games'][game_id]['characters'][g_w_id]
+											g_l_char_id = sets[set_id]['games'][game_id]['characters'][g_l_id]
 
-											p_info[g_w_id]['characters'][g_w_char_id][0] = max(0,p_info[g_w_id]['characters'][g_w_char_id][0]-1)
-											p_info[g_l_id]['characters'][g_l_char_id][1] = max(0,p_info[g_l_id]['characters'][g_l_char_id][1]-1)
+											p_info[ids['t_'+str(t_id)][g_w_id]]['characters'][g_w_char_id][0] = max(0,p_info[ids['t_'+str(t_id)][g_w_id]]['characters'][g_w_char_id][0]-1)
+											p_info[ids['t_'+str(t_id)][g_l_id]]['characters'][g_l_char_id][1] = max(0,p_info[ids['t_'+str(t_id)][g_l_id]]['characters'][g_l_char_id][1]-1)
 
 					# remove sets from gameplay history
 					records[abs_id]['set_history'] = [set_id for set_id in records[abs_id]['set_history'] if not set_id in deleted_sets if not set_id in tourney_sets]
@@ -824,7 +858,7 @@ def delete_tourney(dicts,t_id,slug=None,clean_slugs=False,clean_tourneys=True,cl
 	return tourneys,ids,p_info,records,skills,meta
 
 # cleans out tourneys over a year out from the currently importing one
-def clean_old_tourneys(dicts,t_info,rank_period=12,delete_data=False):
+def clean_old_tourneys(dicts,t_info,rank_period=args.srank_ranking_period,delete_data=False):
 	tourneys,ids,p_info,records,skills,meta = dicts
 	t_id,t_name,t_slug,t_ss,t_type,t_date,t_startdate,t_region,t_size,t_images,t_coords,t_bracket,t_social = t_info
 	if v >= 6:

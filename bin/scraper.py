@@ -322,7 +322,17 @@ def rivals_events(year):
 				'na-rcs-season-3-november-monthly','traction-4','eu-rcs-season-3-november-monthly','au-rcs-season-3-november-monthly','na-rcs-season-3-december-monthly',\
 				'au-rcs-season-3-december-monthly','don-t-park-on-the-grass-2018-1','eu-rcs-season-3-december-monthly']
 	elif year == 2019:
-		return ['genesis-6','frostbite-2019','road-to-season-4-online-qualifier','gote-4thekids-2019-charity-pro-am-sponsored-by-mortv','smash-n-splash-5']
+		return ['genesis-6','frostbite-2019','road-to-season-4-online-qualifier','gote-4thekids-2019-charity-pro-am-sponsored-by-mortv','smash-n-splash-5',\
+				'au-rcs-june-online-monthly','eu-rcs-june-online-monthly','bigwinchampionship-2','albion-4','na-rcs-season-4-july-online-major','metal-cavern-20',\
+				'couchwarriors-vic-july-ranking-battle-2019-smash-roa','rivals-of-aether-at-evo-2019','indie-showcase-super-smash-con-2019','awakening-5-1','biggie-ii',\
+				'eu-rcs-september-online-monthly','au-rcs-september-online-monthly','glitch-7-minus-world','bifrost-iii-sessrumnir','heat-wave-3',\
+				# AU September/October Event
+				# EU October Event
+				'eu-rcs-november-online-monthly',\
+				'dreamhack-atlanta','au-rcs-november-online-monthly',\
+				# traction-5,
+				# couchwarriors crossup,
+				'na-rcs-season-4-december-online-major']
 	else:
 		return False
 

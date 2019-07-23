@@ -981,13 +981,12 @@ def winprobs(dicts,id_list=None,mode='array',weight_recency=False):
 				h2h_scores.extend([0 for loss in range(int(nl))])
 				if nw+nl <= 1:
 					if mode == 'dict':
-						chis[abs_id][opp_id] = 0.5
+						chis[abs_id][opp_id] = 0.9
 					else:
-						chis[abs_idx,opp_idx] = 0.5
+						chis[abs_idx,opp_idx] = 0.9
 				else:
-					p_sigma = np.sqrt(sum([(gamescore-prob)**2. for gamescore in h2h_scores])/(nw+nl-1.))
-					if p_sigma == 0:
-						p_sigma = 0.5/np.sqrt(nw+nl-1.)
+					#p_sigma = np.sqrt(sum([(gamescore-prob)**2. for gamescore in h2h_scores])/(nw+nl-1.))
+					p_sigma = 1./np.sqrt(nw+nl)
 					if mode == 'dict':
 						chis[abs_id][opp_id] = max(p_sigma,0.1)
 					else:
@@ -1662,7 +1661,7 @@ def sub_fitsig(p_id,x,y,s,n_i,p0,v_b,dats,params):
 			if sig_mode == 'simple':
 				p,cov = sp.optimize.curve_fit(lambda x,x0,k:simple_cfsigmoid(x,x0,k),x,y,p0=(p_cfguess[0],p_cfguess[2]),sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf')
 				#p,cov = sp.optimize.curve_fit(simple_cfsigmoid,x,y,p0=(p[0],p_cfguess[1],p[1]),sigma=ss,bounds=([b[0] for b in v_b_2],[b[1] for b in v_b_2]),method='trf')
-				return [p[0],0.,1.,p[1]],np.diag(cov)
+				return [p[0],0.,1.,p[1]],sp.sqrt(np.diag(cov))
 			# first fit x_0 and k
 			if method == 'curve_fit':
 				if sig_mode == 'alt':
@@ -1671,7 +1670,7 @@ def sub_fitsig(p_id,x,y,s,n_i,p0,v_b,dats,params):
 					first_guess,cov_guess = sp.optimize.curve_fit(lambda x,x0,k:sigmoid(x,x0,p_cfguess[1],p_cfguess[2],k),x,y,p0=(p_cfguess[0],p_cfguess[3]),sigma=s,bounds=([v_b[0][0],v_b[3][0]],[v_b[0][1],v_b[3][1]]),method='trf',tr_solver='lsmr')
 				#first_guess,cov_guess = sp.optimize.curve_fit(lambda x,x0,k:sigmoid(x,x0,p_cfguess[1],p_cfguess[2],k),x,y,p0=(p_cfguess[0],p_cfguess[3]),sigma=s,bounds=([v_b[0][0],v_b[3][0]],[v_b[0][1],v_b[3][1]]),method='trf',tr_solver='lsmr',x_scale='jac')
 				x0_guess,k_guess = first_guess
-				cov_guess = np.diag(cov_guess)
+				cov_guess = np.sqrt(np.diag(cov_guess))
 			else:
 				first_res = sp.optimize.least_squares(cfresiduals,p_cfguess,jac=cfjac,args=(x,y),bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf')
 				p = first_res.x
@@ -1691,7 +1690,7 @@ def sub_fitsig(p_id,x,y,s,n_i,p0,v_b,dats,params):
 			else:
 				second_guess,second_cov_guess = sp.optimize.curve_fit(lambda x,y0,c:sigmoid(x,x0_guess,y0,c,k_guess),x,y,p0=(p_cfguess[1],p_cfguess[2]),sigma=s,bounds=([v_b[1][0],v_b[2][0]],[v_b[1][1],v_b[2][1]]),method='trf',tr_solver='lsmr')
 			y0_guess,c_guess = second_guess
-			second_cov_guess = np.diag(second_cov_guess)
+			second_cov_guess = np.sqrt(np.diag(second_cov_guess))
 		except RuntimeError:
 			#print(x0_guess,k_guess)
 			if sig_mode == 'alt':
@@ -1718,7 +1717,7 @@ def sub_fitsig(p_id,x,y,s,n_i,p0,v_b,dats,params):
 				final_guess,final_cov_guess = sp.optimize.curve_fit(alt_sigmoid,x,y,p0=p_cfguess,sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf',tr_solver='lsmr')
 			else:
 				final_guess,final_cov_guess = sp.optimize.curve_fit(sigmoid,x,y,p0=p_cfguess,sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf',tr_solver='lsmr')
-			final_cov = np.diag(final_cov_guess)
+			final_cov = np.sqrt(np.diag(final_cov_guess))
 			#p,cov = sp.optimize.curve_fit(cfsigmoid,x,y,p0=fit_guess,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf',tr_solver='lsmr')
 			#try:
 			#	final_p,final_cov = sp.optimize.curve_fit(cfsigmoid,x,y,p0=fit_guess,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf',tr_solver='lsmr',x_scale='jac')
@@ -1736,16 +1735,16 @@ def sub_fitsig(p_id,x,y,s,n_i,p0,v_b,dats,params):
 			try:
 				x = np.append(x,[0.,1.])
 				y = np.append(y,[0.,1.])
-				s = np.append(s,[0.25,0.25])
+				s = np.append(s,[0.1,0.1])
 				if sig_mode == 'alt':
 					final_guess,final_cov_guess = sp.optimize.curve_fit(alt_sigmoid,x,y,p0=p_cfguess,sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf',tr_solver='lsmr')
 				elif sig_mode == 'simple':
 					final_guess,final_cov_guess = sp.optimize.curve_fit(simple_cfsigmoid,x,y,p0=p_cfguess,sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf',tr_solver='lsmr')
 				else:
 					final_guess,final_cov_guess = sp.optimize.curve_fit(sigmoid,x,y,p0=p_cfguess,sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf',tr_solver='lsmr')
-				final_cov = np.diag(final_cov_guess)
+				final_cov = np.sqrt(np.diag(final_cov_guess))
 			except RuntimeError:
-				print('final pass: %s | %d | N:%d'%(data[p_id][0],p_id,len(x)))
+				print('could not fit: %s | %d | N:%d'%(data[p_id][0],p_id,len(x)))
 				#plot_winprobs(data,winps,None,None,p_id,plot_sigmoid=False,plot_tags=True)
 				#final_guess = np.array([x0_guess,y0_guess,c_guess,k_guess])
 				final_guess = p_cfguess

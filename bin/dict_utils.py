@@ -334,9 +334,9 @@ def get_character_usage_by_set(dicts,p_set,p_id,char_history={}):
 				g_w_id = p_set['games'][game_id]['w_id']
 				g_l_id = p_set['games'][game_id]['l_id']
 
-				if g_w_id is not None and ids['t_'+str(t_id)][g_w_id] == p_id:
+				if g_w_id is not None and g_w_id == p_id:
 					key_id = g_w_id
-				elif g_l_id is not None and ids['t_'+str(t_id)][g_l_id] == p_id:
+				elif g_l_id is not None and g_l_id == p_id:
 					key_id = g_l_id
 				else:
 					key_id = None

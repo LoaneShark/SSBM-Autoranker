@@ -2,6 +2,7 @@ import numpy as np
 import scipy as sp 
 import os,sys,pickle,time,datetime,math
 import firebase_admin
+import json
 from firebase_admin import db as fdb
 from firebase_admin.db import ApiCallError
 from firebase_admin import auth
@@ -140,13 +141,24 @@ def batch_upload(big_dict,sub_db_ref,batch_size=500):
 def generate_db_searchbar(dicts):
 	tourneys,ids,p_info,records,skills,meta = dicts
 
+	if args.verbosity >= 5:
+		print('Generating searchbar prefetch file...')
+
 	sbar = []
 	for p_id in p_info:
+		if 'firstname' in p_info[p_id] and p_info[p_id]['firstname'] is not None:
+			fullname = p_info[p_id]['firstname']
+			if 'lastname' in p_info[p_id] and p_info[p_id]['lastname'] is not None:
+				fullname += ' '+p_info[p_id]['lastname']
+		elif 'lastname' in p_info[p_id] and p_info[p_id]['lastname'] is not None:
+			fullname = p_info[p_id]['lastname']
+		else:
+			fullname = None
 		sbar.append({'name':p_info[p_id]['tag'],'id':p_id,'index':p_info[p_id]['srank-rnk_peak'],\
-					 'team':p_info[p_id]['team'],'fullname':p_info[p_id]['firstname']+' '+p_info[p_id]['lastname'],\
+					 'team':p_info[p_id]['team'],'fullname':fullname,\
 					 'aliases':p_info[p_id]['aliases'],'region':p_info[p_id]['region'][2],'main':p_info[p_id]['main']})
 
-	sb_filename = '../docs/assets/js/prefetch'+generate_db_str()+'_prefetch.json'
+	sb_filename = '../docs/assets/js/prefetch/'+generate_db_str()+'_prefetch.json'
 	with open(sb_filename,'w') as sb_file:
 		json.dump(sbar,sb_file)
 
