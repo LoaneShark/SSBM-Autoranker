@@ -7,6 +7,7 @@ from six.moves.urllib.request import urlopen
 from six.moves.urllib.error import HTTPError
 from timeit import default_timer as timer
 from copy import deepcopy as dcopy
+from trueskill import Rating
 ## UTIL IMPORTS
 from arg_utils import *
 from readin_utils import *
@@ -16,6 +17,8 @@ from scraper import scrape_ranks,check_ssbwiki,get_rank_name
 flatten = lambda l: [item for sublist in l for item in sublist] if type(l) is list else []
 
 args = get_args()
+
+# ts_env = TrueSkill(mu=args.trueskill_init_mu,sigma=args.trueskill_init_sigma,backend='scipy',draw_probability=0.0)
 
 # return the (filtered) result(s) for a tourney
 # format is a list of players sorted by final placement, with indexing:
@@ -457,13 +460,15 @@ def update_official_ranks(dicts,game,year,year_half=1,lookback=False):
 def update_percentiles(dicts,t_id=None):
 	tourneys,ids,p_info,records,skills,meta = dicts
 
-	for skill_key in ['elo','glicko','srank']:
-	#for skill_key in ['elo','glicko','srank','trueskill']:
+	# for skill_key in ['elo','glicko','srank','glixare']:
+	for skill_key in ['elo','glicko','srank','glixare','trueskill']:
 
 		if skill_key == 'srank':
 			p_data = np.array([[p_id,1.-p_info[p_id][skill_key]] for p_id in p_info])
 		elif skill_key == 'glicko':
 			p_data = np.array([[p_id,p_info[p_id][skill_key][0]] for p_id in p_info])
+		elif skill_key == 'trueskill':
+			p_data = np.array([[p_id,p_info[p_id]['trueskill_val']] for p_id in p_info])
 		else:
 			p_data = np.array([[p_id,p_info[p_id][skill_key]] for p_id in p_info])
 		# p_data = [p_id,skill]
@@ -500,8 +505,14 @@ def update_percentiles(dicts,t_id=None):
 
 			# store percentile/rank history in skills
 			if t_id:
-				skills[skill_key+'-rnk'][int(p_line[1])] = p_info[int(p_line[1])][skill_key+'-rnk']
-				skills[skill_key+'-pct'][int(p_line[1])] = p_info[int(p_line[1])][skill_key+'-pct']
+				if skill_key+'-rnk' not in skills:
+					skills[skill_key+'-rnk'] = {}
+					skills[skill_key+'-rnk'][int(p_line[1])] = {}
+				if skill_key+'-pct' not in skills:
+					skills[skill_key+'-pct'] = {}
+					skills[skill_key+'-pct'][int(p_line[1])] = {}
+				skills[skill_key+'-rnk'][int(p_line[1])][t_id] = p_info[int(p_line[1])][skill_key+'-rnk']
+				skills[skill_key+'-pct'][int(p_line[1])][t_id] = p_info[int(p_line[1])][skill_key+'-pct']
 
 def update_top_h2h(dicts):
 	tourneys,ids,p_info,records,skills,meta = dicts

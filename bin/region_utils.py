@@ -126,14 +126,14 @@ def calc_region(country,state=None,city=None,granularity=2,force_new=False,use_c
 	# calculate and look up region if not found in dict
 	if not use_cache or locstr not in locdict:
 		first_call_time = time.perf_counter()
-		geocoder_name = 'Nominatim'
 		try:
-			geoloc = Nominatim(user_agent='SSBM_Autoranker',timeout=5)
-			loc_res = geoloc.geocode(locstr,language='en',addressdetails=True)
-		except (ValueError, GeocoderQuotaExceeded):
+			geocoder_name = 'PickPoint'
 			geoloc = PickPoint(user_agent='SSBM_Autoranker',timeout=5,api_key='HseGVog8zSydBkMnHTEN')
 			loc_res = geoloc.geocode(locstr,language='en',addressdetails=True)
-			geocoder_name = 'PickPoint'
+		except (ValueError, GeocoderQuotaExceeded):
+			geocoder_name = 'Nominatim'
+			geoloc = Nominatim(user_agent='SSBM_Autoranker',timeout=5)
+			loc_res = geoloc.geocode(locstr,language='en',addressdetails=True)
 
 		if loc_res == None:
 			temp_locstr = ', '.join(locstr.split(', ')[1:])

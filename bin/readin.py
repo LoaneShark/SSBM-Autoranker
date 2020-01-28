@@ -163,7 +163,10 @@ def read_groups(t_id,groups,phase_data,translate_cjk=True):
 			if translate_cjk:
 				if has_cjk(groupname):
 					groupname = '<'+transliterate(groupname)+'>'
-			groupstate = int(data['entities']['groups']['state'])
+			if 'state' in data['entities']['groups']:
+				groupstate = int(data['entities']['groups']['state'])
+			else:
+				groupstate = None
 			grouptype = int(data['entities']['groups']['groupTypeId'])
 
 			# don't want exhibition brackets
@@ -171,8 +174,10 @@ def read_groups(t_id,groups,phase_data,translate_cjk=True):
 				# round 2 of filtering out amateur brackets
 				if not(is_amateur(groupname) or (is_arcadian(groupname) and not count_arcadians)):
 					# catch still-in-progress or not-yet updated brackets
-					if groupstate < 3:
+					if groupstate is None or groupstate < 3:
 						if v >= 4 :
+							if groupstate == None:
+								errstr = 'no group state!'
 							if groupstate == 2:
 								errstr = 'it is still in progress!'
 							elif groupstate == 1:
@@ -485,14 +490,14 @@ def read_sets(data,phase_data,wins,losses,xpath,sets):
 	return wins,losses,xpath,sets
 
 # reads the phase data for a given tournament
-def read_phases(tourney):
+def read_phases(slug):
 	gamemap = {1: ['melee','ssbm','ssbmelee'], 2: ['P:M','project: m','project melee','project m'], 3: ['ssb4','smash 4','ssb wii u','smash wii u','for wii u'], \
 				4: ['smash 64','ssb64','64'], 5: ['brawl','ssbb'], 1386: ['ssbu','ultimate','for switch','nintendo switch','switch'], 24: ['roa','rivals','of aether']}
 	waves = {}
 	#with open(filepath) as f:
 	#	data = json.loads(f.read())
 
-	phaselink ='https://api.smash.gg/tournament/%s?expand[]=event&expand[]=groups&expand[]=phase'%tourney
+	phaselink ='https://api.smash.gg/tournament/%s?expand[]=event&expand[]=groups&expand[]=phase'%slug
 	try:
 		tfile = urlopen(phaselink).read()
 		tdata = json.loads(tfile.decode('UTF-8'))
@@ -642,7 +647,7 @@ def read_phases(tourney):
 		return (t_info,group_ids,waves,groups)
 
 	except HTTPError:
-		print('Error 404: tourney [%s] not found'%tourney)
+		print('Error 404: tourney [%s] not found'%slug)
 		return False
 		
 

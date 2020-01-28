@@ -1,6 +1,6 @@
 #import numpy as np 
 #import scipy as sp 
-from six.moves.urllib.request import urlopen
+from six.moves.urllib.request import urlopen,Request
 from six.moves.urllib.error import HTTPError
 import matplotlib.image as mpimg
 #from six.moves.urllib.parse import urlencode
@@ -75,6 +75,7 @@ def is_ladder(descr):
 # returns the full JSON data for a phase given its ID number
 def pull_phase(num):
 	link = 'https://api.smash.gg/phase_group/%d?expand[]=sets&expand[]=seeds'%num
+	#link = 'https://api.smash.gg/phase_group/%d?expand[]=sets&expand[]=seeds&expand[]=player'%num
 	tempdata = urlopen(link).read()
 	return tempdata.decode('UTF-8')
 
@@ -281,15 +282,27 @@ def load_dict(name,ver,loc='db'):
 			s['mainrank'] = {}
 			s['mainrank_readin'] = {}
 			s['elo'] = {}
+			s['elo-rnk'] = {}
+			s['elo-pct'] = {}
 			s['elo_del'] = {}
 			s['glicko'] = {}
+			s['glicko-rnk'] = {}
+			s['glicko-pct'] = {}
 			s['glicko_del'] = {}
 			s['srank'] = {}
+			s['srank-rnk'] = {}
+			s['srank-pct'] = {}
 			s['srank_del'] = {}
 			s['srank_sig'] = {}
 			s['perf'] = {}
 			s['trueskill'] = {}
+			s['trueskill-rnk'] = {}
+			s['trueskill-pct'] = {}
 			s['trueskill_del'] = {}
+			s['glixare'] = {}
+			s['glixare-rnk'] = {}
+			s['glixare-pct'] = {}
+			s['glixare_del'] = {}
 			save_dict(s,name,ver,loc)
 			return s
 		else:
@@ -384,7 +397,9 @@ def save_character_dicts(games='smash',chars=None,to_load=True,force_new_icons=F
 				icons[game_id] = {}
 			stock_icon_url = sorted([[img['url'],img['width']] for img in character['images']],key=lambda l: l[1])[0][0]
 			if stock_icon_url not in icons[game_id] or force_new_icons:
-				icons[game_id][character['id']] = mpimg.imread(urlopen(stock_icon_url))
+				stock_icon_header = {'User-Agent' : 'Magic Browser'}
+				stock_icon_req = Request(stock_icon_url,headers=stock_icon_header)
+				icons[game_id][character['id']] = mpimg.imread(urlopen(stock_icon_req))
 			characters[game_id][character['id']] = character['name']
 
 	if save_dict(characters,'characters',None,loc='../lib') and save_dict(icons,'character_icons',None,loc='../lib'):
@@ -469,8 +484,9 @@ def print_results(res,names,entrants,losses,characters,game=1,max_place=64,trans
 	res_l = [item for item in res.items()]
 	res_s = sorted(res_l, key=lambda l: (0-l[1]['placing'],len(l[1]['path'])), reverse=True)
 
-	chardict = load_dict('characters',None,loc='../lib')
-	chardict = chardict[game]
+	if game != 5:
+		chardict = load_dict('characters',None,loc='../lib')
+		chardict = chardict[game]
 
 	# Error catching
 	if res == [] or len(res) <= 0:
@@ -545,7 +561,7 @@ def print_results(res,names,entrants,losses,characters,game=1,max_place=64,trans
 				playerstrings.extend([(sp,tag)])
 
 			# select the character with the highest pickrate as the player's 'main'
-			if player[0] in characters:
+			if player[0] in characters and game != 5:
 				char_idx = sorted([char_id for char_id in characters[player[0]]],key=lambda c_id: sum(characters[player[0]][c_id]),reverse=True)[0]
 				main_str = chardict[char_idx]
 				#main_str = str(char_idx)
@@ -598,8 +614,8 @@ if __name__ == '__main__':
 	#print(save_stock_icons(1386))
 	#write_blank_dict('meta')
 
-	clean_data('./old/sns5setsraw.txt','./old/sns5setsclean.txt')
+	#clean_data('./old/sns5setsraw.txt','./old/sns5setsclean.txt')
 
 	#save_videogame_dicts()
-	#save_character_dicts()
-	#save_stock_icons()
+	save_character_dicts()
+	save_stock_icons()

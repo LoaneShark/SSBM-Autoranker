@@ -17,6 +17,7 @@ from statistics import *
 import scipy.optimize
 from random import *
 from sklearn.cluster import KMeans as km
+from trueskill import TrueSkill, Rating, quality_1vs1, rate_1vs1
 ## UTIL IMPORTS
 from arg_utils import *
 from dict_utils import get_abs_id_from_tag,get_en_tag
@@ -296,7 +297,7 @@ def glicko_update_vol(mu,phi,sigma,p_matches,delta,v_g,tau):
 # updates the glicko ratings for all players that entered,
 # after a given tournament
 old_glicko_tau = 0.5
-def update_glicko(dicts,matches,t_info,tau=0.5,ranking_period=60):
+def update_glicko(dicts,t_info,matches,tau=0.5,ranking_period=60,to_update_glixare=True):
 	tourneys,ids,p_info,records,skills,meta = dicts
 	t_id,t_name,t_slug,t_ss,t_type,t_date,t_startdate,t_region,t_size,t_images,t_coords,t_bracket,t_social = t_info
 	# converts match information to (s_j,mu_j,phi_j) format
@@ -361,6 +362,69 @@ def update_glicko(dicts,matches,t_info,tau=0.5,ranking_period=60):
 		#if not(r_del == 0 and RD_del == 0 and sigma_del == 0):
 		skills['glicko_del'][abs_id][t_id] = (r_del,RD_del,sigma_del)
 
+		if to_update_glixare:
+			update_glixare(dicts,t_info,abs_id,r_prime,RD_prime)
+
+## GLIXARE CALCULATIONS
+# this should only run after glicko is updated, as it requires the new glicko rating/RD
+def update_glixare(dicts,t_info,abs_id,gxe_R,gxe_RD):
+	tourneys,ids,p_info,records,skills,meta = dicts
+	t_id,t_name,t_slug,t_ss,t_type,t_date,t_startdate,t_region,t_size,t_images,t_coords,t_bracket,t_social = t_info
+
+	if gxe_RD > 100:
+		gxe_res = 0
+	else:
+		gxe_res = np.round(10000. / (1. + 10.**(((1500. - gxe_R) * np.pi / sqrt(3. * log(10.)**2. * gxe_RD**2. + 2500. * (64. * np.pi**2. + 147. * log(10.)**2.)))))) / 100.
+
+	gxe_old = p_info[abs_id]['glixare']
+	p_info[abs_id]['glixare'] = gxe_res
+	p_info[abs_id]['glixare_peak'] = max(p_info[abs_id]['glixare_peak'],gxe_res)
+
+	skills['glixare'][abs_id][t_id] = gxe_res
+	skills['glixare_del'][abs_id][t_id] = gxe_res-gxe_old
+
+## TRUESKILL CALCULATIONS
+# WIP -- need to figure out batch update shenanigans
+# 		(for now it just assumes matches are chronological and does them one by one)
+def update_trueskill(dicts,t_info,matches):
+	tourneys,ids,p_info,records,skills,meta = dicts
+	t_id,t_name,t_slug,t_ss,t_type,t_date,t_startdate,t_region,t_size,t_images,t_coords,t_bracket,t_social = t_info
+
+	# establish TrueSkill environment for smash games
+	env = TrueSkill(mu=c_args.trueskill_init_mu,sigma=c_args.trueskill_init_sigma,backend='scipy',draw_probability=0.0)
+	#p_info_old = dcopy(p_info)
+	#new_trueskills = {}
+
+	for abs_id in p_info:
+		#if abs_id in matches
+		if t_id in ids[abs_id] and abs_id in matches and len(matches[abs_id]) > 0:
+
+			p_matches = [(abs_id,match[1]) if match[0] >= 0.5 else (match[1],abs_id) for match in matches[abs_id]]
+			#p_matches = [(p_info_old(match[0])['trueskill'],p_info_old(match[1])['trueskill']) for match in p_matches]
+			p_matches = [(p_info[match[0]]['trueskill'],p_info[match[1]]['trueskill']) for match in p_matches]
+
+			for match in p_matches:
+				print(match[0],match[1])
+				new_r1, new_r2 = rate_1vs1(match[0],match[1])
+				#new_trueskills[match[0]] = new_r1
+				p_info[match[0]]['trueskill_del'] = new_r1-p_info[match[0]]['trueskill']
+				p_info[match[0]]['trueskill'] = new_r1
+				p_info[match[0]]['trueskill_val'] = env.expose(new_r1)
+				if p_info[match[0]]['trueskill_peakval'] < p_info[match[0]]['trueskill_val']:
+					p_info[match[0]]['trueskill_peakval'] = p_info[match[0]]['trueskill_val']
+					p_info[match[0]]['trueskill_peak'] = p_info[match[0]]['trueskill']
+				#new_trueskills[match[1]] = new_r2
+				p_info[match[1]]['trueskill_del'] = new_r2-p_info[match[1]]['trueskill']
+				p_info[match[1]]['trueskill'] = new_r2
+				p_info[match[1]]['trueskill_val'] = env.expose(new_r2)
+				## this will never happen pretty much, since r2 is always going to have lost (and therefore dropped in rating)
+				if p_info[match[1]]['trueskill_peakval'] < p_info[match[1]]['trueskill_val']:
+					p_info[match[1]]['trueskill_peakval'] = p_info[match[1]]['trueskill_val']
+					p_info[match[1]]['trueskill_peak'] = p_info[match[1]]['trueskill']
+
+			if abs_id == 1000:
+				print(matches[abs_id])
+				print(p_matches)
 
 ## SIGRANK MAIN CALCULATIONS
 
@@ -1001,7 +1065,10 @@ def winprobs(dicts,id_list=None,mode='array',weight_recency=False):
 def running_winprobs(data,winps,p_id,mode='dict',plot_probs=True,window_sigma=float(c_args.srank_running_avg_sigma),window_step=float(c_args.srank_running_avg_step)):
 	#tourneys,ids,p_info,records,skills,meta = dicts
 	p_winps = winps[p_id]
-	opp_list = sorted([opp_id for opp_id in p_winps],key=lambda opp:p_winps[opp])
+	opp_list = sorted([opp_id for opp_id in p_winps if p_winps[opp_id] >= 0.],key=lambda opp:p_winps[opp])
+	if False:
+		for opp_id in opp_list:
+			print(p_winps[opp_id], data[opp_id][0],'\t', data[opp_id])
 
 	#window_sigma = 0.1
 	#window_step = 0.05
@@ -1327,7 +1394,6 @@ def inv_simple_sigmoid(y,p):
 	#		return intercept
 	return [y_int if not np.isnan(y_int) else nan_round(y_p) for y_int,y_p in zip(intercept,p)]
 	#return intercept
-
 def cfsigmoid(x,x0,y0,c,k):
 	#x0,y0,c,k=p
 	#print x0,y0,c,k
@@ -1454,8 +1520,9 @@ def fitsig(skill_ranks,data,winps,chis,id_list,old_guess=None,method='curve_fit'
 					opp_skill = skill_ranks[opp_id][1]
 					if not np.isnan(opp_skill):
 						if merge_unranked and opp_skill >= 1.0:
-							field_y.append(max(min(ratio,0.999),0.001))
-							field_s.append(chis[p_id][opp_id])
+							if ratio >= 0.0:
+								field_y.append(max(min(ratio,0.999),0.001))
+								field_s.append(chis[p_id][opp_id])
 						else:
 							if ratio > 0:
 								xs.append(opp_skill)
@@ -1479,8 +1546,9 @@ def fitsig(skill_ranks,data,winps,chis,id_list,old_guess=None,method='curve_fit'
 						opp_skill = data[opp_id][1]
 					if not np.isnan(opp_skill):
 						if merge_unranked and opp_skill >= 1.0:
-							field_y.append(max(min(ratio,0.999),0.001))
-							field_s.append(chis[p_id][opp_id])
+							if ratio >= 0.0:
+								field_y.append(max(min(ratio,0.999),0.001))
+								field_s.append(chis[p_id][opp_id])
 						else:
 							if ratio > 0:
 								xs.append(opp_skill)
@@ -1632,7 +1700,7 @@ def fitsig(skill_ranks,data,winps,chis,id_list,old_guess=None,method='curve_fit'
 # subroutine of fitsig, so that many can be fit in parallel
 def sub_fitsig(p_id,x,y,s,n_i,p0,v_b,dats,params):
 	data,winps = dats
-	p_cfguess = p0
+	p_cfguess = np.copy(p0)
 	#print(p_cfguess.shape)
 	method,three_pass,mode,sig_mode = params
 
@@ -1708,24 +1776,33 @@ def sub_fitsig(p_id,x,y,s,n_i,p0,v_b,dats,params):
 	#if three_pass:
 	else:
 		try:
-			#final_guess,final_cov_guess = sp.optimize.curve_fit(lambda x,x0,k:cfsigmoid(x,x0,p_cfguess[1],p_cfguess[2],k),x,y,p0=(p_cfguess[0],p_cfguess[3]),sigma=s,bounds=([v_b[0][0],v_b[3][0]],[v_b[0][1],v_b[3][1]]),method='trf',tr_solver='lsmr',x_scale='jac')
-			#soft_bounds = [[max(val-.25*abs(val),bound[0]),min(val+.25*abs(val),bound[1])] for val,bound in zip(fit_guess,v_b)]
-			#x0_guess,k_guess = final_guess
 			if sig_mode == 'simple':
-				final_guess,final_cov_guess = sp.optimize.curve_fit(simple_cfsigmoid,x,y,p0=p_cfguess,sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf',tr_solver='lsmr')
+				final_guess,final_cov_guess = sp.optimize.curve_fit(simple_cfsigmoid,x,y,p0=p_cfguess,sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='dogbox',tr_solver='exact')
+				#final_guess,final_cov_guess = sp.optimize.curve_fit(simple_cfsigmoid,x,y,p0=p_cfguess,sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf',tr_solver='lsmr')
 			elif sig_mode == 'alt':
-				final_guess,final_cov_guess = sp.optimize.curve_fit(alt_sigmoid,x,y,p0=p_cfguess,sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf',tr_solver='lsmr')
+				if True and args.verbosity >= 6:
+					np.set_printoptions(precision=15)
+					print('id: '+str(p_id))
+					print(data[p_id])
+					print(p_cfguess)
+					print([type(p) for p in p_cfguess])
+					print([p == 0 for p in p_cfguess])
+					print([p < 0 for p in p_cfguess])
+					print(v_b)
+					print([[type(b[0]),type(b[1])] for b in v_b])
+					print([[xi,yi] for xi,yi in zip(x,y)])
+					print(s)
+					print([[type(xi),type(yi)] for xi,yi in zip(x,y)])
+					print([cfg > b[0] and cfg < b[1] for cfg,b in zip(p_cfguess,v_b)])
+				if p_cfguess[1] < 1e-17:
+					p_cfguess[1] = 1e-17
+				final_guess,final_cov_guess = sp.optimize.curve_fit(alt_sigmoid,x,y,p0=p_cfguess,sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='dogbox',tr_solver='exact')
+				#final_guess,final_cov_guess = sp.optimize.curve_fit(alt_sigmoid,x,y,p0=p_cfguess,sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf',tr_solver='lsmr')
 			else:
-				final_guess,final_cov_guess = sp.optimize.curve_fit(sigmoid,x,y,p0=p_cfguess,sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf',tr_solver='lsmr')
+				final_guess,final_cov_guess = sp.optimize.curve_fit(sigmoid,x,y,p0=p_cfguess,sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='dogbox',tr_solver='exact')
+				#final_guess,final_cov_guess = sp.optimize.curve_fit(sigmoid,x,y,p0=p_cfguess,sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf',tr_solver='lsmr')
 			final_cov = np.sqrt(np.diag(final_cov_guess))
-			#p,cov = sp.optimize.curve_fit(cfsigmoid,x,y,p0=fit_guess,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf',tr_solver='lsmr')
-			#try:
-			#	final_p,final_cov = sp.optimize.curve_fit(cfsigmoid,x,y,p0=fit_guess,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf',tr_solver='lsmr',x_scale='jac')
-				#final_p,final_cov = sp.optimize.curve_fit(cfsigmoid,x,y,p0=fit_guess,bounds=([b[0] for b in soft_bounds],[b[1] for b in soft_bounds]),method='trf',tr_solver='lsmr',x_scale='jac')
-			#except ValueError:
-			#	print ([var > b[0] and var < b[1] for b in v_b])
-			#	return None
-			#return final_p,final_cov
+
 		except RuntimeError:
 			'''print('final pass: %s | %d'%(data[p_id][0],p_id))
 			final_guess = p_cfguess
@@ -1737,19 +1814,31 @@ def sub_fitsig(p_id,x,y,s,n_i,p0,v_b,dats,params):
 				y = np.append(y,[0.,1.])
 				s = np.append(s,[0.1,0.1])
 				if sig_mode == 'alt':
-					final_guess,final_cov_guess = sp.optimize.curve_fit(alt_sigmoid,x,y,p0=p_cfguess,sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf',tr_solver='lsmr')
+					final_guess,final_cov_guess = sp.optimize.curve_fit(alt_sigmoid,x,y,p0=p_cfguess,sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='dogbox',tr_solver='lsmr')
+					#final_guess,final_cov_guess = sp.optimize.curve_fit(alt_sigmoid,x,y,p0=p_cfguess,sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf',tr_solver='lsmr')
 				elif sig_mode == 'simple':
-					final_guess,final_cov_guess = sp.optimize.curve_fit(simple_cfsigmoid,x,y,p0=p_cfguess,sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf',tr_solver='lsmr')
+					final_guess,final_cov_guess = sp.optimize.curve_fit(simple_cfsigmoid,x,y,p0=p_cfguess,sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='dogbox',tr_solver='lsmr')
+					#final_guess,final_cov_guess = sp.optimize.curve_fit(simple_cfsigmoid,x,y,p0=p_cfguess,sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf',tr_solver='lsmr')
 				else:
-					final_guess,final_cov_guess = sp.optimize.curve_fit(sigmoid,x,y,p0=p_cfguess,sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf',tr_solver='lsmr')
+					final_guess,final_cov_guess = sp.optimize.curve_fit(sigmoid,x,y,p0=p_cfguess,sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='dogbox',tr_solver='lsmr')
+					#final_guess,final_cov_guess = sp.optimize.curve_fit(sigmoid,x,y,p0=p_cfguess,sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='trf',tr_solver='lsmr')
 				final_cov = np.sqrt(np.diag(final_cov_guess))
 			except RuntimeError:
 				print('could not fit: %s | %d | N:%d'%(data[p_id][0],p_id,len(x)))
 				#plot_winprobs(data,winps,None,None,p_id,plot_sigmoid=False,plot_tags=True)
-				#final_guess = np.array([x0_guess,y0_guess,c_guess,k_guess])
 				final_guess = p_cfguess
-				#final_cov = np.array([cov_guess[0],second_cov_guess[0],second_cov_guess[1],cov_guess[1]])
 				final_cov = np.full_like(final_guess,-1.)
+		# catch '`x0` violates bound constraints' error from scipy
+		## TODO: Find out what causes this and fix it
+		except ValueError:
+			if sig_mode == 'simple':
+				final_guess,final_cov_guess = sp.optimize.curve_fit(simple_cfsigmoid,x,y,p0=p_cfguess,sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='dogbox',tr_solver='lsmr')
+			elif sig_mode == 'alt':
+				final_guess,final_cov_guess = sp.optimize.curve_fit(alt_sigmoid,x,y,p0=p_cfguess,sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='dogbox',tr_solver='lsmr')
+			else:
+				final_guess,final_cov_guess = sp.optimize.curve_fit(sigmoid,x,y,p0=p_cfguess,sigma=s,bounds=([b[0] for b in v_b],[b[1] for b in v_b]),method='dogbox',tr_solver='lsmr')
+			final_cov = np.sqrt(np.diag(final_cov_guess))
+
 
 	#print(final_guess.shape,final_cov.shape)
 	return final_guess,final_cov
@@ -1761,13 +1850,14 @@ def old_fitsigs(skill_ranks,data,winps,chis,p_ids,old_guess=None,method='curve_f
 def get_fitsig_bounds(g=False,simple=False):
 	if g:
 		# x0, g, c, k
-		return [[-1.,1.],[0.,1.],[0.,1.],[0.,20.]]
+		#return np.array([[-1.,1.],[0.,1.],[0.,1.],[0.,20.]])
+		return np.array([[-1.,1.],[0.,1.],[0.,1.],[0.,20.]])
 	elif simple:
 		# x0, k
-		return [[-1.,1.],[0.,20.]]
+		return np.array([[-1.,1.],[0.,20.]])
 	else:
 		# x0, y0, c, k
-		return [[-1.,1.],[-1.,1.],[0.,1.],[0.,20.]]
+		return np.array([[-1.,1.],[-1.,1.],[0.,1.],[0.,20.]])
 
 def get_fitsig_guesses(p_skill=None,g=False,simple=False):
 	if p_skill == None:

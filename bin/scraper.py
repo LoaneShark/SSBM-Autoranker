@@ -237,9 +237,11 @@ def scrape_ranks(game,year,rank_str,yearstr,yr_half=-1):
 			continue # ignore header row
 		else:
 			player_content = player.find_all('td')
-			tags.append(player_content[1].find_all('a')[1].text.strip())
-			if len(player_content) >= 6:
-				ratings.append(float(player_content[5].text))
+			player_links = player_content[1].find_all('a')
+			if len(player_links) >= 2:
+				tags.append(player_links[1].text.strip())
+				if len(player_content) >= 6:
+					ratings.append(float(player_content[5].text))
 
 	if ratings == []:
 		ratings = None
@@ -326,40 +328,40 @@ def rivals_events(year):
 				'au-rcs-june-online-monthly','eu-rcs-june-online-monthly','bigwinchampionship-2','albion-4','na-rcs-season-4-july-online-major','metal-cavern-20',\
 				'couchwarriors-vic-july-ranking-battle-2019-smash-roa','rivals-of-aether-at-evo-2019','indie-showcase-super-smash-con-2019','awakening-5-1','biggie-ii',\
 				'eu-rcs-september-online-monthly','au-rcs-september-online-monthly','glitch-7-minus-world','bifrost-iii-sessrumnir','heat-wave-3',\
-				# AU September/October Event
-				# EU October Event
-				'eu-rcs-november-online-monthly',\
-				'dreamhack-atlanta','au-rcs-november-online-monthly',\
-				# traction-5,
-				# couchwarriors crossup,
-				'na-rcs-season-4-december-online-major']
+				'au-rcs-october-online-monthly','syndicate-2019','eu-rcs-november-online-monthly','dreamhack-atlanta','au-rcs-november-online-monthly',\
+				'traction-5','couchwarriors-crossup-2','na-rcs-season-4-december-online-major']
+	elif year == 2020:
+		return ['genesis-7']
 	else:
 		return False
 
 if __name__ == '__main__':
 	#print(scrape(1386,2019,verb=9))
 	#print(scrape_ranks(4,2018))
-	urlattempt = 'https://www.ssbwiki.com/Smasher:Light'
 
-	try:
-		page = urlopen(urlattempt).read()
-		page = page.decode('UTF-8')
-		doc = BeautifulSoup(page,features='lxml')
+	print(scrape_ranks(1386,2019,'Summer_2019_PGRU','Summer_2019_',0))
 
-		head1 = doc.find('h1')
-		if head1.get('id') == 'firstHeading':
-			if 'disambiguation' in head1.text:
-				bulletlist = doc.find('ul')
-				for line in bulletlist.find_all('li'):
-					if ', a smasher from ' in line.text:
-						state = line.text.split(', a smasher from ')
-						state = state[1]
+	if False:
+		urlattempt = 'https://www.ssbwiki.com/Smasher:Light'
+		try:
+			page = urlopen(urlattempt).read()
+			page = page.decode('UTF-8')
+			doc = BeautifulSoup(page,features='lxml')
 
-						#if state in p_info[p_id]['region']:
-						ssbwiki_stub = line.find('a').get('href')
-						print(ssbwiki_stub[9:]) # remove the '/Smasher:' that is prepended
-	except HTTPError:
-		print('ass')
+			head1 = doc.find('h1')
+			if head1.get('id') == 'firstHeading':
+				if 'disambiguation' in head1.text:
+					bulletlist = doc.find('ul')
+					for line in bulletlist.find_all('li'):
+						if ', a smasher from ' in line.text:
+							state = line.text.split(', a smasher from ')
+							state = state[1]
+
+							#if state in p_info[p_id]['region']:
+							ssbwiki_stub = line.find('a').get('href')
+							print(ssbwiki_stub[9:]) # remove the '/Smasher:' that is prepended
+		except HTTPError:
+			print('ass')
 	#scrape_slugs(['https://www.ssbwiki.com/Tournament:Valhalla'])
 	
 	#url = 'https://www.ssbwiki.com/List_of_national_tournaments'

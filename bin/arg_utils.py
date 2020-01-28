@@ -14,34 +14,34 @@ parser = configargparse.get_argument_parser()
 parser.add('-cf','--config_file',help='path to config file',default='./configs/defaults.conf',is_config_file=True,type=str)
 
 # instance/db type args
-parser.add('-g','--game',help='game id to be used: Melee=1, P:M=2, Wii U=3, 64=4, Ultimate=1386 (default melee)',default=1, required=True, type=int)
-parser.add('-y','--year',help='The year you want to analyze (for ssbwiki List of Majors scraper)(default 2016)',default=2016, required=True, type=int)
+parser.add('-g', '--game',help='game id to be used: Melee=1, P:M=2, Wii U=3, 64=4, Ultimate=1386 (default melee)',default=1, required=True, type=int)
+parser.add('-y', '--year',help='The year you want to analyze (for ssbwiki List of Majors scraper)(default 2016)',default=2016, required=True, type=int)
 parser.add('-yc','--year_count',help='How many years to analyze from starting year',default=0, type=int)
 parser.add('-fg','--force_game',help='game id to be used, force use (cannot scrape non-smash slugs)',default=False)
-parser.add('-d','--debug',help='debug id toggle, will save separately (default False)',action='store_true')
+parser.add('-d', '--debug',help='debug id toggle, will save separately (default False)',action='store_true')
 parser.add('-ds','--debug_str',help='optional str to append to db key name (alphanumeric chars only)',default=False)
 
-parser.add('-c','--current_db',help='keep the database "current" i.e. delete tourney records over 1 year old (default False)',action='store_true')
+parser.add('-c', '--current_db',help='keep the database "current" i.e. delete tourney records over 1 year old (default False)',action='store_true')
 parser.add('-sd','--season_db',help='keep the database as the "current season" i.e. delete tourney records not in current (realtime) year (default False)',action='store_true')
 
 parser.add('-sl','--slug',help='tournament URL slug',default=None)
 parser.add('-ss','--short_slug',help='shorthand tournament URL slug',default=None)
 
 # basic/general config args
-parser.add('-s','--save',help='save db/cache toggle (default True)',action='store_false')
-parser.add('-l','--load',help='load db/cache toggle (default True)',action='store_false')
-parser.add('-v','--verbosity',help='verbosity [0-9]',default=0, type=int)
+parser.add('-s', '--save',help='save db/cache toggle (default True)',action='store_false')
+parser.add('-l', '--load',help='load db/cache toggle (default True)',action='store_false')
+parser.add('-v', '--verbosity',help='verbosity [0-9]',default=0, type=int)
 
-parser.add('-t','--teamsize',help='1 for singles bracket, 2 for doubles, 4+ for crews (default 1)',default=1, type=int)
+parser.add('-t', '--teamsize',help='1 for singles bracket, 2 for doubles, 4+ for crews (default 1)',default=1, type=int)
 parser.add('-st','--static_teams',help='store teams as static units, rather than strack skill of its members individually [WIP]',action='store_true')
 parser.add('-ar','--use_arcadians',help='count arcadian events (default False)',action='store_true')
 
 parser.add('-ff','--force_first',help='force the first criteria-matching event to be the only event (default True)',action='store_false')
 parser.add('-dn','--display_size',help='lowest placing shown on pretty printer output, or -1 to show all entrants (default 64)',default=64, type=int)
-parser.add('-p','--print',help='print tournament final results to console as they are read in (default False)',action='store_true')
+parser.add('-p', '--print',help='print tournament final results to console as they are read in (default False)',action='store_true')
 
 # storage args
-parser.add('-o','--offline',help='[WIP] Toggle whether to search online for information. Automatically enables all caching. (default False)',action='store_true')
+parser.add('-o', '--offline',help='[WIP] Toggle whether to search online for information. Automatically enables all caching. (default False)',action='store_true')
 parser.add('-cs','--cache_slugs',help='load slugs toggle (default True)',action='store_false')
 parser.add('-cr','--cache_results',help='save phase data after tournament is done being read in (default False)',action='store_true')
 parser.add('-cm','--cache_mainranks',help='toggle caching the "official" rankings (default True)',action='store_false')
@@ -62,6 +62,9 @@ parser.add('-ge','--glicko_tol',help='convergence tolerance value to be used by 
 parser.add('-gv','--glicko_init_value',help='initial rating value to be used by Glicko-2 algorithm (default 1500)',default=1500., type=float)
 parser.add('-gr','--glicko_init_rd',help='initial rating deviation value to be used by Glicko-2 algorithm (default 350)',default=350., type=float)
 parser.add('-gs','--glicko_init_sigma',help='initial sigma value to be used by Glicko-2 algorithm (default 0.06)',default=0.06, type=float)
+
+parser.add('-tm','--trueskill_init_mu',help='Initial skill rating for TrueSkill algorithm (default 25)',default=25,type=float)
+parser.add('-ts','--trueskill_init_sigma',help='Initial skill rating variance for TrueSkill algorithm (default 25/3 == 8.3333...)',default=25./3., type=float)
 
 parser.add('-ra','--srank_alpha',default = 0.5, help='S-Rank learnrate (default 0.5)', type=float)
 parser.add('-rb','--srank_beta',default = 0.9, help='S-Rank learning momentum coefficient; currently deprecated (default 0.9)', type=float)
@@ -90,7 +93,7 @@ parser.add('-rx','--srank_simbrack',default = False, help='Toggle scoring by sim
 parser.add('-mu','--character_matchups',action='store_true',help='toggle for generating character matchup charts (default False)')
 parser.add('-mm','--matchup_mode',default='default',help='set character matchup chart calculation mode')
 parser.add('-tl','--make_tier_list',action='store_true',help='toggle for generating character tier lists (default False)')
-parser.add('-tm','--tier_list_mode',default='default',help='set character tier list calculation mode')
+parser.add('-tt','--tier_list_mode',default='default',help='set character tier list calculation mode')
 
 # web db args
 parser.add('-wu','--web_upload',action='store_true',help='toggle for pushing the game db to the online database (default False)')

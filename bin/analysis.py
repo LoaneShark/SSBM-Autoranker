@@ -17,6 +17,7 @@ from dict_utils import *
 from calc_utils import *
 from analysis_utils import *
 from webdb import *
+from nn_utils import *
 
 ## TODO: 
 ##	Shortterm
@@ -34,6 +35,7 @@ from webdb import *
 ## 			- Maybe drop worst N results from each player? does this take away from consistency as a virtue?
 ## 		 - SKILL TIERSSSSS
 ## 		 - Fix crashes on repeated web calls
+## 		 - Kickscore algorithm/library
 ##
 ## 		LOWER PRIORITY:
 ## 		 - filter out invitationals for certain metrics (like % of bracket complete, etc.)
@@ -104,6 +106,10 @@ def main():
 	if int(args.verbosity) >= 5:
 		print('-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-')
 
+	if False:
+		ps = dicts_to_nn(dicts,seed='last')
+		main_nn(ps)
+		return True
 	#if 121567 in tourneys:
 	#	print(calc_tourney_stack_score(dicts,121567,plot_res=True))
 	# ==========================================================================================
@@ -119,7 +125,7 @@ def main():
 	#resume = get_resume(dicts,None,tags=['Iago','Jobbo','Jobboman','Crimock','CrimockLyte'])
 	#resume = get_resume(dicts,None,tags=['Draxsel','iModerz','TehGuitarLord','Joe-J','San','PikaPika!','K.I.D. Goggles','K.I.D.Goggles','Dom','Fun China'])
 	#resume = get_resume(dicts,None,tags=['Nairo','Axe','Iago'])
-	#resume = get_resume(dicts,None,tags=['Nightmare','N','Mafia','The Party','Hyuga'])
+	#resume = get_resume(dicts,None,tags=['Nightmare','N','Mafia','The Party','Hyuga','Ally'])
 	#print_resume(dicts,resume,g_key='player',s_key='event')
 	#print(get_social_media(dicts,1004))
 	
@@ -150,8 +156,13 @@ def main():
 	#if game_idx == 1386 or game_idx == 3:
 
 	top100_sranks = sorted([[p_info[p_id]['tag'],p_info[p_id]['srank']] for p_id in p_info if is_active(dicts,p_id)],key=lambda l:l[1])[:100]
+	i = 1
 	for line in top100_sranks:
-		print(line)
+		if i >= 100: i_buff = ""
+		elif i >= 10: i_buff = " "
+		else: i_buff = "  "
+		print(''+str(i)+str(i_buff)+str(line))
+		i+=1
 
 	# find optimum hyperparameters (higher learnrate is better, >0.2 needed for convergence)
 	if 1 < 0:
@@ -161,11 +172,11 @@ def main():
 	if to_calc_sigrank:
 		array_t = timer()
 		if game_idx == 1:
-			iagorank_params = calc_sigrank(dicts,min_req=min_act,max_iter=500,learn_decay=True,disp_size=100,verbosity=5,print_res=True,plot_ranks=False,\
-				mode='array',seed='last',sig_mode='alt',score_by='intsig',fit_mode='winprobs',\
+			iagorank_params = calc_sigrank(dicts,min_req=min_act,max_iter=1000,learn_decay=True,disp_size=100,verbosity=5,print_res=True,plot_ranks=False,\
+				mode='array',seed='blank',sig_mode='alt',score_by='intsig',fit_mode='winprobs',\
 				alpha=0.5,fit_corners=False,pad_zeros=False,combine_unranked=False)
 		else:
-			iagorank_params = calc_sigrank(dicts,min_req=min_act,max_iter=1000,learn_decay=True,disp_size=300,verbosity=5,print_res=True,plot_ranks=False,\
+			iagorank_params = calc_sigrank(dicts,min_req=min_act,max_iter=1000,learn_decay=True,disp_size=100,verbosity=5,print_res=True,plot_ranks=False,\
 				mode='array',seed='blank',sig_mode='alt',score_by='intsig',fit_mode='winprobs')
 		array_time = timer()-array_t
 		print('Sigrank calc time elapsed:','{:.3f}'.format(array_time) + ' s')
@@ -178,7 +189,7 @@ def main():
 		else:
 			iagorank_params = None
 
-	if False:
+	if True:
 		iagoranks,winprobs,sigmoids,data_hist,id_list = iagorank_params
 		print('N: %d'%len(id_list))
 		if v >= 4:

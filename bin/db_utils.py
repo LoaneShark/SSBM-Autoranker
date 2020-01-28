@@ -7,6 +7,7 @@ import shutil
 from timeit import default_timer as timer
 from copy import deepcopy as dcopy
 from math import *
+from trueskill import Rating as ts_Rating
 ## UTIL IMPORTS
 from arg_utils import *
 from readin import readin,set_readin_args
@@ -302,14 +303,20 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 					update_social_media(dicts,abs_id,v)
 
 				# store ranking data, with initial values if needed
-				if 'elo' not in skills:
-					for key in ['elo','elo_del','glicko','glicko_del','srank','srank_del','srank_sig','perf']:
+				if 'elo' not in skills or 'elo-rnk' not in skills:
+					for key in ['elo','elo-rnk','elo-pct','elo_del',\
+								'glicko','glicko-rnk','glicko-pct','glicko_del',\
+								'srank','srank-rnk','srank-pct','srank_del','srank_sig',\
+								'trueskill','trueskill-rnk','trueskill-pct','trueskill_del',\
+								'glixare','glixare-rnk','glixare-pct','glixare_del', 'perf']:
 						skills[key] = {}
 				if 'elo' not in p_info[abs_id]:
 					#p_info[abs_id]['elo'] = 1500.
 					p_info[abs_id]['elo'] = float(args.elo_init_value)
 					p_info[abs_id]['elo_peak'] = p_info[abs_id]['elo']
 					skills['elo'][abs_id] = {}
+					skills['elo-rnk'][abs_id] = {}
+					skills['elo-pct'][abs_id] = {}
 					skills['elo_del'][abs_id] = {}
 				# glicko stores a tuple with (rating,RD,volatility)
 				if 'glicko' not in p_info[abs_id]:
@@ -317,6 +324,8 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 					p_info[abs_id]['glicko'] = (float(args.glicko_init_value),float(args.glicko_init_rd),float(args.glicko_init_sigma))
 					p_info[abs_id]['glicko_peak'] = p_info[abs_id]['glicko'][0]
 					skills['glicko'][abs_id] = {}
+					skills['glicko-rnk'][abs_id] = {}
+					skills['glicko-pct'][abs_id] = {}
 					skills['glicko_del'][abs_id] = {}
 				if 'srank' not in p_info[abs_id]:
 					p_info[abs_id]['srank'] = int(1)
@@ -325,8 +334,33 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 					p_info[abs_id]['srank_last'] = int(1)
 					p_info[abs_id]['srank_peak'] = int(1)
 					skills['srank'][abs_id] = {}
+					skills['srank-rnk'][abs_id] = {}
+					skills['srank-pct'][abs_id] = {}
 					skills['srank_del'][abs_id] = {}
 					skills['srank_sig'][abs_id] = {}
+				if 'trueskill' not in p_info[abs_id]:
+					#p_info[abs_id]['trueskill'] = 0.
+					p_info[abs_id]['trueskill'] = ts_Rating(mu=args.trueskill_init_mu,sigma=args.trueskill_init_sigma)
+					p_info[abs_id]['trueskill_val'] = 0.
+					p_info[abs_id]['trueskill_peak'] = p_info[abs_id]['trueskill']
+					p_info[abs_id]['trueskill_peakval'] = p_info[abs_id]['trueskill_val']
+					if 'trueskill' not in skills:
+						skills['trueskill'] = {}
+						skills['trueskill-rnk'] = {}
+						skills['trueskill-pct'] = {}
+						skills['trueskill_del'] = {}
+					skills['trueskill'][abs_id] = {}
+					skills['trueskill-rnk'][abs_id] = {}
+					skills['trueskill-pct'][abs_id] = {}
+					skills['trueskill_del'][abs_id] = {}
+				if 'glixare' not in p_info[abs_id]:
+					#p_info[abs_id]['glicko'] = (1500.,350.,0.06)
+					p_info[abs_id]['glixare'] = 0
+					p_info[abs_id]['glixare_peak'] = p_info[abs_id]['glixare']
+					skills['glixare'][abs_id] = {}
+					skills['glixare-rnk'][abs_id] = {}
+					skills['glixare-pct'][abs_id] = {}
+					skills['glixare_del'][abs_id] = {}
 				if 'sets_played' not in p_info[abs_id]:
 					p_info[abs_id]['sets_played'] = 0
 				if 'events_entered' not in p_info[abs_id]:
@@ -353,6 +387,7 @@ def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_up
 	tourneys,ids,p_info,records,skills,meta = dicts
 	old_p_info = dcopy(p_info)
 	glicko_matches = {}
+	trueskill_matches = {}
 
 	elo_history = skills['elo']
 	elo_deltas = skills['elo_del']
@@ -412,6 +447,7 @@ def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_up
 				actual_score = 0.
 				# used for glicko
 				glicko_scores = []
+				trueskill_scores = []
 
 				# store wins and losses
 				if e_id in wins:
@@ -441,6 +477,7 @@ def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_up
 						expected_score += exp_score(old_p_info[abs_id]['elo'],old_p_info[l_id]['elo'])
 
 						glicko_scores.extend([(1.,l_id)])
+						trueskill_scores.extend([(1.,l_id)])
 				if e_id in losses:
 					for loss in losses[e_id]:
 						# store set id/data & character data if available
@@ -454,6 +491,8 @@ def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_up
 								game_data = sets[records[abs_id]['set_history'][-1]]['games'][game_id]
 								set_games[game_id] = game_data
 								if 'characters' in game_data:
+									if game_data['characters'][abs_id] not in p_info[abs_id]['characters']:
+										p_info[abs_id]['characters'][game_data['characters'][abs_id]] = [0,0]
 									p_info[abs_id]['characters'][game_data['characters'][abs_id]][1] += 1
 						# store opponent & event
 						w_id = ids['t_'+str(t_id)][loss[0]]
@@ -468,6 +507,7 @@ def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_up
 						expected_score += exp_score(old_p_info[abs_id]['elo'],old_p_info[w_id]['elo'])
 
 						glicko_scores.extend([(0.,w_id)])
+						trueskill_scores.extend([(0.,w_id)])
 				if not (e_id in wins or e_id in losses):
 					records[abs_id]['placings'][t_id]['isDQ'] = True
 
@@ -478,6 +518,7 @@ def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_up
 					p_info[abs_id]['elo'] = new_elo
 					p_info[abs_id]['elo_peak'] = max(p_info[abs_id]['elo_peak'],new_elo)
 					glicko_matches[abs_id] = glicko_scores
+					trueskill_matches[abs_id] = trueskill_scores
 					# store skill ratings and event performance by tourney id
 					elo_history[abs_id][t_id] = new_elo
 					elo_deltas[abs_id][t_id] = new_elo - old_elo
@@ -515,14 +556,16 @@ def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_up
 		update_performances(dicts,t_info)
 		if v >= 4:
 			print('Updating Glicko...')
-		update_glicko(dicts,glicko_matches,t_info,tau=glicko_tau)
+		update_glicko(dicts,t_info,glicko_matches,tau=glicko_tau)
+		# update_trueskill(dicts,t_info,trueskill_matches)
 		if to_update_sigmoids:
 			#update_sigmoids(dicts,t_info,max_iterations=500,v=v,ranking_period=ranking_period)
 			sigrank_res = update_sigmoids(dicts,t_info,max_iterations=args.srank_max_iter,v=v,ranking_period=0,sig=args.srank_sig_mode)
 			if sigrank_res:
 				ISR = {'params': sigrank_res}
 				save_dict(ISR,'ISR_%d_%d_%d'%(db_game,db_year,db_year_count),None,'..\\lib')
-		update_percentiles(dicts)
+		# must be run after all skill values are updated
+		update_percentiles(dicts, t_id)
 		update_top_h2h(dicts)
 
 	return True
@@ -800,9 +843,9 @@ def delete_tourney(dicts,t_id,slug=None,clean_slugs=False,clean_tourneys=True,cl
 										if sets[set_id]['games'][game_id]['characters'] != {}:
 											g_w_char_id = sets[set_id]['games'][game_id]['characters'][g_w_id]
 											g_l_char_id = sets[set_id]['games'][game_id]['characters'][g_l_id]
-
-											p_info[ids['t_'+str(t_id)][g_w_id]]['characters'][g_w_char_id][0] = max(0,p_info[ids['t_'+str(t_id)][g_w_id]]['characters'][g_w_char_id][0]-1)
-											p_info[ids['t_'+str(t_id)][g_l_id]]['characters'][g_l_char_id][1] = max(0,p_info[ids['t_'+str(t_id)][g_l_id]]['characters'][g_l_char_id][1]-1)
+											
+											p_info[g_w_id]['characters'][g_w_char_id][0] = max(0,p_info[g_w_id]['characters'][g_w_char_id][0]-1)
+											p_info[g_l_id]['characters'][g_l_char_id][1] = max(0,p_info[g_l_id]['characters'][g_l_char_id][1]-1)
 
 					# remove sets from gameplay history
 					records[abs_id]['set_history'] = [set_id for set_id in records[abs_id]['set_history'] if not set_id in deleted_sets if not set_id in tourney_sets]

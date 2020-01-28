@@ -43,6 +43,10 @@ glicko_init_value = 1500 		# Initial rating for players in Glicko-2 algorithm (d
 glicko_init_rd = 350 			# Initial rating deviation for players in Glicko-2 algorithm (default 350)
 glicko_init_sigma = 0.06 		# Initial sigma for players in Glicko-2 algorithm (default 0.06)
 
+# TrueSkill configs
+trueskill_init_mu = 25 			# Initial skill rating for TrueSkill algorithm (default 25)
+trueskill_init_sigma = 25/3 	# Initial skill rating variance for TrueSkill algorithm (default 25/3 == 8.3333...)
+
 # S-Rank configs
 srank_alpha = 0.5 				# S-Rank learnrate (default 0.5)
 srank_beta = 0.9 				# S-Rank learning momentum coefficient; currently deprecated (default 0.9)

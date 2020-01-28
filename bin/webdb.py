@@ -4,8 +4,7 @@ import os,sys,pickle,time,datetime,math
 import firebase_admin
 import json
 from firebase_admin import db as fdb
-from firebase_admin.db import ApiCallError
-from firebase_admin import auth
+from firebase_admin import auth, exceptions
 from six.moves.urllib.error import HTTPError
 ## UTIL IMPORTS
 from arg_utils import *
@@ -56,14 +55,14 @@ def update_db(dicts,db_key,force_update=False,new_db=False,make_searchbar=args.p
 			try:
 				sub_db.set(dictdata)
 			# if dict is too big to upload at once
-			except ApiCallError as e:
-				print('ApiCallError pushing \'%s\': attempting batch upload...'%dictname)
+			except exceptions.FirebaseError as e:
+				print('FirebaseError pushing \'%s\': attempting batch upload...'%dictname)
 				if dictname == 'skills':
 					for skill_key in dictdata.keys():
 						skill_db_ref = sub_db.child(skill_key)
 						try:
 							skill_db_ref.set(dictdata[skill_key])
-						except ApiCallError as e2:
+						except exceptions.ApiCallError as e2:
 							batch_upload(dictdata[skill_key],skill_db_ref)
 				else:
 					batch_upload(dictdata,sub_db)
@@ -155,7 +154,7 @@ def generate_db_searchbar(dicts):
 		else:
 			fullname = None
 		sbar.append({'name':p_info[p_id]['tag'],'id':p_id,'index':p_info[p_id]['srank-rnk_peak'],\
-					 'team':p_info[p_id]['team'],'fullname':fullname,\
+					 'team':p_info[p_id]['team'],'fullname':fullname,'en_name':p_info[p_id]['en_tag'],\
 					 'aliases':p_info[p_id]['aliases'],'region':p_info[p_id]['region'][2],'main':p_info[p_id]['main']})
 
 	sb_filename = '../docs/assets/js/prefetch/'+generate_db_str()+'_prefetch.json'
@@ -178,9 +177,10 @@ if __name__ == '__main__':
 	#for user in auth.list_users().iterate_all():
 	#	print('User: ' + user.uid)
 
-	if False:
+	if True:
 		curr_db = get_db_reference()
 		for game in [1,2,3,4,5,1386]:
+		#for game in [3,4,24]:
 			#print(delete_sub_db(curr_db,game,2018,0))
 			#print(delete_sub_db(curr_db,game,2018,1))
-			print(delete_sub_db(curr_db,game,2016,3))
+			print(delete_sub_db(curr_db,game,2016,3,is_current=True))
