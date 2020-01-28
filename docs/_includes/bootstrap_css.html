@@ -3,7 +3,7 @@
 -->
 
 <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap4.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.20/css/dataTables.bootstrap4.min.css">
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.3/css/responsive.bootstrap4.min.css">
 <!-- icons stylesheet -->
 <script defer src="https://use.fontawesome.com/releases/v5.8.1/js/all.js" integrity="sha384-g5uSoOSBd7KkhAMlnQILrecXvzst9TdC09/VM+pjDTCM+1il8RHz5fKANTFFb+gQ" crossorigin="anonymous"></script>
@@ -36,10 +36,16 @@
 		/*border-color: lightseagreen;*/
 		background-color: #8DB0C0;
 		border-color: #8DB0C0;
+		box-shadow: none !important;
+		color: white !important;
 	}
 	.btn.btn-sr-primary:hover:not([disabled]) {
 		filter: brightness(85%);
 	}
+	.btn.btn-sr-primary:active:not([disabled]) {
+		filter: brightness(75%);
+	}
+
 
 	.text-sr-secondary {
 		/*color: teal;*/ /* Hex = 008080 */
@@ -58,9 +64,14 @@
 		/*border-color: teal;*/
 		background-color: #396C81;
 		border-color: #396C81;
+		box-shadow: none !important;
+		color: white !important;
 	}
 	.btn.btn-sr-secondary:hover:not([disabled]) {
 		filter: brightness(85%);
+	}
+	.btn.btn-sr-secondary:active:not([disabled]) {
+		filter: brightness(75%);
 	}
 
 	.text-sr-link {
@@ -80,9 +91,14 @@
 		/*border-color: turquoise;*/
 		background-color: #5D899C;
 		border-color: #5D899C;
+		box-shadow: none !important;
+		color: white !important;
 	}
 	.btn.btn-sr-link:hover:not([disabled]) {
 		filter: brightness(85%);
+	}
+	.btn.btn-sr-link:active:not([disabled]) {
+		filter: brightness(75%);
 	}
 
 	.text-sr-dark {
@@ -97,9 +113,14 @@
 	.btn.btn-sr-dark {
 		background-color: dimgray; /* Hex = 696969 */      /* nice */
 		border-color: dimgray;
+		box-shadow: none !important;
+		color: white !important;
 	}
 	.btn.btn-sr-dark:hover:not([disabled]) {
 		filter: brightness(85%);
+	}
+	.btn.btn-sr-dark:active:not([disabled]) {
+		filter: brightness(75%);
 	}
 
 	.text-sr-light {
@@ -119,9 +140,13 @@
 		/*border-color: gainsboro;*/
 		background-color: #E9F2F5;
 		border-color: #E9F2F5;
+		box-shadow: none !important;
 	}
 	.btn.btn-sr-light:hover:not([disabled]) {
 		filter: brightness(85%);
+	}
+	.btn.btn-sr-light:active:not([disabled]) {
+		filter: brightness(75%);
 	}
 
 	.text-sr-light-2 {
@@ -141,9 +166,13 @@
 		/*border-color: gainsboro;*/
 		background-color: #BED5DF;
 		border-color: #BED5DF;
+		box-shadow: none !important;
 	}
 	.btn.btn-sr-light-2:hover:not([disabled]) {
 		filter: brightness(85%);
+	}
+	.btn.btn-sr-light-2:active:not([disabled]) {
+		filter: brightness(75%);
 	}
 
 	.text-sr-info {
@@ -158,9 +187,14 @@
 	.btn.btn-sr-info {
 		background-color: slateblue; /* Hex = 6A5ACD */
 		border-color: slateblue;
+		box-shadow: none !important;
+		color: white !important;
 	}
 	.btn.btn-sr-info:hover:not([disabled]) {
 		filter: brightness(85%);
+	}
+	.btn.btn-sr-info:active:not([disabled]) {
+		filter: brightness(75%);
 	}
 
 	.text-sr-danger {
@@ -175,9 +209,14 @@
 	.btn.btn-sr-danger {
 		background-color: crimson; /* Hex = DC143C */
 		border-color: crimson;
+		box-shadow: none !important;
+		color: white !important;
 	}
 	.btn.btn-sr-danger:hover:not([disabled]) {
 		filter: brightness(85%);
+	}
+	.btn.btn-sr-danger:active:not([disabled]) {
+		filter: brightness(75%);
 	}
 
 	/* "trophy" colors */
@@ -347,15 +386,15 @@
 	table.dataTable thead{
 		border-color: #8DB0C0 !important;
 	}*/
-	table.dataTable th {
+	table th {
 		/*background-color: #5D899C !important;*/
 		background-color: #BED5DF !important;
 		/*border-color: #8DB0C0 !important;*/
 	}
-	table.dataTable tr.odd {
+	table tr.even {
 		background-color: #E9F2F5 !important;
 	}
-	table.dataTable tr.even {
+	table tr.odd {
 		/*background-color: #BED5DF !important;*/
 		background-color: #FFFFFF !important;
 	}

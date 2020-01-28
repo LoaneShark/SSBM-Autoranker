@@ -3,6 +3,14 @@ title: About
 layout: pretty
 permalink: /about/
 ---
+<style>
+	.text-event{
+	  white-space: nowrap;
+	  overflow: hidden;
+	  text-overflow: ellipsis;
+	}
+</style>
+
 <div class="d-flex flex-row justify-content-between">
 	<p class="display-1 text-sr-dark">About</p>
 	<img src="/assets/images/site_icons/sr_logo_minimal.png" height="120vw">
@@ -18,25 +26,25 @@ permalink: /about/
 						Smash 64, Melee, Brawl, Smash 4, Ultimate, and PM. More game support is planned in the future. 
 						The below table shows a glance at the databases and their states.</p>
 
-<table id="database-table" class="table" cellspacing="0" width="100%">
+<table id="database-table" class="table" cellspacing="0" width="100%" style="table-layout:fixed;">
 	<thead>
 		<tr class="header">
-			<th>Game</th>
-			<th>Players</th>
-			<th>Events</th>
-			<th>Last Active Year</th>
-			<th>Last Event</th>
+			<th style="width:2.5vw;">Game</th>
+			<th style="width:2vw;">Players</th>
+			<th style="width:1vw;">Events</th>
+			<th style="width:3.5vw;">Last Active Year</th>
+			<th style="width:7vw;">Last Tournament</th>
 		</tr>
 	</thead>
 	<tbody>
 
 		{% for i in (0..5) %}
-		<tr>
+		<tr class="{% cycle 'odd', 'even' %}">
 			<td id="db_{{i}}_name" class="font-weight-bold"></td>
 			<td id="db_{{i}}_playerNum"></td>
 			<td id="db_{{i}}_eventNum"></td>
 			<td id="db_{{i}}_lastYear"></td>
-			<td id="db_{{i}}_lastEvent"></td>
+			<td id="db_{{i}}_lastEvent" class="text-event"></td>
 		</tr>
 		{% endfor %}
 </table>
@@ -59,31 +67,31 @@ permalink: /about/
 		</tr>
 	</thead>
 	<tbody>
-		<tr>
-			<td class="font-weight-bold">64</td>
+		<tr class="odd">
+			<td class="font-weight-bold"><a href="../ranks/64">64</a></td>
 			<td></td>
 			<td><a href="https://supersmashbros.org/rankings/past-rankings/">64 League Rankings</a></td>
 			<td><a href="https://supersmashbros.org/rankings/">64 League Rankings</a></td>
 			<td></td>
 			<td></td>
 		</tr>
-		<tr>
-			<td class="font-weight-bold">Melee</td>
+		<tr class="even">
+			<td class="font-weight-bold"><a href="../ranks/Melee">Melee</a></td>
 			<td><a href="http://www.meleeitonme.com/ssbmrank2015/">2015 SSBMRank</a></td>
 			<td><a href="https://www.redbull.com/us-en/ssbmrank-2016-the-full-list">SSBMRank</a></td>
 			<td><a href="https://www.redbull.com/us-en/ssbmrank-2017-announcement">SSBMRank</a></td>
 			<td><a href="https://www.redbull.com/us-en/mpgr-2018">MPGR</a></td>
 			<td>MPGR</td>
 		</tr>
-		<tr>
-			<td class="font-weight-bold">Brawl</td>
+		<tr class="odd">
+			<td class="font-weight-bold"><a href="../ranks/Brawl">Brawl</a></td>
 			<td><a href="http://web.archive.org/web/20150209055943/http://clashtournaments.com/ssbbrank-1-3-the-grand-finale/">2014 SSBBRank<a></td>
 			<td colspan="2"><a href="https://smashboards.com/threads/ssbb-rank-2016-2017-by-the-brawl-community.452558/">2016-2017 SSBBRank</a></td>
 			<td></td>
 			<td></td>
 		</tr>
-		<tr>
-			<td class="font-weight-bold">Smash 4</td>
+		<tr class="even">
+			<td class="font-weight-bold"><a href="../ranks/Smash4">Smash 4</a></td>
 			<td>PGR (<a href="http://panda.esportsify.com/articles/news/gaming/43/panda-global-rankings-10-1">v1</a>)</td>
 			<td>PGR (<a href="http://panda.esportsify.com/articles/news/gaming/43/panda-global-rankings-10-1">v1</a> cont'd, 
 					 <a href="https://panda.gg/blogs/smash-bros/panda-global-rankings-v2-smash-bros-wii-u-1-10">v2</a>)</td>
@@ -93,16 +101,16 @@ permalink: /about/
 					 <a href="https://twitter.com/ThePGstats/status/1070863114210607105">100</a>)</td>
 			<td></td>
 		</tr>
-		<tr>
-			<td class="font-weight-bold">Ultimate</td>
+		<tr class="odd">
+			<td class="font-weight-bold"><a href="../ranks/Ultimate">Ultimate</a></td>
 			<td></td>
 			<td></td>
 			<td></td>
 			<td></td>
 			<td>PGRU</td>
 		</tr>
-		<tr>
-			<td class="font-weight-bold">PM</td>
+		<tr class="even">
+			<td class="font-weight-bold"><a href="../ranks/PM">PM</a></td>
 			<td></td>
 			<td></td>
 			<td></td>
@@ -207,27 +215,31 @@ Players that have not met activity requirements are treated as having an S-Rank 
 			var game_ref = firebase.database().ref(game_ref_str);
 			var game_query = game_ref.once('value').then(function(MetaSnapshot){
 				if (MetaSnapshot.exists()){
-					var game_db_info = []
-					game_db_info.push(MetaSnapshot.child('numPlayers').val());
-					game_db_info.push(MetaSnapshot.child('numEvents').val());
-					//game_db_info.push(MetaSnapshot.child('lastActiveYear').val());
-					game_db_info.push(getLastYearFromGame(MetaSnapshot.child('gameId').val()));
+					var game_db_info = {}
+					game_db_info['numPlayers'] = MetaSnapshot.child('numPlayers').val();
+					game_db_info['numPlayersActive'] = MetaSnapshot.child('numPlayersActive').val();
+					game_db_info['numEvents'] = MetaSnapshot.child('numEvents').val();
+					game_db_info['numEventsActive'] = MetaSnapshot.child('numEventsActive').val();
+					game_db_info['lastYear'] = MetaSnapshot.child('lastActiveYear').val();
+					/*var lastYear = getLastYearFromGame(MetaSnapshot.child('gameId').val());
+					if (!lastYear){
+						game_db_info['lastYear'] = '<span class="text-muted"><small>N/A</small></span>';
+					} else {
+						game_db_info['lastYear'] = lastYear;
+					}*/
 
 					var lastEventId = MetaSnapshot.child('lastEvent').val();
 					var lastEventInfo = getEventById('/'+MetaSnapshot.child('gameId').val()+'_2016_'+(curr_year-2016)+'_c/',lastEventId);
-					console.log(lastEventId);
-					console.log(lastEventInfo);
 					var lastEventInfoResolved = lastEventInfo.then(function(lastEvent){
-						return lastEvent['name'];
+						return {'name':lastEvent['name'],'id':lastEvent['id'],'imgUrl':lastEvent['url_prof'],'date':lastEvent['date']};
 					});
-					console.log(lastEventInfoResolved);
 
-					game_db_info.push(lastEventInfoResolved);
+					game_db_info['lastEventPromise'] = lastEventInfoResolved;
 					//console.log(game_db_info)
 					return game_db_info;
 				} else {
-					//console.log('Error: ' + game_ref_str +' reference does not exist!')
-					return ['N/A','N/A','N/A','N/A'];
+					console.log('Error: ' + game_ref_str +' reference does not exist!')
+					return {};
 				}
 			});
 			db_info.push(game_query);
@@ -236,19 +248,51 @@ Players that have not met activity requirements are treated as having an S-Rank 
 		Promise.all(db_info).then(function(TableSnapshot){
 			console.log(TableSnapshot)
 			for (j=0;j<6;j++){
-				$('#db_'+j+'_name').html(getGameTitle(gameId_map[j]));
-				$('#db_'+j+'_playerNum').html(TableSnapshot[j][0]);
-				$('#db_'+j+'_eventNum').html(TableSnapshot[j][1]);
-				$('#db_'+j+'_lastYear').html(TableSnapshot[j][2]);
-				//$('#db_'+j+'_lastEvent').html(TableSnapshot[j][3]);
+				var gameTitle = getGameTitle(gameId_map[j]);
+				if (gameTitle == 'Smash4'){
+					gameTitleText = 'Smash 4';
+				} else {
+					gameTitleText = gameTitle;
+				}
+				$('#db_'+j+'_name').html('<a href="../games/'+gameTitle.toLowerCase()+'">'+gameTitleText+'</a>');
+				if (TableSnapshot[j]['lastYear']){
+				  if (TableSnapshot[j]['lastYear'] != curr_year){
+				  	$('#db_'+j+'_lastYear').html(TableSnapshot[j]['lastYear']);
+				    $('#db_'+j+'_playerNum').html(TableSnapshot[j]['numPlayers']);
+				    $('#db_'+j+'_eventNum').html(TableSnapshot[j]['numEvents']);
+				  } else {
+				  	$('#db_'+j+'_lastYear').html('<span class="text-sr-primary">'+TableSnapshot[j]['lastYear']+'</span>');
+				    $('#db_'+j+'_playerNum').html('<span data-toggle="tooltip" title="'+TableSnapshot[j]['numPlayersActive']+' active currently">'+
+				    							  TableSnapshot[j]['numPlayers']+
+				    							  '</span>');
+				    $('#db_'+j+'_eventNum').html('<span data-toggle="tooltip" title="'+TableSnapshot[j]['numEventsActive']+' in current season">'+
+				    							  TableSnapshot[j]['numEvents']+
+				    							  '</span>');
+				  }
+				} else {
+				  $('#db_'+j+'_playerNum').html(TableSnapshot[j]['numPlayers']);
+				  $('#db_'+j+'_eventNum').html(TableSnapshot[j]['numEvents']);
+				  $('#db_'+j+'_lastYear').html('<2016');
+				}
 
-				Promise.resolve([TableSnapshot[j][3],j]).then(function(promiseValue){
-					console.log(promiseValue)
-					console.log(promiseValue[0])
-					console.log(promiseValue[1])
-					$('#db_'+promiseValue[1]+'_lastEvent').html(Promise.resolve(promiseValue[0]).then(function(v){return v}));
+				Promise.resolve([TableSnapshot[j]['lastEventPromise'],j]).then(function(promiseValue){
+					Promise.resolve(promiseValue[0]).then(function(eventPromise){
+						$('#db_'+promiseValue[1]+'_lastEvent').html('<a href="../games/'+
+																	getGameTitle(gameId_map[promiseValue[1]]).toLowerCase()+
+																	'/events/full/#'+
+																	eventPromise['id']+'">'+
+																	'<img style="height:2vw;" class="rounded" src="'+eventPromise['imgUrl']+'" alt="'+eventPromise['id']+'" title="'+eventPromise['name']+'"> '+
+																	'&nbsp;'+eventPromise['name']+
+																	'</a>');
+					})
 				});
 			}
 		});
 	});
+  $(document).ready(function(){
+    $('[data-toggle="tooltip"]').tooltip({
+      animated: 'fade'
+    });
+
+  });
 </script>

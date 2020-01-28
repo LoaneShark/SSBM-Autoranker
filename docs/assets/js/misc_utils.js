@@ -83,31 +83,57 @@ function getLastYearFromGame(gameId){
 function getGameIconPath(gameId){
 	switch(gameId) {
 		case 1:
-			return "/assets/images/game_icons/36px-SSBM_Icon.png";
+			return '/assets/images/game_icons/36px-SSBM_Icon.png';
 			break;
 		case 2:
-			return "/assets/images/game_icons/36px-PM_Icon.png";
+			return '/assets/images/game_icons/36px-PM_Icon.png';
 			break;
 		case 3:
-			return "/assets/images/game_icons/36px-SSB4_Icon.png";
+			return '/assets/images/game_icons/36px-SSB4_Icon.png';
 			break;
 		case 4:
-			return "/assets/images/game_icons/36px-SSB64_Icon.png";
+			return '/assets/images/game_icons/36px-SSB64_Icon.png';
 			break;
 		case 5:
-			return "/assets/images/game_icons/36px-SSBB_Icon.png";
+			return '/assets/images/game_icons/36px-SSBB_Icon.png';
 			break;
 		case 24:
-			return "/assets/images/game_icons/2000px-RoA_Icon.png";
+			return '/assets/images/game_icons/2000px-RoA_Icon.png';
 			break;
 		case 1386:
-			return "/assets/images/game_icons/36px-SSBU_Icon.png";
+			return '/assets/images/game_icons/36px-SSBU_Icon.png';
+			break;
+	}
+}
+
+function getGameRankName(gameId,year){
+	switch(gameId){
+		case 1:
+			if (year >= 2018){
+				return 'MPGR';
+			} else {
+				return 'SSBMRank';
+			}
+			break;
+		case 2:
+			return 'PMRank';
+		case 3:
+			return 'PGR';
+		case 4:
+			return 'SBBRank';
+		case 5:
+			return '64 League Rankings';
+		case 24:
+			return '';
+			break;
+		case 1386:
+			return 'PGRU';
 			break;
 	}
 }
 
 function getStockIconPath(gameId,charId){
-	return "/assets/images/stock_icons/"+gameId+"/"+charId+".png";
+	return '/assets/images/stock_icons/'+gameId+'/'+charId+'.png';
 }
 
 // returns a 3-tuple of the r,g,b values of a color given its hexstring
@@ -146,17 +172,17 @@ function textColorFromBG(rgbColor){
 	}
 }
 
-function snapshotToArray(snapshot,attr="val") {
+function snapshotToArray(snapshot,attr='val') {
     var returnArr = [];
     snapshot.forEach(function(childSnapshot) {
-    	if (attr == "val") {
+    	if (attr == 'val') {
 	        var item = childSnapshot.val();
-		} else if (attr == "key") {
+		} else if (attr == 'key') {
         	var item = childSnapshot.key;
-        } else if (attr == "both") {
+        } else if (attr == 'both') {
         	var item = {val: childSnapshot.val()};
         	item.key = childSnapshot.key;
-        } else if (attr == "insert"){
+        } else if (attr == 'insert'){
         	var item = childSnapshot.val();
         	item['key'] = childSnapshot.key;
         }
@@ -170,10 +196,11 @@ function otherGameActivity(p_id,game_id){
 	var gameIds = [1,2,3,4,5,1386];
 	var gamePromises = [];
 	var otherGames = [];
+	var curr_year = new Date().getFullYear();
 	for (i=0;i<gameIds.length;i++){
 		if (gameIds[i] != game_id){
-			//var refStr = "/" + gameIds[i] + "_2018_1/p_info/" + p_id + "/";
-			var refStr = "/" + gameIds[i] + "_2016_3_c/p_info/" + p_id + "/";
+			//var refStr = '/'' + gameIds[i] + '_2018_1/p_info/' + p_id + '/';
+			var refStr = '/' + gameIds[i] + '_2016_'+(curr_year-2016)+'_c/p_info/' + p_id + '/';
 			var currGameId = gameIds[i];
 
 			var gameRef = firebase.database().ref(refStr);
@@ -209,12 +236,13 @@ function getEventById(dbRefStr,tourneyId){
 
 function placementsToEvents(placements,gameId,isCurrent=true){
 	var eventPromises = [];
+	var curr_year = new Date().getFullYear();
 	for (i=0;i<placements.length;i++){
 		eventId = placements[i].key;
 		if (isCurrent){
-			var refStr = '/'+gameId+'_2016_3_c/tourneys/'+eventId;
+			var refStr = '/'+gameId+'_2016_'+(curr_year-2016)+'_c/tourneys/'+eventId;
 		} else {
-			var refStr = '/'+gameId+'_2016_3/tourneys/'+eventId;
+			var refStr = '/'+gameId+'_2016_'+(curr_year-2016)+'/tourneys/'+eventId;
 		}
 
 		var eventRef = firebase.database().ref(refStr);
@@ -240,20 +268,20 @@ function ordinalSuffixOf(i) {
     var j = i % 10,
         k = i % 100;
     if (j == 1 && k != 11) {
-        return "st";
+        return 'st';
     }
     if (j == 2 && k != 12) {
-        return "nd";
+        return 'nd';
     }
     if (j == 3 && k != 13) {
-        return "rd";
+        return 'rd';
     }
-    return "th";
+    return 'th';
 }
 
 // returns the given tag, formatted for web (changing bracket type if is a 'transliterated cjk' tag)
 function handleTransTag(tag){
-	if (tag.includes('<')){
+	if (tag && tag.includes('<')){
 	    return '『'+tag.slice(1,tag.length-1)+'』';
 	  } else {
 	  	return tag
@@ -262,7 +290,7 @@ function handleTransTag(tag){
 
 // returns the given tag, formatted for web (removing brackets if is a 'transliterated cjk' tag)
 function handleTransTagEN(tag){
-	if (tag.includes('<')){
+	if (tag && tag.includes('<')){
 	    return tag.slice(1,tag.length-1);
 	  } else {
 	  	return tag

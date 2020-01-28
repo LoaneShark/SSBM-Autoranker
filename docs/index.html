@@ -139,7 +139,7 @@ title: Home
 				var melee_top_10 = snapshotToArray(TopPlayerSnapshot)
 				var players = [];
 				for (i=0;i<9;i++){
-					playerId = melee_top_10[i];
+					playerId = melee_top_10[i]['id'];
 
 					var melee_player_ref_str = "/1_2016_" + (curr_year-2016)+ "_c" + "/p_info/"+playerId;
 					var melee_player_ref = firebase.database().ref(melee_player_ref_str);
@@ -173,6 +173,8 @@ title: Home
 					$('#melee-tab').tab('show')
 					$($.fn.dataTable.tables(true)).DataTable().columns.adjust().responsive.recalc();	
 				});		
+			} else {
+				console.log('No such database found: ' + melee_meta_ref_str)
 			}
 		});
 
@@ -185,7 +187,7 @@ title: Home
 				var ultimate_top_10 = snapshotToArray(TopPlayerSnapshot)
 				var players = [];
 				for (i=0;i<9;i++){
-					playerId = ultimate_top_10[i];
+					playerId = ultimate_top_10[i]['id'];
 
 					var ultimate_player_ref_str = "/1386_2016_" + (curr_year-2016)+ "_c" + "/p_info/"+playerId;
 					var ultimate_player_ref = firebase.database().ref(ultimate_player_ref_str);

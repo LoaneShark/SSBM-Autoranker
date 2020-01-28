@@ -71,7 +71,7 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 
 				// prevents plotting of the same ranking twice -- needed until I fix my db
 				if (!skillset.some(e => e.label === rankName)) {
-					skillset.push({'t': jsDate, 'y': rankVal, 'label': rankName, 'present': true, 'idx':j});
+					skillset.push({'t': jsDate, 'y': rankVal, 'label': getGameRankName(gameId,skillYear)+' '+rankName, 'present': true, 'idx':j});
 				}
 
 			}
@@ -299,28 +299,37 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 				displayColors: false,
 				callbacks: {
 					title: function(tooltipItem,data){
-						labelString = tooltipItem[0].xLabel;
-						var eventDate = new Date(labelString.slice(0,labelString.length-17));
-						var eventDateString = eventDate.toDateString();
-						return eventDateString.slice(0,eventDateString.length-4);
+						if (type == 'mainrank'){
+							var rankName = data.datasets[tooltipItem[0].datasetIndex].data[tooltipItem[0].index].label;
+							return rankName
+						} else {
+							labelString = tooltipItem[0].xLabel;
+							var eventDate = new Date(labelString.slice(0,labelString.length-17));
+							var eventDateString = eventDate.toDateString();
+							return eventDateString.slice(0,eventDateString.length-4);
+						}
 					},
 					beforeLabel: function(tooltipItem,data){
 						var eventName = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].label;
 						var currSkill = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y;
-						// avoid repeat tooltips where datasets transition (unranked -> ranked)
-						if (tooltipItem.datasetIndex == 3){
-							if (tooltipItem.index == data.datasets[3].data.length-1){
-								if (data.datasets[0].data.length >= 1){
-									return null;
+						if (type == 'mainrank'){
+							return ''+currSkill;
+						} else {
+							// avoid repeat tooltips where datasets transition (unranked -> ranked)
+							if (tooltipItem.datasetIndex == 3){
+								if (tooltipItem.index == data.datasets[3].data.length-1){
+									if (data.datasets[0].data.length >= 1){
+										return null;
+									}
 								}
 							}
+							if (type == 'srank'){
+								currSkill = Math.round(currSkill*1000.0)/1000.0;
+							} else {
+								currSkill = Math.round(currSkill);
+							}
+							return eventName+"\n"+currSkill;
 						}
-						if (type == 'srank'){
-							currSkill = Math.round(currSkill*1000.0)/1000.0;
-						} else {
-							currSkill = Math.round(currSkill);
-						}
-						return eventName+"\n"+currSkill;
 					},
 					label: function(tooltipItem,data){
 						// avoid repeat tooltips where datasets transition (unranked -> ranked)

@@ -11,388 +11,22 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  padding-bottom: 15px;
+}
+.text-event {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+table tr:nth-child(even){
+	background-color: #FFFFFF !important;
 }
 </style>
-<section>
-	<div class="container border rounded border-sr-primary" id="player_container">
-		<div class="p-2 d-flex float-right" style="height:30px;width:36px;" id="game_icon_div"></div>
-		<div class="invisible">&nbsp;</div>
-		
-		<!-- header info -->
-		<section class="d-flex flex-row" id="player_header">
-			<div class="flex-column col-2">
-				<div class="p-2 propic" id="player_propic_div">
-				</div>
-			</div>
-			<div class="flex-column col-9">
-				<div class="d-flex flex-row justify-content-between" id="player_header_div">
-					<div class="p-2 d-flex flex-grow-1 flex-row justify-content-center" id="player_tag_div">
-						<h1 class="text-team" id="player_team"></h1>
-						<h1 class="display-4 text-tag" id="player_tag"></h1>
-					</div>
-				</div>
-				<div class="d-flex flex-row justify-content-center" id="player_name_div">
-					<span class="text-muted font-italic" id="player_name"></span>
-				</div>
-			</div>
-			<div class="flex-column col-1">
-				<img id="player_region_flag" src="/assets/images/blank.gif" class="flag"></img>
-			</div>
-		</section>
 
-		<!-- line break -->
-		<hr class="my-4" style="padding:0px;">
+{% include player_search.html %}
 
-
-		<div class="invisible">&nbsp;</div>
-
-		<!-- player info -->
-		<section class="d-flex flex-row invisible" id="player_info">
-
-		</section>
-
-		<!-- line break -->
-		<hr class="my-4 invisible" style="padding:0px;">
-
-		<!-- player skills -->
-		<section id="player_skills">
-			<div class="card-deck" id="player_skills_deck">
-
-				<div class="card border-sr-light" id="mainrank_card">
-					<div class="card-header text-center font-weight-bold bg-sr-light border-sr-light" id="mainrank_card_header">
-						{% if {{page.game}} == 'Ultimate'%}
-							PGRU
-						{% elsif {{page.game}} == 'Melee' %}
-							MPGR
-						{% elsif {{page.game}} == 'PM' %}
-							PMRank
-						{% elsif {{page.game}} == 'Smash4' %}
-							PGR
-						{% elsif {{page.game}} == 'Brawl' %}
-							SSBBRank
-						{% elsif {{page.game}} == '64' %}
-							64LR
-						{% else %}
-							Rank
-						{% endif %}
-					</div>
-					<div class="card-body text-center" id="mainrank_card_body">
-						<h6 class="card-title" id="player_mainrank"></h6>
-						<div class="collapse" id="mainrank_card_collapse"></div>
-						<a class="collapsed btn btn_div_collapse collapse-text text-muted disabled invisible" data-toggle="collapse" href="#mainrank_card_collapse" 
-				   			aria-label="Expand/collapse mainrank info" aria-expanded="false" role="button" style="box-shadow:none;">
-				   		  <i class="fas fa-chevron-down"></i>
-				   		</a>
-					</div>
-					<div class="card-footer text-center bg-sr-light border-sr-light" id="mainrank_card_footer">
-						<small id="mainrank_trophy"></small>
-					</div>
-				</div>
-				<div class="card border-sr-light" id="elo_card">
-					<div class="card-header text-center font-weight-bold bg-sr-light border-sr-light" id="elo_card_header">
-						Elo
-					</div>
-					<div class="card-body text-center" id="elo_card_body">
-						<h6 class="card-title" id="player_elo"></h6>
-						<div class="collapse" id="elo_card_collapse">
-							<p><span id="player_elo_rank"></span><span class="text-muted db_size"></span></p>
-							<p><span id="player_elo_pct"></span></p>
-						</div>
-						<a class="collapsed btn btn_div_collapse collapse-text text-muted" data-toggle="collapse" href="#elo_card_collapse" 
-				   			aria-label="Expand/collapse Elo info" aria-expanded="false" role="button" style="box-shadow:none;">
-				   		  <i class="fas fa-chevron-down"></i>
-				   		</a>
-					</div>
-					<div class="card-footer text-center bg-sr-light border-sr-light" id="elo_card_footer">
-						<small id="elo_trophy"></small>
-					</div>
-				</div>
-				<div class="card border-sr-light" id="glicko_card">
-					<div class="card-header text-center font-weight-bold bg-sr-light border-sr-light" id="glicko_card_header">
-						Glicko-2
-					</div>
-					<div class="card-body text-center" id="glicko_card_body">
-						<h6 class="card-title" id="player_glicko"></h6>
-						<div class="collapse" id="glicko_card_collapse">
-							<p><span id="player_glicko_rank"></span><span class="text-muted db_size"></span></p>
-							<p><span id="player_glicko_pct"></span></p>
-						</div>
-						<a class="collapsed btn btn_div_collapse collapse-text text-muted" data-toggle="collapse" href="#glicko_card_collapse" 
-				   			aria-label="Expand/collapse Glicko-2 info" aria-expanded="false" role="button" style="box-shadow:none;">
-				   		  <i class="fas fa-chevron-down"></i>
-				   		</a>
-					</div>
-					<div class="card-footer text-center bg-sr-light border-sr-light" id="glicko_card_footer">
-						<small id="glicko_trophy"></small>
-					</div>
-				</div>
-				<div class="card border-sr-light" id="srank_card">
-					<div class="card-header text-center font-weight-bold bg-sr-light border-sr-light" id="srank_card_header">
-						S-Rank
-					</div>
-					<div class="card-body text-center" id="srank_card_body">
-						<h6 class="card-title" id="player_srank"></h6>
-						<div class="collapse" id="srank_card_collapse">
-							<p><span id="player_srank_rank"></span><span class="text-muted db_size_active"></span></p>
-							<p><span id="player_srank_pct"></span></p>
-						</div>
-						<a class="collapsed btn btn_div_collapse collapse-text text-muted" data-toggle="collapse" href="#srank_card_collapse" 
-				   			aria-label="Expand/collapse S-Rank info" aria-expanded="false" role="button" style="box-shadow:none;">
-				   		  <i class="fas fa-chevron-down"></i>
-				   		</a>
-					</div>
-					<div class="card-footer text-center bg-sr-light border-sr-light" id="srank_card_footer">
-						<small id="srank_trophy"></small>
-					</div>
-				</div>
-
-			</div>
-		</section>
-
-		<!-- line break -->
-		<hr class="my-4" style="padding:0px;">
-
-		<!-- player skill history -->
-		<section id="player_skill_history">
-			<div>
-				<a class="collapsed btn btn_div_collapse collapse-text" data-toggle="collapse" href="#player_skills_collapse" 
-				   aria-label="Expand/collapse player skills section" aria-expanded="false" role="button" style="box-shadow:none;">
-					<span class="h3 text-sr-dark">
-						Skills
-						<!--<i class="fas fa-chevron-circle-right" id="#player_skills_collapse_icon" aria-hidden="true"></i>-->
-					</span>
-				</a>
-			</div>
-			<div class="collapse" id="player_skills_collapse" style="padding-left:1vw;">
-				<div>
-					<a class="collapsed btn text-sr-secondary btn_div_collapse" data-toggle="collapse" href="#player_mainrank_collapse" 
-				  	   aria-label="Expand/collapse player official ranking history" aria-expanded="false" role="button" style="box-shadow:none;">
-				  	  <span class="h4">
-						&nbsp; Official Rank
-					  <!--<i class="fas fa-chevron-circle-right" id="#player_mainrank_collapse_icon" aria-hidden="true"></i>-->
-					  </span>
-					</a>
-				</div>
-				<div class="collapse" id="player_mainrank_collapse">
-					<div id="mainrank_chart_container" class="chart-container" style="position: relative;">
-						<div class="text-muted font-weight-light small invisible">~</div>
-						<div class="card">
-							<canvas id="mainrank_chart" class="p-3 chart" aria-label="mainrank-chart" width="400" height="200"></canvas>
-						</div>
-					</div>
-				</div>
-				<div>
-					<a class="collapsed btn text-sr-secondary btn_div_collapse" data-toggle="collapse" href="#player_elo_collapse" 
-				  	   aria-label="Expand/collapse player Elo history" aria-expanded="false" role="button" style="box-shadow:none;">
-				  	  <span class="h4">
-					    &nbsp; Elo
-					  <!--<i class="fas fa-chevron-circle-right" id="#player_elo_collapse_icon" aria-hidden="true"></i>-->
-					  </span>
-					</a>
-				</div>
-				<div class="collapse" id="player_elo_collapse">
-					<div>
-						<a class="collapsed btn text-sr-primary btn_div_collapse" data-toggle="collapse" href="#elo_chart_container" 
-					  	   aria-label="Elo skill history plot" aria-expanded="false" role="button" style="box-shadow:none;">
-						  <span class="h5">
-						    &nbsp; &nbsp; Skill History
-						  </span>
-						</a>
-					</div>
-					<div id="elo_chart_container" class="chart-container collapse" style="position: relative;">
-						<div class="text-muted font-weight-light small invisible">~</div>
-						<div class="card">
-							<canvas id="elo_chart" class="p-3 chart" aria-label="elo-chart" width="400" height="200"></canvas>
-						</div>
-					</div>
-					<div>
-						<a class="collapsed btn text-sr-primary btn_div_collapse" data-toggle="collapse" href="#elo_rankchart_container" 
-					  	   aria-label="Elo rank history plot" aria-expanded="false" role="button" style="box-shadow:none;">
-						  <span class="h5">
-						    &nbsp; &nbsp; Rank History
-						  </span>
-						</a>
-					</div>
-					<div id="elo_rankchart_container" class="chart-container collapse" style="position: relative;">
-						<div class="text-muted font-weight-light small invisible">~</div>
-						<div class="card">
-							<canvas id="elo_rnk_chart" class="p-3 chart" aria-label="elo-rnk-chart" width="400" height="200"></canvas>
-						</div>
-					</div>
-				</div>
-				<div>
-					<a class="collapsed btn text-sr-secondary btn_div_collapse" data-toggle="collapse" href="#player_glicko_collapse" 
-				  	   aria-label="Expand/collapse player Glicko-2 history" aria-expanded="false" role="button" style="box-shadow:none;">
-				  	  <span class="h4">
-					    &nbsp; Glicko-2
-					  <!--<i class="fas fa-chevron-circle-right" id="#player_glicko_collapse_icon" aria-hidden="true"></i>-->
-					  </span>
-					</a>
-				</div>
-				<div class="collapse" id="player_glicko_collapse">
-					<div>
-						<a class="collapsed btn text-sr-primary btn_div_collapse" data-toggle="collapse" href="#glicko_chart_container" 
-					  	   aria-label="Glicko skill history plot" aria-expanded="false" role="button" style="box-shadow:none;">
-						  <span class="h5">
-						    &nbsp; &nbsp; Skill History
-						  </span>
-						</a>
-					</div>
-					<div id="glicko_chart_container" class="chart-container collapse" style="position: relative;">
-						<div class="text-muted font-weight-light small invisible">~</div>
-						<div class="card">
-							<canvas id="glicko_chart" class="p-3 chart" aria-label="glicko-chart" width="400" height="200"></canvas>
-						</div>
-					</div>
-					<div>
-						<a class="collapsed btn text-sr-primary btn_div_collapse" data-toggle="collapse" href="#glicko_rankchart_container" 
-					  	   aria-label="Glicko rank history plot" aria-expanded="false" role="button" style="box-shadow:none;">
-						  <span class="h5">
-						    &nbsp; &nbsp; Rank History
-						  </span>
-						</a>
-					</div>
-					<div id="glicko_rankchart_container" class="chart-container collapse" style="position: relative;">
-						<div class="text-muted font-weight-light small invisible">~</div>
-						<div class="card">
-							<canvas id="glicko_rnk_chart" class="p-3 chart" aria-label="glicko-rnk-chart" width="400" height="200"></canvas>
-						</div>
-					</div>
-				</div>
-				<div>
-					<a class="collapsed btn text-sr-secondary btn_div_collapse" data-toggle="collapse" href="#player_srank_collapse" 
-				  	   aria-label="Expand/collapse player S-Rank history" aria-expanded="false" role="button" style="box-shadow:none;">
-				  	  <span class="h4">
-					    &nbsp; S-Rank
-					  <!--<i class="fas fa-chevron-circle-right" id="#player_srank_collapse_icon" aria-hidden="true"></i>-->
-					  </span>
-					</a>
-				</div>
-				<div class="collapse" id="player_srank_collapse">
-					<div>
-						<a class="collapsed btn text-sr-primary btn_div_collapse" data-toggle="collapse" href="#srank_chart_container" 
-					  	   aria-label="S-Rank skill history plot" aria-expanded="false" role="button" style="box-shadow:none;">
-						  <span class="h5">
-						    &nbsp; &nbsp; Skill History
-						  </span>
-						</a>
-					</div>
-					<div id="srank_chart_container" class="chart-container collapse" style="position: relative;">
-						<div class="text-muted font-weight-light small invisible">~</div>
-						<div class="card">
-							<canvas id="srank_chart" class="p-3 chart" aria-label="srank-chart" width="400" height="200"></canvas>
-						</div>
-					</div>
-					<div>
-						<a class="collapsed btn text-sr-primary btn_div_collapse" data-toggle="collapse" href="#srank_rankchart_container" 
-					  	   aria-label="S-Rank rank history plot" aria-expanded="false" role="button" style="box-shadow:none;">
-						  <span class="h5">
-						    &nbsp; &nbsp; Rank History
-						  </span>
-						</a>
-					</div>
-					<div id="srank_rankchart_container" class="chart-container collapse" style="position: relative;">
-						<div class="text-muted font-weight-light small invisible">~</div>
-						<div class="card">
-							<canvas id="srank_rnk_chart" class="p-3 chart" aria-label="srank-rnk-chart" width="400" height="200"></canvas>
-						</div>
-					</div>
-					<div>
-						<a class="collapsed btn text-sr-primary btn_div_collapse" data-toggle="collapse" href="#srank_sigmoid_container" 
-					  	   aria-label="S-Rank sigmoid regression" aria-expanded="false" role="button" style="box-shadow:none;">
-						  <span class="h5">
-						    &nbsp; &nbsp; Sigmoid
-						  </span>
-						</a>
-					</div>
-					<div id="srank_sigmoid_container" class="chart-container collapse" style="position: relative;">
-						<div class="text-muted font-weight-light small invisible">~</div>
-						<div class="card">
-							<canvas id="srank_sigmoid" class="p-3 chart" aria-label="srank-sigmoid" width="400" height="200"></canvas>
-						</div>
-					</div>
-				</div>
-			</div>
-		</section>
-		<!-- player event attendance -->
-		<section id="player_events">
-			<div>
-				<a class="collapsed btn btn_div_collapse collapse-text" data-toggle="collapse" href="#player_event_collapse" 
-				   aria-label="Expand/collapse player event section" aria-expanded="false" role="button" style="box-shadow:none;">
-					<span class="h3 text-sr-dark">
-						Events
-						<!--<i class="fas fa-chevron-circle-right" id="#player_event_collapse_icon" aria-hidden="true"></i>-->
-					</span>
-				</a>
-			</div>
-			<div class="collapse" id="player_event_collapse" style="padding-left:1vw;">
-				EVENTS
-			</div>
-		</section>
-		<!-- player h2h lookup -->
-		<section id="player_h2h">
-			<div>
-				<a class="collapsed btn btn_div_collapse collapse-text" data-toggle="collapse" href="#player_h2h_collapse" 
-				   aria-label="Expand/collapse player H2H section" aria-expanded="false" role="button" style="box-shadow:none;">
-					<span class="h3 text-sr-dark">
-						Head-to-Head
-						<!--<i class="fas fa-chevron-circle-right" id="#player_h2h_collapse_icon" aria-hidden="true"></i>-->
-					</span>
-				</a>
-			</div>
-			<div class="collapse" id="player_h2h_collapse" style="padding-left:1vw;">
-				<div>
-					<a class="collapsed btn text-sr-secondary btn_div_collapse disabled" data-toggle="collapse" href="#player_top10_collapse" 
-				  	   aria-label="Expand/collapse player top 10 Head-to-head at-a-glance" aria-expanded="false" role="button" style="box-shadow:none;">
-				  	  <span class="h4">
-						&nbsp; Top 10
-					  <!--<i class="fas fa-chevron-circle-right" id="#player_mainrank_collapse_icon" aria-hidden="true"></i>-->
-					  </span>
-					</a>
-				</div>
-				<div class="collapse" id="player_top10_collapse">
-					<div class="text-muted font-weight-light small invisible">~</div>
-					<div class="card">
-						<div id="player_top10_container">TOP 10 BAYBEE</div>
-					</div>
-				</div>
-				<div>
-					<a class="collapsed btn text-sr-secondary btn_div_collapse disabled" data-toggle="collapse" href="#player_top100_collapse" 
-				  	   aria-label="Expand/collapse player top 100 Head-to-head at-a-glance" aria-expanded="false" role="button" style="box-shadow:none;">
-				  	  <span class="h4">
-						&nbsp; Top 100
-					  <!--<i class="fas fa-chevron-circle-right" id="#player_mainrank_collapse_icon" aria-hidden="true"></i>-->
-					  </span>
-					</a>
-				</div>
-				<div class="collapse" id="player_top100_collapse">
-					<div class="text-muted font-weight-light small invisible">~</div>
-					<div class="card">
-						<div id="player_top10_container">TOP 100 BAYBEE</div>
-					</div>
-				</div>
-				<div>
-					<a class="collapsed btn text-sr-secondary btn_div_collapse" data-toggle="collapse" href="#player_lookup_collapse" 
-				  	   aria-label="Expand/collapse player Head-to-head lookup" aria-expanded="false" role="button" style="box-shadow:none;">
-				  	  <span class="h4">
-						&nbsp; Lookup
-					  <!--<i class="fas fa-chevron-circle-right" id="#player_mainrank_collapse_icon" aria-hidden="true"></i>-->
-					  </span>
-					</a>
-				</div>
-				<div class="collapse" id="player_lookup_collapse">
-					<div class="text-muted font-weight-light small invisible">~</div>
-					<div class="card">
-						<div id="player_lookup_container">H2H Lookup</div>
-					</div>
-				</div>
-			</div>
-		</section>
-
-	</div>
-	<div class="card border border-danger invisible" id="warning_div">
-		<p class="text-secondary" id="warning_div_text">No such player in {{page.game}} DB: <span class="font-weight-bold" id="warning_div_playerId"></span></p>
-	</div>
+<section id="player_container">
+	{% include player_stat_body.html %}
 </section>
 
 <!-- REGION CUTOUT
@@ -415,6 +49,7 @@
 {% include datatables_scripts.html %}
 <script type="text/javascript" src="/assets/js/finch.min.js"></script>
 <script type="text/javascript" src="/assets/js/typeahead.bundle.js"></script>
+<script type="text/javascript" src="/assets/js/jquery.jsonp-2.4.0.min.js"></script>
 <script type="text/javascript" src="/assets/js/misc_utils.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.bundle.min.js" async></script>
 <script type="text/javascript" src="/assets/js/graph_utils.js"></script>
@@ -428,7 +63,7 @@
 
   // add searchbar
   var gameId = getGameId('{{page.game}}');
-  buildPlayerSearchbar(gameId,prefetch=false);
+  buildPlayerSearchbar(gameId);
 </script>
 
 
@@ -440,6 +75,8 @@
     console.log('No player selected');
     $('#player_container').addClass('invisible');
     $('#warning_div').addClass('invisible');
+    $('#player_card').empty();
+    $('#player_card').html('');
   });
   Finch.route('/:p_id', function(bindings){
     console.log('Loading player page: '+bindings.p_id);
@@ -464,18 +101,30 @@
     // populate meta info
     var meta_ref = firebase.database().ref(meta_ref_str);
     var meta_query = meta_ref.once('value').then(function(MetaSnapshot){
-    	$('.db_size').html(' out of '+MetaSnapshot.child('numPlayers').val());
-    	$('.db_size_active').html(' out of '+MetaSnapshot.child('numPlayersActive').val());
+    	$('#player_elo_rank').attr('title','out of '+MetaSnapshot.child('numPlayers').val());
+      $('#player_glicko_rank').attr('title','out of '+MetaSnapshot.child('numPlayers').val());
+    	$('#player_srank_rank').attr('title','out of '+MetaSnapshot.child('numPlayersActive').val());
     });
 
     var player_ref_str = p_info_ref_str+playerId;
     var player_ref = firebase.database().ref(player_ref_str);
     var player_query = player_ref.once('value').then(function(PlayerSnapshot) {
+      console.log('Player Promise')
       if (PlayerSnapshot.exists()) {
+        $('#player_card').empty();
+        $('#player_card').html('');
+      	$('#player_card').html(`{% include player_stat_body.html %}`)
+      	$('#game_icon_div').attr('style','height:30px;width:36px;padding-right:0px;padding-left:15px;padding-top:10px;')
         $('#warning_div').addClass('invisible');
     	$('#header_card').removeClass('invisible');
 
+    	populateOtherGames(PlayerSnapshot,playerId,gameId,true,false)
     	populatePrimaryStatsInfo(PlayerSnapshot);
+        // add social media accounts
+    	$('#player_social').empty();
+        populateSocialMedia(PlayerSnapshot, playerId)
+    	$('#player_characters').empty();
+    	populateCharacters(PlayerSnapshot,gameId);
 
         // populate skills
         var eloVal = Math.round(PlayerSnapshot.child('elo').val());
@@ -510,22 +159,25 @@
         var playerRecordStr = '/' + gameId + '_2016_' + (curr_year-2016)+ '_c' + '/records/'+playerId;
         var playerRecordRef = firebase.database().ref(playerRecordStr);
         var playerRecordQuery = playerRecordRef.once('value').then(function(RecordSnapshot){
+          console.log('Player Record Promise')
           if (RecordSnapshot.exists()){
 	        // draw skill graphs
 	        if (currentDB){
 	          var tourneyRefStr = '/'+gameId+'_2016_'+(curr_year-2016)+'_c/tourneys/'
 	          var skillRefStr = '/'+gameId+'_2016_'+(curr_year-2016)+'_c/skills/';
+              var infoRefStr = '/'+gameId+'_2016_'+(curr_year-2016)+'_c/p_info/';
 	        } else {
 	          var tourneyRefStr = '/'+gameId+'_2018_1/tourneys/'
 	          var skillRefStr = '/'+gameId+'_2018_1/skills/';
+              var infoRefStr = '/'+gameId+'_2018_1/p_info/';
 	        }
 	        drawSkillGraphs(RecordSnapshot,playerId,skillRefStr,tourneyRefStr)
+	        drawSkillGraphs(RecordSnapshot,playerId,skillRefStr,tourneyRefStr,'rank')
 
             // draw srank sigmoid skill chart
             var playerWins = RecordSnapshot.child('wins').val();
             var playerLosses = RecordSnapshot.child('losses').val();
             var sigmoidParams = PlayerSnapshot.child('srank_sig').val();
-            var infoRefStr = '/'+gameId+'_2016_'+(curr_year-2016)+'_c/p_info/';
             winps = winprobsFromRecords(playerWins,playerLosses);
 
             var sigChart = sigmoidChart(PlayerSnapshot,infoRefStr,sigmoidParams,winps,srankVal);
@@ -535,17 +187,35 @@
               $('srank_sigmoid_container').addClass('invisible')
               $('srank_switch').addClass('disabled')
             }
-		  }
-		});
 
+            // get tournament data
+            var placements = snapshotToArray(RecordSnapshot.child('placings'),attr='both');
+            var eventPromises = placementsToEvents(placements,gameId);
+            Promise.all(eventPromises).then(function(PlayerEvents){
+              console.log('Player Events Promise')
+              if (PlayerEvents.length>0){
+                // populate the cards
+                populateEventCards(PlayerSnapshot,PlayerEvents,placements,playerWins,playerLosses, p_info_ref_str)
+                // populate h2h-at-a-glance
+                populateH2H(10,PlayerSnapshot, RecordSnapshot, PlayerEvents, infoRefStr, playerWins, playerLosses)
+                populateH2H(100,PlayerSnapshot, RecordSnapshot, PlayerEvents, infoRefStr, playerWins, playerLosses)
+              }
+              console.log('Player Events Promise done')
+            });
+    		  }
+          console.log('Player Record Promise done')
+    		});
+        console.log('Player Promise done')
       } else {
-    	$('#header_card').addClass('invisible');
+    	$('#player_card').addClass('invisible');
         $('#warning_div').removeClass('invisible');
+        $('#player_card').empty();
+        $('#player_card').html('');
       }
     });
 
   });
-
+  console.log('finched')
   Finch.listen();
 </script>
 

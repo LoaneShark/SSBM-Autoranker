@@ -36,7 +36,7 @@ span.twitter-typeahead .tt-suggestion:focus {
   color: #ffffff;
   text-decoration: none;
   outline: 0;
-  background-color: #337ab7;
+  background-color: #8DB0C0;
 }
 .input-group.input-group-lg span.twitter-typeahead .form-control {
   height: 46px;
@@ -54,6 +54,19 @@ span.twitter-typeahead .tt-suggestion:focus {
 }
 span.twitter-typeahead {
   width: 100%;
+}
+.twitter-typeahead, 
+.tt-hint, 
+.tt-input, 
+.tt-menu { 
+  width: 100%; 
+  /*flex: 1 0 auto;*/
+}
+.btn.btn-sr-primary-noinput:hover:not([disabled]) {
+  filter: brightness(100%) !important;
+}
+.btn.btn-sr-primary-noinput:active:not([disabled]) {
+  filter: brightness(100%) !important;
 }
 .input-group span.twitter-typeahead {
   display: block !important;

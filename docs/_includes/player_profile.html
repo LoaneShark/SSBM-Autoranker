@@ -25,10 +25,10 @@
 				</div>	
 				<div class="p-4 d-flex flex-column col-2 justify-content-end shadow invisible" id="player_region_div">
 					<p class="text-muted text-center small font-italic">
-						Region
-						<span class="text-left text-muted small">
+						<a id="player_region_link" style="text-decoration:none;">Region</a>
+						<!--<span class="text-left text-muted small">
 							<a id="player_region_link" style="text-decoration:none;"> ⟶</a>
-						</span>
+						</span>-->
 					</p>
 					<p class="text-center" id="player_region"></p>
 					<div class="d-flex flex-row justify-content-center">
@@ -63,7 +63,7 @@
 					<div id="player_games"></div>
 				</div>
 				<div class="p-2 col-3 justify-content-end invisible" id="player_social_div">
-					<p class="text-right text-muted small font-italic">Social</p>
+					<p class="text-right text-muted small font-italic">Links</p>
 					<div class="float-right" id="player_social"></div>
 				</div>
 			</div>
@@ -199,7 +199,7 @@
 			</div>
 		</div>-->
 		<div id="top10_chart_container" class="container collapse" style="position:relative;width:100%;">
-			<table id="top10_chart" class="display table nowrap" style="width:100%">
+			<table id="top10_chart" class="display table nowrap" style="width:100%;table-layout:fixed;">
 				<thead>
 					<tr>
 						<th></th>
@@ -216,7 +216,7 @@
 			</table>
 		</div>
 		<div id="top100_chart_container" class="container collapse" style="position:relative;width:100%;">
-			<table id="top100_chart" class="display table nowrap" style="width:100%">
+			<table id="top100_chart" class="display table nowrap" style="width:100%;table-layout:fixed;">
 				<thead>
 					<tr>
 						<th></th>
@@ -252,7 +252,7 @@
 			</div>
 			{% endfor %}
 		</div>
-		<div id="full_event_link_div" class="p-2">
+		<!--<div id="full_event_link_div" class="p-2">
 			<span class="text-left text-muted small font-italic" style="text-decoration:none;">
 				See 
 				<a id="player_event_link" style="text-decoration:none;">All</a>
@@ -260,5 +260,5 @@
 			<span class="text-left text-muted small">
 				<a id="player_event_link_2" style="text-decoration:none;"> ⟶</a>
 			</span>
-		</div>
+		</div>-->
 	</div>
