@@ -377,11 +377,11 @@ def update_glixare(dicts,t_info,abs_id,gxe_R,gxe_RD):
 		gxe_res = np.round(10000. / (1. + 10.**(((1500. - gxe_R) * np.pi / sqrt(3. * log(10.)**2. * gxe_RD**2. + 2500. * (64. * np.pi**2. + 147. * log(10.)**2.)))))) / 100.
 
 	gxe_old = p_info[abs_id]['glixare']
-	p_info[abs_id]['glixare'] = gxe_res
-	p_info[abs_id]['glixare_peak'] = max(p_info[abs_id]['glixare_peak'],gxe_res)
+	p_info[abs_id]['glixare'] = float(gxe_res)
+	p_info[abs_id]['glixare_peak'] = float(max(p_info[abs_id]['glixare_peak'],gxe_res))
 
-	skills['glixare'][abs_id][t_id] = gxe_res
-	skills['glixare_del'][abs_id][t_id] = gxe_res-gxe_old
+	skills['glixare'][abs_id][t_id] = float(gxe_res)
+	skills['glixare_del'][abs_id][t_id] = float(gxe_res-gxe_old)
 
 ## TRUESKILL CALCULATIONS
 # WIP -- need to figure out batch update shenanigans
@@ -391,40 +391,37 @@ def update_trueskill(dicts,t_info,matches):
 	t_id,t_name,t_slug,t_ss,t_type,t_date,t_startdate,t_region,t_size,t_images,t_coords,t_bracket,t_social = t_info
 
 	# establish TrueSkill environment for smash games
-	env = TrueSkill(mu=c_args.trueskill_init_mu,sigma=c_args.trueskill_init_sigma,backend='scipy',draw_probability=0.0)
-	#p_info_old = dcopy(p_info)
-	#new_trueskills = {}
+	env = TrueSkill(mu=c_args.trueskill_init_mu,sigma=c_args.trueskill_init_sigma,backend='scipy',draw_probability=0.0001)
 
 	for abs_id in p_info:
 		#if abs_id in matches
 		if t_id in ids[abs_id] and abs_id in matches and len(matches[abs_id]) > 0:
 
 			p_matches = [(abs_id,match[1]) if match[0] >= 0.5 else (match[1],abs_id) for match in matches[abs_id]]
-			#p_matches = [(p_info_old(match[0])['trueskill'],p_info_old(match[1])['trueskill']) for match in p_matches]
-			p_matches = [(p_info[match[0]]['trueskill'],p_info[match[1]]['trueskill']) for match in p_matches]
+
+			#p_ratings = [(p_info[match[0]]['trueskill'],p_info[match[1]]['trueskill']) for match in p_matches]
+			#p_ratings = [(env.create_rating(rating[0]['mu'],rating[0]['sigma']),env.create_rating(rating[1]['mu'],rating[1]['sigma'])) for rating in p_ratings]
 
 			for match in p_matches:
-				print(match[0],match[1])
-				new_r1, new_r2 = rate_1vs1(match[0],match[1])
-				#new_trueskills[match[0]] = new_r1
-				p_info[match[0]]['trueskill_del'] = new_r1-p_info[match[0]]['trueskill']
-				p_info[match[0]]['trueskill'] = new_r1
-				p_info[match[0]]['trueskill_val'] = env.expose(new_r1)
-				if p_info[match[0]]['trueskill_peakval'] < p_info[match[0]]['trueskill_val']:
-					p_info[match[0]]['trueskill_peakval'] = p_info[match[0]]['trueskill_val']
+
+				old_r1 = env.create_rating(p_info[match[0]]['trueskill']['mu'],p_info[match[0]]['trueskill']['sigma'])
+				old_r2 = env.create_rating(p_info[match[1]]['trueskill']['mu'],p_info[match[1]]['trueskill']['sigma'])
+				new_r1, new_r2 = rate_1vs1(old_r1,old_r2,env=env)
+
+				# update p1 trueskill
+				p_info[match[0]]['trueskill_del'] = float(env.expose(new_r1)-env.expose(old_r1))
+				p_info[match[0]]['trueskill'] = {'mu': float(new_r1.mu), 'sigma': float(new_r1.sigma), 'expose': float(env.expose(new_r1))}
+				skills['trueskill'][match[0]][t_id] = p_info[match[0]]['trueskill']
+				if p_info[match[0]]['trueskill_peak']['expose'] < p_info[match[0]]['trueskill']['expose']:
 					p_info[match[0]]['trueskill_peak'] = p_info[match[0]]['trueskill']
-				#new_trueskills[match[1]] = new_r2
-				p_info[match[1]]['trueskill_del'] = new_r2-p_info[match[1]]['trueskill']
-				p_info[match[1]]['trueskill'] = new_r2
-				p_info[match[1]]['trueskill_val'] = env.expose(new_r2)
-				## this will never happen pretty much, since r2 is always going to have lost (and therefore dropped in rating)
-				if p_info[match[1]]['trueskill_peakval'] < p_info[match[1]]['trueskill_val']:
-					p_info[match[1]]['trueskill_peakval'] = p_info[match[1]]['trueskill_val']
+				# update p2 trueskill
+				p_info[match[1]]['trueskill_del'] = float(env.expose(new_r2)-env.expose(old_r2))
+				p_info[match[1]]['trueskill'] = {'mu': float(new_r2.mu), 'sigma': float(new_r2.sigma), 'expose': float(env.expose(new_r2))}
+				skills['trueskill'][match[1]][t_id] = p_info[match[1]]['trueskill']
+				# this should never happen since p2 always is the loser
+				if p_info[match[1]]['trueskill_peak']['expose'] < p_info[match[1]]['trueskill']['expose']:
 					p_info[match[1]]['trueskill_peak'] = p_info[match[1]]['trueskill']
 
-			if abs_id == 1000:
-				print(matches[abs_id])
-				print(p_matches)
 
 ## SIGRANK MAIN CALCULATIONS
 
@@ -931,7 +928,7 @@ def update_sigmoids(dicts,t_info,sig='sigmoid',ranking_period=2,max_iterations=1
 					p_info[abs_id]['srank_sig'] = list(sigrank_res[2][abs_id])
 					p_info[abs_id]['srank_active'] = True
 					p_info[abs_id]['srank_last'] = float(skill_rank)
-					p_info[abs_id]['srank_peak'] = min(p_info[abs_id]['srank_peak'],skill_rank)
+					p_info[abs_id]['srank_peak'] = float(min(p_info[abs_id]['srank_peak'],skill_rank))
 				# otherwise set skill to 1 (unrankable/inactive player)
 				else:
 					p_info[abs_id]['srank'] = int(1)

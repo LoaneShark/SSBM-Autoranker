@@ -138,7 +138,7 @@ def batch_upload(big_dict,sub_db_ref,batch_size=500):
 		sub_db_ref.update(upload_dict)
 
 def generate_db_searchbar(dicts):
-	tourneys,ids,p_info,records,skills,meta = dicts
+	tourneys,ids,p_info,records,skills,meta,sets = dicts
 
 	if args.verbosity >= 5:
 		print('Generating searchbar prefetch file...')
@@ -171,8 +171,6 @@ def clean_tourneys(t_dict):
 			t_dict[t_id]['rating'] = float(t_dict[t_id]['rating'])
 
 if __name__ == '__main__':
-
-
 
 	#for user in auth.list_users().iterate_all():
 	#	print('User: ' + user.uid)

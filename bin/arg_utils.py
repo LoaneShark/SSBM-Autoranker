@@ -84,7 +84,7 @@ parser.add('-rc','--srank_calc_mode',default = 'array', help='Choose calculation
 parser.add('-rr','--srank_score_mode',default = 'intsig', help='Choose scoring method, from [intsig,intercept,average]. Intsig required if sig_mode = alt. (default intsig)')
 parser.add('-rm','--srank_seed_mode',default = 'last', help='Choose seeding method, from [last,winrate,placing,random,blank,normalized_skills]. Last or blank recommended. (default last)')
 
-parser.add('-ri','--srank_max_iter',default = 1000, help='Max iterations per update_sigmoids call. Recommended ~500-1000 for standard config, ~100 if running_bins are enabled. (default 1000)', type=int)
+parser.add('-ri','--srank_max_iter',default = 300, help='Max iterations per update_sigmoids call. Recommended ~500-1000 for standard config, ~100 if running_bins are enabled. (default 1000)', type=int)
 parser.add('-rn','--srank_max_size',default = None, help='Max number of players to consider in ranking calculations. If None, all "active" players are considered. (default None)')
 parser.add('-rx','--srank_simbrack',default = False, help='Toggle scoring by simulated brackets rather than sigmoid fitting; deprecated (default False)')
 ## < show key sigmoids >

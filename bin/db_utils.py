@@ -339,11 +339,8 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 					skills['srank_del'][abs_id] = {}
 					skills['srank_sig'][abs_id] = {}
 				if 'trueskill' not in p_info[abs_id]:
-					#p_info[abs_id]['trueskill'] = 0.
-					p_info[abs_id]['trueskill'] = ts_Rating(mu=args.trueskill_init_mu,sigma=args.trueskill_init_sigma)
-					p_info[abs_id]['trueskill_val'] = 0.
+					p_info[abs_id]['trueskill'] = {'mu':args.trueskill_init_mu,'sigma':args.trueskill_init_sigma,'expose':0.}
 					p_info[abs_id]['trueskill_peak'] = p_info[abs_id]['trueskill']
-					p_info[abs_id]['trueskill_peakval'] = p_info[abs_id]['trueskill_val']
 					if 'trueskill' not in skills:
 						skills['trueskill'] = {}
 						skills['trueskill-rnk'] = {}
@@ -556,8 +553,8 @@ def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_up
 		update_performances(dicts,t_info)
 		if v >= 4:
 			print('Updating Glicko...')
-		update_glicko(dicts,t_info,glicko_matches,tau=glicko_tau)
-		# update_trueskill(dicts,t_info,trueskill_matches)
+		update_glicko(dicts,t_info,glicko_matches,tau=glicko_tau,to_update_glixare=True)
+		update_trueskill(dicts,t_info,trueskill_matches)
 		if to_update_sigmoids:
 			#update_sigmoids(dicts,t_info,max_iterations=500,v=v,ranking_period=ranking_period)
 			sigrank_res = update_sigmoids(dicts,t_info,max_iterations=args.srank_max_iter,v=v,ranking_period=0,sig=args.srank_sig_mode)

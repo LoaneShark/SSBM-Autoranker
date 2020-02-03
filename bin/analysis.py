@@ -57,6 +57,7 @@ from nn_utils import *
 ## 		 - allow analysis_utils to write to file for some queries, etc. (csv?)
 ## 		 - GUI/standalone executable tool/webapp
 ## 		 - Intelligent clustering of players by region
+## 		 - Migrate ML stack from TensorFlow to PyTorch
 ##
 
 ## ELO BALANCING:
@@ -110,6 +111,7 @@ def main():
 		ps = dicts_to_nn(dicts,seed='last')
 		main_nn(ps)
 		return True
+
 	#if 121567 in tourneys:
 	#	print(calc_tourney_stack_score(dicts,121567,plot_res=True))
 	# ==========================================================================================
@@ -168,7 +170,7 @@ def main():
 	if 1 < 0:
 		opts = find_opt_hyperparams(dicts,20,9,key_ids=[1000,19554])
 
-	to_calc_sigrank = True
+	to_calc_sigrank = False
 	if to_calc_sigrank:
 		array_t = timer()
 		if game_idx == 1:
@@ -189,7 +191,7 @@ def main():
 		else:
 			iagorank_params = None
 
-	if True:
+	if False:
 		iagoranks,winprobs,sigmoids,data_hist,id_list = iagorank_params
 		print('N: %d'%len(id_list))
 		if v >= 4:
@@ -362,18 +364,10 @@ def main():
 			print(line)
 
 def main_read():
-	#set_db_args(args)
-	'''if year_count == 0:
-		yearstr = str(year)
-	else:
-		yearstr = str(year)+'-'+str(year+year_count)
-	if args.current_db:
-		yearstr += '_c'
-	'''
 	verstr = get_db_verstr()
 	tourneys,ids,p_info,records,skills,meta = easy_load_db(verstr)
-	## delete sns 5
-	#delete_tourney((tourneys,ids,p_info,records,skills,meta),72577)
+	preprocess((tourneys,ids,p_info,records,skills,meta))
+
 	tourneys,ids,p_info,records,skills,meta = read_year(game_idx,year,base=(tourneys,ids,p_info,records,skills,meta))
 	for i in range(1,year_count+1):
 		if i == year_count:
@@ -405,7 +399,38 @@ def main_read():
 									p_info[p_id]['characters'][char_id][1] += 10
 						else:
 							print(p_id,'-',p_id in p_info.keys())
+
 	return tourneys,ids,p_info,records,skills,meta
+
+def preprocess(dicts):
+	tourneys,ids,p_info,records,skills,meta = dicts
+
+	# sanitize current dicts for web upload
+	if False:
+		for abs_id in p_info:
+			#print(p_info[abs_id]['trueskill'])
+			if type(p_info[abs_id]['trueskill']) is not dict:
+				p_info[abs_id]['trueskill'] = {'mu': p_info[abs_id]['trueskill'].mu, 'sigma': p_info[abs_id]['trueskill'].sigma}
+			if type(p_info[abs_id]['trueskill_peak']) is not dict:
+				p_info[abs_id]['trueskill_peak'] = {'mu': p_info[abs_id]['trueskill']['mu'], 'sigma': p_info[abs_id]['trueskill']['sigma']}
+				if 'expose' in p_info[abs_id]['trueskill']:
+					p_info[abs_id]['trueskill_peak']['expose'] = float(p_info[abs_id]['trueskill']['expose'])
+				else:
+					p_info[abs_id]['trueskill_peak']['expose'] = float(0.)
+
+			p_info[abs_id]['glixare'] = float(p_info[abs_id]['glixare'])
+			p_info[abs_id]['glixare_peak'] = float(p_info[abs_id]['glixare_peak'])
+			p_info[abs_id]['srank_peak'] = float(p_info[abs_id]['srank_peak'])
+			p_info[abs_id]['trueskill_peak'] = {key: float(p_info[abs_id]['trueskill_peak'][key]) for key in p_info[abs_id]['trueskill_peak']}
+
+		verstr = get_db_verstr()
+		save_dict(p_info,'p_info',verstr)
+		save_dict(skills,'skills',verstr)
+
+	## delete sns 5
+	#delete_tourney((tourneys,ids,p_info,records,skills,meta),72577)
+
+	return dicts
 
 def find_opt_hyperparams(dicts,a_rng=20,ma_rng=9,plot_res=True,key_ids=[1000]):
 	tourneys,ids,p_info,records,skills,meta = dicts

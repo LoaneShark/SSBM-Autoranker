@@ -468,7 +468,7 @@ def update_percentiles(dicts,t_id=None):
 		elif skill_key == 'glicko':
 			p_data = np.array([[p_id,p_info[p_id][skill_key][0]] for p_id in p_info])
 		elif skill_key == 'trueskill':
-			p_data = np.array([[p_id,p_info[p_id]['trueskill_val']] for p_id in p_info])
+			p_data = np.array([[p_id,p_info[p_id]['trueskill']['expose']] for p_id in p_info])
 		else:
 			p_data = np.array([[p_id,p_info[p_id][skill_key]] for p_id in p_info])
 		# p_data = [p_id,skill]
