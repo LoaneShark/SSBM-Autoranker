@@ -242,18 +242,34 @@ table.dataTable{
                     populateH2H(100,PlayerSnapshot, RecordSnapshot, PlayerEvents, topPlayerRefStr, playerWins, playerLosses)
                   }
                 });
-                // draw skill graphs
+                // generate reference strings for skills
                 if (currentDB){
-                  var tourneyRefStr = '/'+gameId+'_2016_'+(curr_year-2016)+'_c/tourneys/'
+                  var tourneyRefStr = '/'+gameId+'_2016_'+(curr_year-2016)+'_c/tourneys/';
                 } else {
-                  var tourneyRefStr = '/'+gameId+'_2018_1/tourneys/'
+                  var tourneyRefStr = '/'+gameId+'_2018_1/tourneys/';
                 }
                 if (currentDB){
                   var skillRefStr = '/'+gameId+'_2016_'+(curr_year-2016)+'_c/skills/';
                 } else {
                   var skillRefStr = '/'+gameId+'_2018_1/skills/';
                 }
-                drawSkillGraphs(RecordSnapshot,playerId,skillRefStr,tourneyRefStr)
+                // get meta info (needed for minActivity to pass to drawSkillGraphs)
+                if (currentDB){
+                  var metaRefStr = '/'+gameId+'_2016_'+(curr_year-2016)+'_c/meta/';
+                } else {
+                  var metaRefStr = '/'+gameId+'_2018_1/meta/';
+                }
+                var metaRef = firebase.database().ref(metaRefStr);
+                var metaQuery = metaRef.once('value').then(function(metaInfo){
+                  // add today's date/watermark
+                  //var utc_date = new Date().toJSON().slice(0,10).replace(/-/g,'/');
+                  var metaDate = metaInfo.child('dateBuilt').val();
+                  $('#db_date').html(''+metaDate[1]+'-'+metaDate[2]+'-'+metaDate[0]);
+
+                  // draw skill graphs
+                  var minAct = metaInfo.child('args').child('min_activity').val();
+                  drawSkillGraphs(RecordSnapshot,playerId,skillRefStr,tourneyRefStr,'skill',minAct);
+                });
 
                 // setup the toggle switch for skill values vs ranks
                 $('input:checkbox').change(function() {
@@ -291,18 +307,6 @@ table.dataTable{
                   $('srank_switch').addClass('disabled')
                 }
               }
-            });
-
-            // add today's date/watermark
-            //var utc_date = new Date().toJSON().slice(0,10).replace(/-/g,'/');
-            if (currentDB){
-              var metaRefStr = '/'+gameId+'_2016_'+(curr_year-2016)+'_c/meta/dateBuilt'
-            } else {
-              var metaRefStr = '/'+gameId+'_2018_1/meta/dateBuilt'
-            }
-            var metaRef = firebase.database().ref(metaRefStr);
-            var metaQuery = metaRef.once('value').then(function(metaDate){
-              $('#db_date').html(''+metaDate.child(1).val()+'-'+metaDate.child(2).val()+'-'+metaDate.child(0).val());
             });
 
             // make jumbotron visible (now that it's loaded)

@@ -21,18 +21,6 @@ function buildPlayerSearchbar(gameId,prefetch=true){
   }
 }
 
-/*
-    $.getJSON(prefetchFileLoc)
-      .done(function(searchbarData){
-        console.log('Prefetching... '+prefetchFileLoc);
-        makePlayerSearchbar(searchbarData)
-      })
-      .fail(function(){
-        fetchPlayerSearchbar(gameId,curr_year)
-      });
-
-*/
-
 function fetchPlayerSearchbar(gameId,curr_year){
   console.log('Building searchbar data...')
   //var searchbar_ref = firebase.database().ref('/'+gameId+'_2018_1/p_info');
@@ -547,7 +535,7 @@ function setStatsSkillTrophy(skillName,skillTier,skillTiers=[5,10,20,50,100,500]
 }
 
 // draws the skill-over-time charts in the collapsed section of skills
-function drawSkillGraphs(RecordSnapshot, playerId, skillRefStr, tourneyRefStr, chartType='skill'){
+function drawSkillGraphs(RecordSnapshot, playerId, skillRefStr, tourneyRefStr, chartType='skill', minActivity=3){
   console.log('Populating skill graphs')
     var tourneyRef = firebase.database().ref(tourneyRefStr);
     var tourneyQuery = tourneyRef.once('value').then(function(TourneySnapshot){
@@ -568,7 +556,7 @@ function drawSkillGraphs(RecordSnapshot, playerId, skillRefStr, tourneyRefStr, c
           for (i=0;i<skillPromises.length;i++){
             skillHistory = PlayerSkills[i];
             if (skillHistory != null){
-              var timeChart = skillChart(skillHistory,TourneySnapshot,RecordSnapshot.child('placings'),gameId,skillTypes[i]);
+              var timeChart = skillChart(skillHistory,TourneySnapshot,RecordSnapshot.child('placings'),gameId,skillTypes[i],minActivity);
               if (timeChart != null){
                 timeChart.update();
               } else {

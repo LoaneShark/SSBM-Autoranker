@@ -50,7 +50,7 @@ var funcPlugin = {
 };
 
 // draw skill history chart
-function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='elo'){
+function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='elo',minActivity=3){
 	var ctx = $('#'+type+'_chart')[0].getContext('2d');
 	//var ctx = $('#tempChart');
 	var skillset = [];
@@ -180,7 +180,7 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 			var showRankPeriod = false;
 			var datasetTooltipIndices = [0]
 		}
-		var maxRankLen = 3;
+		var maxRankLen = minActivity;
 		var rankLen = Math.min(maxRankLen,skillset.length);
 		r_i = 0;
 		for (i=0;i<rankLen;i++){
