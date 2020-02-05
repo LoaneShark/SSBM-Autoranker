@@ -261,7 +261,7 @@ table.dataTable{
                 }
                 var metaRef = firebase.database().ref(metaRefStr);
                 var metaQuery = metaRef.once('value').then(function(metaInfo){
-                  // add today's date/watermark
+                  // add build date footer/watermark
                   //var utc_date = new Date().toJSON().slice(0,10).replace(/-/g,'/');
                   var metaDate = metaInfo.child('dateBuilt').val();
                   $('#db_date').html(''+metaDate[1]+'-'+metaDate[2]+'-'+metaDate[0]);
