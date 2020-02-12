@@ -156,26 +156,38 @@ def main():
 	#print_resume(dicts,resume,g_key='player',s_key='event')
 	#disp_all(dicts,key='elo',dispnum=10,min_activity=min_act,tier_tol=-1,plot_skills=False)
 	#if game_idx == 1386 or game_idx == 3:
+	if True:
+		print('ELO')
+		disp_elos(dicts)
+		print('GLICKO')
+		disp_glickos(dicts)
+		print('TRUESKILL')
+		disp_trueskills(dicts)
+		print('GLIXARE')
+		disp_glixares(dicts)
+		print('SRANK')
+		disp_sranks(dicts)
 
-	top100_sranks = sorted([[p_info[p_id]['tag'],p_info[p_id]['srank']] for p_id in p_info if is_active(dicts,p_id)],key=lambda l:l[1])[:100]
-	i = 1
-	for line in top100_sranks:
-		if i >= 100: i_buff = ""
-		elif i >= 10: i_buff = " "
-		else: i_buff = "  "
-		print(''+str(i)+str(i_buff)+str(line))
-		i+=1
+	if False:
+		top100_sranks = sorted([[p_info[p_id]['tag'],p_info[p_id]['srank']] for p_id in p_info if is_active(dicts,p_id)],key=lambda l:l[1])[:100]
+		i = 1
+		for line in top100_sranks:
+			if i >= 100: i_buff = ""
+			elif i >= 10: i_buff = " "
+			else: i_buff = "  "
+			print(''+str(i)+str(i_buff)+str(line))
+			i+=1
 
 	# find optimum hyperparameters (higher learnrate is better, >0.2 needed for convergence)
-	if 1 < 0:
+	if False:
 		opts = find_opt_hyperparams(dicts,20,9,key_ids=[1000,19554])
 
 	to_calc_sigrank = False
 	if to_calc_sigrank:
 		array_t = timer()
 		if game_idx == 1:
-			iagorank_params = calc_sigrank(dicts,min_req=min_act,max_iter=1000,learn_decay=True,disp_size=100,verbosity=5,print_res=True,plot_ranks=False,\
-				mode='array',seed='blank',sig_mode='alt',score_by='intsig',fit_mode='winprobs',\
+			iagorank_params = calc_sigrank(dicts,min_req=min_act,max_iter=200,learn_decay=True,disp_size=100,verbosity=5,print_res=True,plot_ranks=False,\
+				mode='array',seed='average',sig_mode='alt',score_by='intsig',fit_mode='winprobs',\
 				alpha=0.5,fit_corners=False,pad_zeros=False,combine_unranked=False)
 		else:
 			iagorank_params = calc_sigrank(dicts,min_req=min_act,max_iter=1000,learn_decay=True,disp_size=100,verbosity=5,print_res=True,plot_ranks=False,\

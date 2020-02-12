@@ -77,16 +77,78 @@ def get_glickos(dicts,acc=3,scale_vals=False,activity=3):
 
 def disp_glickos(dicts,dispnum=20,scale_vals=False,activity=3):
 	tourneys,ids,p_info,records,skills,meta = dicts
-	elos = get_glickos(dicts,scale_vals=scale_vals,activity=activity)
+	glickos = get_glickos(dicts,scale_vals=scale_vals,activity=activity)
 
 	players = sorted([[p_info[p_id]['tag'],glickos[p_id]] for p_id in glickos],key=lambda x: x[1],reverse=True)
 	players = players[:dispnum]
 	for player in players:
 		print(player)
 
-def get_iagorank(dicts,acc=3,scale_vals=True,activity=3):
+def get_sranks(dicts,acc=3,scale_vals=False,activity=3):
 	tourneys,ids,p_info,records,skills,meta = dicts
-	return True
+	sranks = {}
+	for p_id in p_info:
+		if p_id in records and is_active(dicts,p_id,min_req=activity):
+			sranks[p_id] = round(p_info[p_id]['srank'],acc)
+	if scale_vals:
+		maxval = max([sranks[p_id] for p_id in sranks])
+		minval = min([sranks[p_id] for p_id in sranks])
+		for p_id in sranks:
+			sranks[p_id] = round(((sranks[p_id] - minval)/(maxval-minval))*10,acc)
+	return sranks
+
+def disp_sranks(dicts,dispnum=20,scale_vals=False,activity=3):
+	tourneys,ids,p_info,records,skills,meta = dicts
+	sranks = get_sranks(dicts,scale_vals=scale_vals,activity=activity)
+
+	players = sorted([[p_info[p_id]['tag'],sranks[p_id]] for p_id in sranks],key=lambda x: x[1])
+	players = players[:dispnum]
+	for player in players:
+		print(player)
+
+def get_trueskills(dicts,acc=3,scale_vals=False,activity=3):
+	tourneys,ids,p_info,records,skills,meta = dicts
+	trueskills = {}
+	for p_id in p_info:
+		if p_id in records and is_active(dicts,p_id,min_req=activity):
+			trueskills[p_id] = round(p_info[p_id]['trueskill']['expose'],acc)
+	if scale_vals:
+		maxval = max([trueskills[p_id] for p_id in trueskills])
+		minval = min([trueskills[p_id] for p_id in trueskills])
+		for p_id in trueskills:
+			trueskills[p_id] = round(((trueskills[p_id] - minval)/(maxval-minval))*10,acc)
+	return trueskills
+
+def disp_trueskills(dicts,dispnum=20,scale_vals=False,activity=3):
+	tourneys,ids,p_info,records,skills,meta = dicts
+	trueskills = get_trueskills(dicts,scale_vals=scale_vals,activity=activity)
+
+	players = sorted([[p_info[p_id]['tag'],trueskills[p_id]] for p_id in trueskills],key=lambda x: x[1],reverse=True)
+	players = players[:dispnum]
+	for player in players:
+		print(player)
+
+def get_glixares(dicts,acc=3,scale_vals=False,activity=3):
+	tourneys,ids,p_info,records,skills,meta = dicts
+	glixares = {}
+	for p_id in p_info:
+		if p_id in records and is_active(dicts,p_id,min_req=activity):
+			glixares[p_id] = round(p_info[p_id]['trueskill']['expose'],acc)
+	if scale_vals:
+		maxval = max([glixares[p_id] for p_id in glixares])
+		minval = min([glixares[p_id] for p_id in glixares])
+		for p_id in glixares:
+			glixares[p_id] = round(((glixares[p_id] - minval)/(maxval-minval))*10,acc)
+	return glixares
+
+def disp_glixares(dicts,dispnum=20,scale_vals=False,activity=3):
+	tourneys,ids,p_info,records,skills,meta = dicts
+	glixares = get_glixares(dicts,scale_vals=scale_vals,activity=activity)
+
+	players = sorted([[p_info[p_id]['tag'],glixares[p_id]] for p_id in glixares],key=lambda x: x[1],reverse=True)
+	players = players[:dispnum]
+	for player in players:
+		print(player)
 
 def get_avg_performances(dicts,acc=3,scale_vals=False):
 	tourneys,ids,p_info,records,skills,meta = dicts
@@ -140,8 +202,8 @@ def get_best_performances(dicts,use_names=False,acc=3,scale_vals=False):
 
 	return best_perfs
 
-def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,winprobs=None,skill_weight=False,v=0,n_bins=20000,\
-							infer_characters=False,label_mode='tens',use_icons=False,prune_sparse=True,save_figure=False,plot_fails=False):
+def generate_matchup_chart(dicts,game,year,year_count=0,id_list=None,winprobs=None,skill_weight=False,v=0,n_bins=20000, \
+	infer_characters=False,label_mode='tens',use_icons=False,prune_sparse=True,save_figure=False,plot_fails=False):
 	tourneys,ids,p_info,records,skills,meta = dicts
 	if id_list == None:
 		id_list = [p_id for p_id in records]

@@ -178,7 +178,7 @@ if __name__ == '__main__':
 	if True:
 		curr_db = get_db_reference()
 		#for game in [1,2,3,4,5,24,1386]:
-		for game in [24]:
+		for game in [2,3,24]:
 			#print(delete_sub_db(curr_db,game,2018,0))
 			#print(delete_sub_db(curr_db,game,2018,1))
-			print(delete_sub_db(curr_db,game,2016,3,is_current=True))
+			print(delete_sub_db(curr_db,game,2016,4,is_current=True))

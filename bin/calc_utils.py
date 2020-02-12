@@ -91,10 +91,11 @@ def calc_tourney_stack_score(dicts,t_id,plot_res=False):
 		final_cov = np.diag(final_cov_guess)
 		stack_srank = 1.-integrate_alt_sigmoid(final_guess,None)
 		is_succ = True
-	except RuntimeError:
+	except (RuntimeError, ValueError) as e:
+		print('Error: ',e)
 		print(x*log2(tourneys[t_id]['numEntrants']))
 		print(y)
-		plot_res = True
+		plot_res = False
 		is_succ = False
 
 
@@ -465,20 +466,28 @@ def calc_sigrank(dicts,max_iter=args.srank_max_iter,min_req=args.min_activity,ve
 		print('N: ',N,'\t n: ',n)
 
 	# initialize data with [id, tag, elo, glicko] structure
-	data = np.array([[p_id,get_en_tag(dicts,p_id=p_id),float(p_info[p_id]['elo']),float(p_info[p_id]['glicko'][0])] for p_id in winps],dtype='object')
+	data   = np.array([[p_id,get_en_tag(dicts,p_id=p_id)] for p_id in winps],dtype='object')
+	s_data = {p_id: {'elo':float(p_info[p_id]['elo']),\
+					'glicko':float(p_info[p_id]['glicko'][0]),\
+					'trueskill':float(p_info[p_id]['trueskill']['expose']),\
+					'glixare':float(p_info[p_id]['glixare'])} \
+					for p_id in winps}
 
 	# use previous sigranks as skill seeds
 	if seed == 'last':
 		if verbosity >= 5:
 			print('[seeding by previous/initial skill values]')
-		data_dict = {p_id: ([tag,p_info[p_id]['srank_last']] if type(p_info[p_id]['srank_last']) is float else [tag,0.5] if p_id in id_list else [tag,1.0]) for p_id,tag,_,_ in data}
-		#data_dict = {p_id: ([tag,p_info[p_id]['srank']] if type(p_info[p_id]['srank']) is float else [tag,1.0]) for p_id,tag,_,_ in data}
+		data_dict = {p_id: ([tag,p_info[p_id]['srank_last']] if type(p_info[p_id]['srank_last']) is float else [tag,0.5] if p_id in id_list else [tag,1.0]) for p_id,tag in data}
+		#data_dict = {p_id: ([tag,p_info[p_id]['srank']] if type(p_info[p_id]['srank']) is float else [tag,1.0]) for p_id,tag in data}
 	# use average win percentage as skill seeds
 	# scale by 1-winrate to fit expected shape of sigmoid skill distribution (lower value == higher skill)
 	elif seed == 'winrate':
 		if verbosity >= 5:
 			print('[seeding by avg winrate]')
-		data_dict = {p_id: [tag,1.-np.mean([winps[p_id][opp_id] for opp_id in winps[p_id]])] for p_id,tag,_,_ in data}
+		data_dict = {p_id: [tag,1.-np.mean([winps[p_id][opp_id] for opp_id in winps[p_id] if winps[p_id][opp_id] != -1.])] \
+					if len(winps[p_id].keys()) >= 1 \
+					else [tag,1.] \
+					for p_id,tag in data}
 	# use average distance in bracket as skill seeds
 	elif seed == 'placing':
 		if verbosity >= 5:
@@ -486,44 +495,88 @@ def calc_sigrank(dicts,max_iter=args.srank_max_iter,min_req=args.min_activity,ve
 		brack_score = lambda pl,N: 1.-float(int(log(N,2))-int(log(pl,2)))/float(int(log(N,2)))
 		data_dict = {p_id: [tag,np.mean([brack_score(records[p_id]['placings'][t_id]['placing'],tourneys[t_id]['numEntrants']) \
 							for t_id in records[p_id]['placings'] if tourneys[t_id]['active']])] \
-							for p_id,tag,_,_ in data}
+							for p_id,tag in data}
 	elif seed == 'random':
 		if verbosity >= 5:
 			print('[seeding by rng]')
 		# give everyone a random initial skillrank in [0.25,0.75]
-		data_dict = {p_id: [tag,np.random.random_sample()/2.+0.25] for p_id,tag,_,_ in data}
+		data_dict = {p_id: [tag,np.random.random_sample()/2.+0.25] for p_id,tag in data}
 	elif seed == 'blank':
 		if verbosity >= 5:
 			print('[blanked seeding]')
-		data_dict = {p_id: ([tag,0.5] if p_id in id_list else [tag,1.0]) for p_id,tag,_,_ in data}
-		#data_dict = {p_id: ([tag,1.0] if p_id in id_list else [tag,1.0]) for p_id,tag,_,_ in data}
+		data_dict = {p_id: ([tag,0.5] if p_id in id_list else [tag,1.0]) for p_id,tag in data}
+		#data_dict = {p_id: ([tag,1.0] if p_id in id_list else [tag,1.0]) for p_id,tag in data}
 	elif seed == 'baselogreg':
 		if verbosity >= 5:
 			print('[seeding by logistic regression]')
-		data_dict = {p_id: [tag,1.-integrate_alt_sigmoid(safe_basereg(winps,id_list,p_id),n)] for p_id,tag,_,_ in data}
+		data_dict = {p_id: [tag,1.-integrate_alt_sigmoid(safe_basereg(winps,id_list,p_id),n)] for p_id,tag in data}
 		data_logreg_list = sorted([data_dict[p_id] for p_id in data_dict],key=lambda l:l[1])[:100]
-		for data_logreg_line in data_logreg_list:
-			print(data_logreg_line)
+		if verbosity >= 6:
+			for data_logreg_line in data_logreg_list:
+				print(data_logreg_line)
+	# seed by (normalized to [0,1]) elo
+	elif seed == 'elo':
+		if verbosity >= 5:
+			print('[seeding by elo]')
+		s_list = [s_data[temp_id]['elo'] for temp_id,_ in data]
+		elo_min = np.min(s_list)
+		elo_max = np.max(s_list)
+		data_dict = {p_id: [tag,((p_info[p_id]['elo']-elo_min)/(elo_max-elo_min))*(1./N-1.)+1.] for p_id,tag in data}
+	# seed by (normalized to [0,1]) glicko
+	elif seed == 'glicko':
+		if verbosity >= 5:
+			print('[seeding by glicko]')
+		s_list = [s_data[temp_id]['glicko'] for temp_id,_ in data]
+		glicko_min = np.min(s_list)
+		glicko_max = np.max(s_list)
+		data_dict = {p_id: [tag,((p_info[p_id]['glicko'][0]-glicko_min)/(glicko_max-glicko_min))*(1./N-1.)+1.] for p_id,tag in data}
+	# seed by (normalized to [0,1]) trueskill
+	elif seed == 'trueskill':
+		if verbosity >= 5:
+			print('[seeding by trueskill]')
+		s_list = [s_data[temp_id]['trueskill'] for temp_id,_ in data]
+		trueskill_min = np.min(s_list)
+		trueskill_max = np.max(s_list)
+		data_dict = {p_id: [tag,((p_info[p_id]['trueskill']['expose']-trueskill_min)/(trueskill_max-trueskill_min))*(1./N-1.)+1.] for p_id,tag in data}
+	# seed by glixare
+	elif seed == 'glixare':
+		if verbosity >= 5:
+			print('[seeding by glixare]')
+		data_dict = {p_id: [tag,1.-p_info[p_id]['glixare']/100.] for p_id,tag in data}
 
 	# use elo/glicko as skill seeds
 	else:
 		if verbosity >= 5:
-			print('invalid seed. defaulting to elo')
+			if seed != 'average':
+				print('invalid seed. defaulting to avg')
 			print('[seeding by avg normalized elo/glicko-2]')
 		# get initial skillranks by rescaling all ranks (elo and glicko) to be between 0 and 1 (for sigmoid fitting)
 		# normalize elo/glicko by all db entrants (N)
 		
-		elo_min = np.min(data[:,2])
-		elo_max = np.max(data[:,2])
+		elo_list = [s_data[temp_id]['elo'] for temp_id,_ in data]
+		elo_min = np.min(elo_list)
+		elo_max = np.max(elo_list)
 		# invert scaling so that highest skill corresponds to skill-rank of 1/N (~0)
-		data[:,2] = ((data[:,2]-elo_min)/(elo_max-elo_min))*(1./N-1.)+1.
-		glicko_min = np.min(data[:,3])
-		glicko_max = np.max(data[:,3])
-		data[:,3] = ((data[:,3]-glicko_min)/(glicko_max-glicko_min))*(1./N-1.)+1.
-		# average normalized elo and glicko for initial skillranks
-		data[:,2] = (data[:,2]+data[:,3])/2.
-		data = data[:,:3]
-		# convert data to a dict and pass to sigrank
+		elo_list = ((elo_list-elo_min)/(elo_max-elo_min))*(1./N-1.)+1.
+
+		glicko_list = [s_data[temp_id]['glicko'] for temp_id,_ in data]
+		glicko_min = np.min(glicko_list)
+		glicko_max = np.max(glicko_list)
+		glicko_list = ((glicko_list-glicko_min)/(glicko_max-glicko_min))*(1./N-1.)+1.
+
+		trueskill_list = [s_data[temp_id]['trueskill'] for temp_id,_ in data]
+		trueskill_min = np.min(trueskill_list)
+		trueskill_max = np.max(trueskill_list)
+		trueskill_list = ((trueskill_list-trueskill_min)/(trueskill_max-trueskill_min))*(1./N-1.)+1.
+
+		glixare_list = [s_data[temp_id]['glixare'] for temp_id,_ in data]
+		glixare_min = np.min(glixare_list)
+		glixare_max = np.max(glixare_list)
+		glixare_list = ((glixare_list-glixare_min)/(glixare_max-glixare_min))*(1./N-1.)+1.
+
+		# average normalized skills for initial skillranks
+		data_list = (elo_list+glicko_list+trueskill_list+glixare_list)/4.
+		data = [[temp_data[0][0],temp_data[0][1],temp_data[1]] for temp_data in zip(data,data_list)]		# convert data to a dict and pass to sigrank
 		data_dict = {p_id: [tag,skill_rank] for p_id,tag,skill_rank in data}
 	if verbosity >= 4:
 		print('Generating Sigmoids... (%d entrants)'%n)
@@ -972,8 +1025,8 @@ def safe_basereg(winps,id_list,abs_id):
 		print(abs_id)
 	wp_mean = lambda value_list,skill: mean(value_list) if len(value_list) >= 1 else 1. if skill >= 1. else 0.
 
-	r_list = [winps[abs_id][norm_key] for norm_key in winps[abs_id] if norm_key in id_list]
-	u_list = [winps[abs_id][norm_key] for norm_key in winps[abs_id] if norm_key not in id_list]
+	r_list = [winps[abs_id][norm_key] for norm_key in winps[abs_id] if winps[abs_id][norm_key] > 0 and norm_key in id_list]
+	u_list = [winps[abs_id][norm_key] for norm_key in winps[abs_id] if winps[abs_id][norm_key] > 0 and norm_key not in id_list]
 	r_val = wp_mean(r_list,0.5)
 	u_val = wp_mean(u_list,1.)
 	basewinprobs = [0.,r_val,u_val]
@@ -1069,7 +1122,8 @@ def running_winprobs(data,winps,p_id,mode='dict',plot_probs=True,window_sigma=fl
 
 	#window_sigma = 0.1
 	#window_step = 0.05
-	bin_locs = np.linspace(0.,1.,num=(1./window_step))
+	num_steps = int(np.round(1./window_step))
+	bin_locs = np.linspace(0.,1.,num=num_steps)
 	local_probs = np.zeros((len(bin_locs)))
 	local_errs = np.zeros((len(bin_locs)))
 
