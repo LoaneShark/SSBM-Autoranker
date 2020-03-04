@@ -45,7 +45,7 @@ glicko_init_sigma = 0.06 		# Initial sigma for players in Glicko-2 algorithm (de
 
 # TrueSkill configs
 trueskill_init_mu = 25 			# Initial skill rating for TrueSkill algorithm (default 25)
-trueskill_init_sigma = 25/3 	# Initial skill rating variance for TrueSkill algorithm (default 25/3 == 8.3333...)
+trueskill_init_sigma = 8.33333 	# Initial skill rating variance for TrueSkill algorithm (default 25/3 == 8.3333...)
 
 # S-Rank configs
 srank_alpha = 0.5 				# S-Rank learnrate (default 0.5)
@@ -81,6 +81,8 @@ fb_key_path = ../lib/Firebase_API_Key.json 		# Path to Firebase API Key json fil
 	try:
 		config_file = open('./configs/defaults.conf','w')
 	except FileNotFoundError:
+		if not os.path.isdir('./configs/'):
+			os.mkdir('./configs/')
 		config_file = open('./configs/defaults.conf','x')
 	config_file.write(config_text)
 	config_file.close()
@@ -94,3 +96,4 @@ def setup_dirs():
 if __name__ == '__main__':
 	print('I should set up something!')
 	setup_dirs()
+	write_blank_config_file()

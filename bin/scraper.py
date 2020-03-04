@@ -223,7 +223,7 @@ def scrape_ranks(game,year,rank_str,yearstr,yr_half=-1):
 		curr_table = tables[i]
 		first_row = curr_table.find_all('tr')[0]
 		if len(first_row.find_all('th')) > 0:
-			if 'rank' in first_row.find_all('th')[0].text.lower():
+			if 'rank' in first_row.find_all('th')[0].text.lower() and 'SSBMRank' not in first_row.find_all('th')[0].text:
 				t_i = i
 				break
 
@@ -331,8 +331,8 @@ def rivals_events(year):
 				'au-rcs-october-online-monthly','syndicate-2019','eu-rcs-november-online-monthly','dreamhack-atlanta','au-rcs-november-online-monthly',\
 				'traction-5','couchwarriors-crossup-2','na-rcs-season-4-december-online-major']
 	elif year == 2020:
-		return ['genesis-7',\
-				# 'salt-flats-2020','ascension-2020-back-to-basics','frostbite-2020','phantom-2020','emerald-city-9-at-huskyx','ceo-dreamland-2020','bloom-2',\
+		return ['genesis-7','salt-flats-2020','ascension-2020-back-to-basics','frostbite-2020',\
+				# 'phantom-2020','emerald-city-9-at-huskyx','ceo-dreamland-2020','bloom-2',\
 				# 'kings-of-hali-5','bam12-battle-arena-melbourne-12','cost-2020','riptide-1',\
 				]
 	else:

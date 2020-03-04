@@ -81,6 +81,8 @@ def pull_phase(num):
 
 # used to save datasets/hashtables
 def save_obj(t_id,phase,obj, name):
+	if not os.path.isdir('obj'):
+		os.mkdir('obj')
 	if not os.path.isdir('obj/%d'%t_id):
 		os.mkdir(str('obj/%d'%t_id))
 	if not os.path.isdir('obj/%d/%d'%(t_id,phase)):
@@ -257,7 +259,7 @@ def save_dict(data,name,ver,loc='db'):
 	return True
 
 # loads a single dict
-def load_dict(name,ver,loc='db'):
+def load_dict(name,ver,loc='db',count=0):
 	try:
 		if ver != None:
 			with open(str(loc)+'/'+str(ver)+'/'+name+'.pkl','rb') as f:
@@ -266,7 +268,9 @@ def load_dict(name,ver,loc='db'):
 			with open(str(loc)+'/'+name+'.pkl','rb') as f:
 				return pickle.load(f)
 	except FileNotFoundError:
-		if name == 'tourneys':
+		if name == 'socials':
+			return None
+		elif name == 'tourneys':
 			t = {}
 			#t['slugs'] = {}
 			#t['groups'] = {}
@@ -308,6 +312,14 @@ def load_dict(name,ver,loc='db'):
 		else:
 			save_dict({},name,ver,loc)
 			return {}
+	except (EOFError,pickle.UnpicklingError) as e:
+		print(e)
+		print('Sleeping...')
+		time.sleep(100)
+		if count <= 1000:
+			load_dict(name,ver,loc,count=count+1)
+		else:
+			raise e
 
 def write_blank_dict(name,loc='db'):
 	try:

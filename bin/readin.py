@@ -266,7 +266,7 @@ def read_entrants(data,phase_data,entrants,names,xpath):
 			if len(abs_id) >= 1:
 				player_images = x['mutations']['players'][str(abs_id[0])]['images']
 				propic = None
-				if len(player_images) >= 0:
+				if player_images and len(player_images) >= 0:
 					for p_image in player_images:
 						if p_image['type'] == 'profile':
 							if p_image['height'] == 100:

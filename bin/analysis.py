@@ -26,9 +26,10 @@ from nn_utils import *
 ## 		 - add fully offline mode toggle  // prefer offline argument
 ##		 - fix errors with player ids being inconsistent somehow? (lookin' at you, We Tech Those 3 PM Singles [Pool PMA2])
 ## 		 - query mode
-## 		 - MIGRATE TO NEW API
+## 		 - !!!! MIGRATE TO NEW API !!!!
 ##
 ##		MEDIUM PRIORITY:
+## 		 - Leagues support
 ## 		 - how to match players that don't have smash.gg accounts/consistent player ids (mostly japanese players)
 ## 			- also match players that have multiple accounts // remade accounts // use them inconsistently (???)
 ## 		 - Can we filter out sandbags somehow? intelligent decisionmaking?
@@ -41,7 +42,6 @@ from nn_utils import *
 ## 		 - filter out invitationals for certain metrics (like % of bracket complete, etc.)
 ## 		 - Add support for non-roman scripts (besides japanese)
 ## 		 - error logs
-## 		 - make elo/glicko calculations faster/more efficient somehow
 ## 		 - use res_filt format more universally for queries and such // expand get_result
 ## 		 - General doubles / crews support (see: scraper support/filtering out by event type)
 ## 			- static team support pls
@@ -416,6 +416,17 @@ def main_read():
 
 def preprocess(dicts):
 	tourneys,ids,p_info,records,skills,meta = dicts
+
+	# update character list in case of DLC
+	if True and game_idx in [1386,24,5]:
+
+		chardict = load_dict('characters',None,loc='../lib')
+
+		if game_idx in chardict:
+			for abs_id in p_info:
+				for char_id in chardict[game_idx]:
+					if char_id not in p_info[abs_id]['characters']:
+						p_info[abs_id]['characters'][char_id] = [0,0]
 
 	# sanitize current dicts for web upload
 	if False:
