@@ -48,7 +48,6 @@ parser.add('-cm','--cache_mainranks',help='toggle caching the "official" ranking
 parser.add('-cu','--use_cached_ranks',help='use saved rank -> p_id mapping (default False)',action='store_false')
 parser.add('-cw','--cache_social_media',help='cache social media accounts/player info query (default True)',action='store_false')
 parser.add('-cg','--cache_region_mappings',help='cache player city/state/country to citydict (default True)',action='store_false')
-parser.add('-sb','--pregenerate_website_searchbar',help='toggle whether to pregenerate necessary ajax files for website searchbar (default False)',action='store_true')
 
 # analysis parameter args
 parser.add('-ma','--min_activity',help='minimum number of tournament appearances in order to be ranked. ELO etc still calculated.',default=3, type=int)
@@ -98,6 +97,7 @@ parser.add('-tt','--tier_list_mode',default='default',help='set character tier l
 # web db args
 parser.add('-wu','--web_upload',action='store_true',help='toggle for pushing the game db to the online database (default False)')
 parser.add('-wk','--fb_key_path',default='../lib/Firebase_API_Key.json',help='path to the firebase api key json file for the web db')
+parser.add('-sb','--pregenerate_website_searchbar',help='toggle whether to pregenerate necessary ajax files for website searchbar (default False)',action='store_true')
 
 args,arglist = parser.parse_known_args()
 

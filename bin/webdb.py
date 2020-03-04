@@ -91,13 +91,18 @@ def delete_sub_db(db_ref,game,year,year_count,is_current=False):
 
 # gets a reference to the firebase db object
 def get_db_reference():
-	FIREBASE_CONFIG = {
-		'apiKey': 'AIzaSyAfoIXJXWGlxuMvOOJCBDYa-Jbw8FaiblY',\
-		'authDomain': 'smashranks-db.firebaseapp.com',\
-		'databaseURL': 'https://smashranks-db.firebaseio.com',\
-		'projectId': 'smashranks-db',\
-		'storageBucket': 'smashranks-db.appspot.com',\
-		'messagingSenderId': '1057783802681'};
+
+	with open('Firebase_API_Key.json') as apiKey_file:
+
+		apiKey = json.load(apiKey_file)['key']
+
+		FIREBASE_CONFIG = {
+			'apiKey': apiKey,\
+			'authDomain': 'smashranks-db.firebaseapp.com',\
+			'databaseURL': 'https://smashranks-db.firebaseio.com',\
+			'projectId': 'smashranks-db',\
+			'storageBucket': 'smashranks-db.appspot.com',\
+			'messagingSenderId': '1057783802681'};
 
 	cred = firebase_admin.credentials.Certificate('../lib/Firebase_API_Key.json')
 	app = firebase_admin.initialize_app(cred)

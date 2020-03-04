@@ -88,6 +88,7 @@ fb_key_path = ../lib/Firebase_API_Key.json 		# Path to Firebase API Key json fil
 	config_file.close()
 
 # generates files necessary for a clean install // establishes necessary directories
+# write blank smash.gg/firebase api key files
 # WIP
 def setup_dirs():
 	return None
