@@ -308,7 +308,8 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 								'glicko','glicko-rnk','glicko-pct','glicko_del',\
 								'srank','srank-rnk','srank-pct','srank_del','srank_sig',\
 								'trueskill','trueskill-rnk','trueskill-pct','trueskill_del',\
-								'glixare','glixare-rnk','glixare-pct','glixare_del', 'perf']:
+								'glixare','glixare-rnk','glixare-pct','glixare_del', 'perf',\
+								'mainrank']:
 						skills[key] = {}
 				if 'elo' not in p_info[abs_id]:
 					#p_info[abs_id]['elo'] = 1500.

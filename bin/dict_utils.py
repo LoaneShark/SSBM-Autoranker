@@ -573,6 +573,8 @@ def get_social_media(dicts,p_id,getAcctType=True):
 		else:
 			nameDisplay = None
 
+		print(player_data)
+
 		p_twitter = player_data['twitterHandle']
 		p_twitch = player_data['twitchStream']
 		p_reddit = player_data['redditUsername']
@@ -638,7 +640,7 @@ def update_social_media(dicts,p_ids=None,v=0,use_cached_accts=args.cache_social_
 
 	for abs_id in p_ids:
 
-		if use_cached_accts:
+		if use_cached_accts and social_dict:
 			# pull from cache if there
 			if abs_id in social_dict:
 				socials = social_dict[abs_id]
