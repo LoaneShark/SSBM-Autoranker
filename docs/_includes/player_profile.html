@@ -118,10 +118,6 @@
 					<p class="lead link-unstyled" id="player_glicko"></p>
 					<div class="text-muted small font-italic font-weight-light text-center" id="glicko_trophy" style="padding:0px;margin:0px;"></div>
 				</a>
-				<!--<div class="p-2" id="player_trueskill_div">
-					<p class="text-muted font-italic">TrueSkill</p>
-					<p class="lead" id="player_trueskill"></p>
-				</div>-->
 				<a class="btn" data-toggle="collapse" href="#srank_chart_container" role="button" aria-expanded="false" aria-controls="srank-button" id="player_srank_button">
 					<p class="text-muted font-italic">S-Rank
 					<span class="fa-layers fa-fw">
@@ -133,6 +129,16 @@
 					</p>
 					<p class="lead" id="player_srank" style="text-decoration:none;"></p>
 					<div class="text-muted small font-italic font-weight-light text-center" id="srank_trophy" style="padding:0px;margin:0px;"></div>
+				</a>
+				<a class="btn" data-toggle="collapse" href="#trueskill_chart_container" role="button" aria-expanded="false" aria-controls="trueskill-button" id="player_trueskill_button">
+					<p class="text-muted font-italic">TrueSkill</p>
+					<p class="lead" id="player_trueskill"></p>
+					<div class="text-muted small font-italic font-weight-light text-center" id="trueskill_trophy" style="padding:0px;margin:0px;"></div>
+				</a>
+				<a class="btn" data-toggle="collapse" href="#glixare_chart_container" role="button" aria-expanded="false" aria-controls="glixare-button" id="player_glixare_button">
+					<p class="text-muted font-italic">Glixare</p>
+					<p class="lead" id="player_glixare"></p>
+					<div class="text-muted small font-italic font-weight-light text-center" id="glixare_trophy" style="padding:0px;margin:0px;"></div>
 				</a>
 			</div> <!-- skills -->
 			<div class="btn-group" role="group" aria-label="H2H at a glance" id="player_h2h_div">
@@ -192,12 +198,18 @@
 				</div>
 			</div>
 		</div>
-		<!--<div id="trueskill_chart_container" class="chart-container collapse" style="position: relative;">
+		<div id="trueskill_chart_container" class="chart-container collapse" style="position: relative;">
 			<div class="text-muted font-weight-light small invisible">~</div>
 			<div class="card">
 				<canvas id="trueskill_chart" class="p-3 chart" aria-label="trueskill-chart" width="400" height="200"></canvas>
 			</div>
-		</div>-->
+		</div>
+		<div id="glixare_chart_container" class="chart-container collapse" style="position: relative;">
+			<div class="text-muted font-weight-light small invisible">~</div>
+			<div class="card">
+				<canvas id="glixare_chart" class="p-3 chart" aria-label="glixare-chart" width="400" height="200"></canvas>
+			</div>
+		</div>
 		<div id="top10_chart_container" class="container collapse" style="position:relative;width:100%;">
 			<table id="top10_chart" class="display table nowrap" style="width:100%;table-layout:fixed;">
 				<thead>

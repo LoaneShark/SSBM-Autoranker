@@ -425,12 +425,14 @@ function populateCharacters(PlayerSnapshot, gameId){
 // PLAYER SKILL FUNCTIONS //
 
 // populate skills-at-a-glance
-function populateSkills(PlayerSnapshot, playerId, eloVal, eloRnkVal, glickoVal, glickoRnkVal, srankVal, srankRnkVal, mainrankVal, mainrankText){
+function populateSkills(PlayerSnapshot, playerId, eloVal, eloRnkVal, glickoVal, glickoRnkVal, srankVal, srankRnkVal, mainrankVal, mainrankText, trueskillVal, trueskillRnkVal, glixareVal, glixareRnkVal){
   console.log('Populating skills')
     $('#player_elo').html(eloVal);
     $('#player_glicko').html(glickoVal);
     $('#player_srank').html(srankVal);
     $('#player_mainrank').html(mainrankText);
+    $('#player_trueskill').html(trueskillVal);
+    $('#player_glixare').html(glixareVal);
     //$('#player_trueskill').html(Math.round(PlayerSnapshot.child('trueskill').val()));
 
     // highlight skill button if top 10/100/500
@@ -438,9 +440,11 @@ function populateSkills(PlayerSnapshot, playerId, eloVal, eloRnkVal, glickoVal, 
     $('#elo_trophy').css('width',$('#player_elo_button').css('width'));
     $('#glicko_trophy').css('width',$('#player_glicko_button').css('width'));
     $('#srank_trophy').css('width',$('#player_srank_button').css('width'));
+    $('#trueskill_trophy').css('width',$('#player_trueskill_button').css('width'));
+    $('#glixare_trophy').css('width',$('#player_glixare_button').css('width'));
 
-    var skillRankVals = [eloRnkVal,glickoRnkVal,srankRnkVal,mainrankVal];
-    var skillRankNames = ['elo','glicko','srank','mainrank'];
+    var skillRankVals = [eloRnkVal,glickoRnkVal,srankRnkVal,mainrankVal,trueskillRnkVal,glixareRnkVal];
+    var skillRankNames = ['elo','glicko','srank','mainrank','trueskill','glixare'];
     var skillRankTiers = [5,10,20,50,100,500];
     for (i=0, n_i=skillRankVals.length;i<n_i;i++){
       for (k=0,n_k=skillRankTiers.length;k<n_k;k++){
@@ -541,13 +545,13 @@ function drawSkillGraphs(RecordSnapshot, playerId, skillRefStr, tourneyRefStr, c
     var tourneyQuery = tourneyRef.once('value').then(function(TourneySnapshot){
       if (TourneySnapshot.exists()){
         if (chartType == 'skill') {
-          var skillTypes = ['mainrank','elo','glicko','srank'];
+          var skillTypes = ['mainrank','elo','glicko','srank','trueskill','glixare'];
           var chartSuffix = '_chart_container';
         } else if (chartType == 'rank'){
-          var skillTypes = ['elo-rnk','glicko-rnk','srank-rnk'];
+          var skillTypes = ['elo-rnk','glicko-rnk','srank-rnk','trueskill-rnk','glixare-rnk'];
           var chartSuffix = '_rankchart_container';
         } else if (chartType == 'percentile'){
-          var skillTypes = ['elo-pct','glicko-pct','srank-pct'];
+          var skillTypes = ['elo-pct','glicko-pct','srank-pct','trueskill-pct','glixare-pct'];
           var chartSuffix = '_percentchart_container';
         }
 

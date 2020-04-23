@@ -16,6 +16,8 @@ function snapshotToTable(snapshot) {
 	    player.push(Math.round(childSnapshot.child('srank').val() * 1000.0) / 1000.0);
 	    player.push(Math.round(childSnapshot.child('elo').val()));
 	    player.push(Math.round(childSnapshot.child('glicko').val()[0]));
+        player.push(Math.round(childSnapshot.child('trueskill/expose').val()));
+        player.push(Math.round(childSnapshot.child('glixare').val()));
         player.push(Math.round(childSnapshot.key));
 
     	returnArr.push(player);
