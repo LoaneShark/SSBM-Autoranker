@@ -14,3 +14,4 @@ bin/configs/*
 bin/__pycache__
 *.pyc
 bin/trueskill_test.py
+lib/API Token.txt
