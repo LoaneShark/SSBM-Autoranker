@@ -145,13 +145,13 @@ def readin(tourney,t_type='slug'):
 
 		if out:
 			t_info = out
-			t_id,t_name,t_slug,t_date,t_sdate,t_region,t_images,t_coords,t_bracket,t_hashtag = t_info
+			t_id,t_name,t_slug,t_ss,t_date,t_sdate,t_region,t_images,t_coords,t_bracket,t_hashtag = t_info
 			entrants,wins,losses,paths,names,sets = read_groups(t_id,t_bracket)
 
 			if v >= 2 and v < 4:
 				print('{:.3f}'.format(timer()-start) + ' s')
 
-			t_info = (t_id,t_name,t_slug,t_date,t_sdate,t_region,len(entrants.keys()),t_images,t_coords,t_bracket,t_hashtag)
+			t_info = (t_id,t_name,t_slug,t_ss,t_date,t_sdate,t_region,len(entrants.keys()),t_images,t_coords,t_bracket,t_hashtag)
 			if print_res:
 				print_results(paths,names,entrants,losses,sets,game=game,max_place=disp_num)
 
@@ -179,6 +179,7 @@ def read_tournament(slug):
 		t_id = tdata.id
 		t_name = tdata.name
 		t_slug = tdata.slug
+		t_ss = tdata.short_slug
 		# date tuple in (year, month, day) format
 		t_date = time.localtime(tdata.end_time)[:3]
 		t_startdate = time.localtime(tdata.start_time)[:3]
@@ -295,7 +296,7 @@ def read_tournament(slug):
 		groups = flatten([phase.get_phase_groups() for phase in phases])
 		t_bracket = {'events':events, 'phases':phases, 'groups':groups}
 		
-		t_info = (t_id,t_name,t_slug,t_date,t_startdate,t_region,t_images,t_coords,t_bracket,t_hashtag)
+		t_info = (t_id,t_name,t_slug,t_ss,t_date,t_startdate,t_region,t_images,t_coords,t_bracket,t_hashtag)
 		return t_info
 
 	except HTTPError:
@@ -514,7 +515,6 @@ def read_sets(group,group_phase,t_id,wins,losses,xpath,sets,entrants):
 			l_DQ = e1_DQ
 		else:
 			w_DQ,l_DQ = False,False
-		#print(e1_DQ,e2_DQ,match['entrant1Score'],match['entrant2Score'])
 
 		# Move past byes
 		if w_id == None or l_id == None or w_id == l_id:

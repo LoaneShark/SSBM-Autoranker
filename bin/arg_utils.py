@@ -43,7 +43,7 @@ parser.add('-p', '--print',help='print tournament final results to console as th
 # storage args
 parser.add('-o', '--offline',help='[WIP] Toggle whether to search online for information. Automatically enables all caching. (default False)',action='store_true')
 parser.add('-cs','--cache_slugs',help='load slugs toggle (default True)',action='store_false')
-parser.add('-cr','--cache_results',help='save phase data after tournament is done being read in (default False)',action='store_true')
+parser.add('-cr','--cache_results',help='save phase data after tournament is done being read in (default True)',action='store_false')
 parser.add('-cm','--cache_mainranks',help='toggle caching the "official" rankings (default True)',action='store_false')
 parser.add('-cu','--use_cached_ranks',help='use saved rank -> p_id mapping (default False)',action='store_false')
 parser.add('-cw','--cache_social_media',help='cache social media accounts/player info query (default True)',action='store_false')

@@ -196,10 +196,12 @@ class SR_Event(Event):
 			raise Exception("No phase group data pulled back for event {}".format(self.identifier))
 
 class SR_Tournament(Tournament):
-	def __init__(self, id, name, slug, start_time, end_time, timezone, venue, organizer, hashtag, images):
+	def __init__(self, id, name, slug, short_slug, start_time, end_time, timezone, venue, organizer, hashtag, is_online, images):
 		super().__init__( id, name, slug, start_time, end_time, timezone, venue, organizer)
 		self.hashtag = hashtag
 		self.images = images
+		self.short_slug = short_slug
+		self.is_online = is_online
 
 	@staticmethod
 	def parse(data):
@@ -218,12 +220,14 @@ class SR_Tournament(Tournament):
 			tournament_data.id,
 			tournament_data.name,
 			tournament_data.slug,
+			data['shortSlug'],
 			tournament_data.start_time,
 			tournament_data.end_time,
 			tournament_data.timezone,
 			tournament_data.venue,
 			tournament_data.organizer,
 			data['hashtag'],
+			data['isOnline'],
 			data['images']
 		)
 
@@ -251,6 +255,10 @@ class SR_User(User):
 	def parse(data):
 		if data is not None:
 			user_data = User.parse(data)
+			if user_data.authorizations is not None:
+				auth_dict = {authorization['type']:authorization for authorization in user_data.authorizations}
+			else:
+				auth_dict = None
 			return SR_User(
 				user_data.id,
 				user_data.name,
@@ -258,7 +266,7 @@ class SR_User(User):
 				user_data.gender_pronoun,
 				user_data.player,
 				user_data.location,
-				user_data.authorizations,
+				auth_dict,
 				data['images']
 			)
 		else:
@@ -350,7 +358,7 @@ class SR_GGSet(GGSet):
 
 		entr1, entr2 = data['slots'][0]['entrant'], data['slots'][1]['entrant']
 		entr1['score'] = ggset_data.score1; entr2['score'] = ggset_data.score2
-		get_loser_id = lambda w_id: entr2['id'] if entr1['id'] == w_id else entr1['id']
+		get_loser_id = lambda w_id: int(entr2['id']) if int(entr1['id']) == int(w_id) else int(entr1['id'])
 
 		return SR_GGSet(
 			ggset_data.id,
@@ -363,7 +371,7 @@ class SR_GGSet(GGSet):
 			data['setGamesType'],
 			ggset_data.started_at,
 			ggset_data.completed_at,
-			ggset_data.winner_id,
+			int(ggset_data.winner_id),
 			ggset_data.total_games,
 			ggset_data.state,
 			ggset_data.player1,

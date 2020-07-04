@@ -108,6 +108,7 @@ get_tournament = """
 query TournamentQuery($id: ID!){{
     tournament(id: $id){{
         {0}
+        shortSlug
     }}
 }}
 """.format(schema.tournament_schema)
@@ -276,6 +277,7 @@ query TournamentQuery($slug: String) {
 			id
 			name
       slug
+      shortSlug
       city
       postalCode
       addrState
@@ -288,6 +290,7 @@ query TournamentQuery($slug: String) {
       startAt
       endAt
     	hashtag
+      isOnline
     	images{
         id
         type

@@ -127,7 +127,7 @@ def calc_tourney_stack_score(dicts,t_id,plot_res=False):
 # (not a very meaningful metric; unused in other calculations)
 def calc_performance(dicts,abs_id,t_info,use_FIDE=True):
 	tourneys,ids,p_info,records,skills,meta = dicts
-	t_id,t_name,t_slug,t_ss,t_type,t_date,t_startdate,t_region,t_size,t_images,t_coords,t_bracket,t_social = t_info
+	t_id,t_name,t_slug,t_ss,t_date,t_startdate,t_region,t_size,t_images,t_coords,t_bracket,t_hashtag = t_info
 	#print("Calculating performance: %d :: %s"%(abs_id,t_name))
 	w_count,l_count = 0.,0.
 	opp_skills = 0.
@@ -167,7 +167,7 @@ def calc_performance(dicts,abs_id,t_info,use_FIDE=True):
 
 def update_performances(dicts,t_info,use_FIDE=True):
 	tourneys,ids,p_info,records,skills,meta = dicts
-	t_id,t_name,t_slug,t_ss,t_type,t_date,t_startdate,t_region,t_size,t_images,t_coords,t_bracket,t_social = t_info
+	t_id,t_name,t_slug,t_ss,t_date,t_startdate,t_region,t_size,t_images,t_coords,t_bracket,t_hashtag = t_info
 
 	for abs_id in records:
 		if t_id in records[abs_id]['placings']:
@@ -300,7 +300,7 @@ def glicko_update_vol(mu,phi,sigma,p_matches,delta,v_g,tau):
 old_glicko_tau = 0.5
 def update_glicko(dicts,t_info,matches,tau=0.5,ranking_period=60,to_update_glixare=True):
 	tourneys,ids,p_info,records,skills,meta = dicts
-	t_id,t_name,t_slug,t_ss,t_type,t_date,t_startdate,t_region,t_size,t_images,t_coords,t_bracket,t_social = t_info
+	t_id,t_name,t_slug,t_ss,t_date,t_startdate,t_region,t_size,t_images,t_coords,t_bracket,t_hashtag = t_info
 	# converts match information to (s_j,mu_j,phi_j) format
 	p_info_old = dcopy(p_info)
 
@@ -370,7 +370,7 @@ def update_glicko(dicts,t_info,matches,tau=0.5,ranking_period=60,to_update_glixa
 # this should only run after glicko is updated, as it requires the new glicko rating/RD
 def update_glixare(dicts,t_info,abs_id,gxe_R,gxe_RD):
 	tourneys,ids,p_info,records,skills,meta = dicts
-	t_id,t_name,t_slug,t_ss,t_type,t_date,t_startdate,t_region,t_size,t_images,t_coords,t_bracket,t_social = t_info
+	t_id,t_name,t_slug,t_ss,t_date,t_startdate,t_region,t_size,t_images,t_coords,t_bracket,t_hashtag = t_info
 
 	if gxe_RD > 100:
 		gxe_res = 0
@@ -389,7 +389,7 @@ def update_glixare(dicts,t_info,abs_id,gxe_R,gxe_RD):
 # 		(for now it just assumes matches are chronological and does them one by one)
 def update_trueskill(dicts,t_info,matches):
 	tourneys,ids,p_info,records,skills,meta = dicts
-	t_id,t_name,t_slug,t_ss,t_type,t_date,t_startdate,t_region,t_size,t_images,t_coords,t_bracket,t_social = t_info
+	t_id,t_name,t_slug,t_ss,t_date,t_startdate,t_region,t_size,t_images,t_coords,t_bracket,t_hashtag = t_info
 
 	# establish TrueSkill environment for smash games
 	env = TrueSkill(mu=c_args.trueskill_init_mu,sigma=c_args.trueskill_init_sigma,backend='scipy',draw_probability=0.0001)
@@ -941,7 +941,7 @@ def sigrank(data,winps,chis,id_list,max_iter=1000,v=0,learn_rate=0.5,beta=0.9,to
 # if era <= 0, updates after each tourney
 def update_sigmoids(dicts,t_info,sig='sigmoid',ranking_period=2,max_iterations=1000,v=0):
 	tourneys,ids,p_info,records,skills,meta = dicts
-	t_id,t_name,t_slug,t_ss,t_type,t_date,t_startdate,t_region,t_size,t_images,t_coords,t_bracket,t_social = t_info
+	t_id,t_name,t_slug,t_ss,t_date,t_startdate,t_region,t_size,t_images,t_coords,t_bracket,t_hashtag = t_info
 	sigrank_history = skills['srank']
 	sigrank_deltas = skills['srank_del']
 	sigmoid_history = skills['srank_sig']

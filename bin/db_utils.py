@@ -208,7 +208,7 @@ def store_data(readins,dicts,slug,year):
 # and name = (sponsor, tag, teamname (or None))
 # and metainfo = [firstname, lastname, state, country, city]
 def store_players(entrants,names,t_info,dicts,translate_cjk=True):
-	t_id,t_name,t_slug,t_ss,t_type,t_date,t_startdate,t_region,t_size,t_images,t_coords,t_bracket,t_social = t_info
+	t_id,t_name,t_slug,t_ss,t_date,t_startdate,t_region,t_size,t_images,t_coords,t_bracket,t_hashtag = t_info
 	tourneys,ids,p_info,records,skills,meta = dicts
 	if t_id not in tourneys:
 		# store teams/crews instead if this is a teams competition
@@ -219,9 +219,10 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 		# store all entrant/player-specific info from this tournament
 		for e_id in entrants:
 			#e_id = entrant[2]
-			for abs_id in entrants[e_id][1]:
+			for user in entrants[e_id][1]:
+				abs_id = user.id
 				to_update_socials = False
-				idx = entrants[e_id][1].index(abs_id)
+				idx = entrants[e_id][1].index(user)
 				# store matrix to get entrant ids for each tourney given absolute id'
 				# (and also to get the reverse)
 				if abs_id not in ids:
@@ -238,9 +239,16 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 					to_update_socials = True
 					p_info[abs_id]['status'] = handle_player_status(abs_id,'active')
 					p_info[abs_id]['first_event'] = t_id
+
+				# basic User info
 				p_info[abs_id]['active'] = True
 				p_info[abs_id]['id'] = abs_id
 				p_info[abs_id]['teamsize'] = args.teamsize
+				p_info[abs_id]['name'] = user.name
+				p_info[abs_id]['slug'] = user.slug
+				p_info[abs_id]['pronouns'] = user.gender_pronoun
+
+				# handle tag and sponsor
 				if names[e_id][0][idx] == None:
 					if 'team' not in p_info[abs_id]:
 						p_info[abs_id]['team'] = names[e_id][0][idx]
@@ -253,8 +261,6 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 				if p_tag not in p_info[abs_id]['aliases']:
 					p_info[abs_id]['aliases'].extend([p_tag])
 					if p_tag != None and any([is_cjk(tag_c) for tag_c in p_tag]):
-						#trans_tag = '『'+translate(tag)+'』'
-						#trans_tag = '<'+(translate(p_tag,to='ja')).pronunciation+'>'
 						trans_tag_base = transliterate(p_tag)
 						trans_tag = '<'+transliterate(p_tag)+'>'
 						if trans_tag not in p_info[abs_id]['aliases']:
@@ -266,25 +272,35 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 					p_info[abs_id]['tag'] = trans_tag
 				else:
 					p_info[abs_id]['tag'] = p_tag
-				for key,info in zip(['firstname','lastname','state','country','city','decl_region'],entrants[e_id][3][idx]):
-					if key in p_info[abs_id]:
-						if not info in ['N/A','',"",None]:
+
+				# handle region
+				if user.location is not None:
+					for key in ['id','city','country','countryId','state','stateId']:
+						info = user.location[key]
+						if key == 'id':
+							key = 'location_id'
+						if key in p_info[abs_id]:
+							if not info in ['N/A','',"",None]:
+								p_info[abs_id][key] = info
+						else:
 							p_info[abs_id][key] = info
-					else:
-						p_info[abs_id][key] = info
-				if 'region' not in p_info[abs_id] or p_info[abs_id]['region'] == None:
-					#p_info[abs_id]['region'] = get_region(dicts,abs_id,granularity=2,to_calc=True)
-					p_info[abs_id]['region'] = {}
-					for r_i in range(0,6):
-						p_info[abs_id]['region'][r_i] = get_region(dicts,abs_id,granularity=r_i,to_calc=True)
-						p_info[abs_id]['region_'+str(r_i)] = get_region(dicts,abs_id,granularity=r_i,to_calc=True) # store it separately too for firebase querying
-				else:
-					#print(p_info[abs_id]['region'])
-					if p_info[abs_id]['region'] == {} or any([r_idx not in p_info[abs_id]['region'] for r_idx in range(0,6)]) or any([p_info[abs_id]['region'][r_idx] == 'N/A' for r_idx in range(0,6)]):
-						#p_info[abs_id]['region'] = get_region(dicts,abs_id,granularity=2,to_calc=True)
+					if 'region' not in p_info[abs_id] or p_info[abs_id]['region'] == None:
+						p_info[abs_id]['region'] = {}
 						for r_i in range(0,6):
 							p_info[abs_id]['region'][r_i] = get_region(dicts,abs_id,granularity=r_i,to_calc=True)
 							p_info[abs_id]['region_'+str(r_i)] = get_region(dicts,abs_id,granularity=r_i,to_calc=True) # store it separately too for firebase querying
+					else:
+						if p_info[abs_id]['region'] == {} or any([r_idx not in p_info[abs_id]['region'] for r_idx in range(0,6)]) or any([p_info[abs_id]['region'][r_idx] == 'N/A' for r_idx in range(0,6)]):
+							#p_info[abs_id]['region'] = get_region(dicts,abs_id,granularity=2,to_calc=True)
+							for r_i in range(0,6):
+								p_info[abs_id]['region'][r_i] = get_region(dicts,abs_id,granularity=r_i,to_calc=True)
+								p_info[abs_id]['region_'+str(r_i)] = get_region(dicts,abs_id,granularity=r_i,to_calc=True) # store it separately too for firebase querying
+				else:
+					p_info[abs_id]['region'] = {}
+					for r_i in range(0,6):
+						p_info[abs_id]['region'][r_i] = None
+						p_info[abs_id]['region_'+str(r_i)] = None # store it separately too for firebase querying
+
 
 				# store smash.gg profile picture url
 				p_info[abs_id]['propic'] = entrants[e_id][4]
@@ -297,15 +313,20 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 						p_info[abs_id]['characters'] = {char_id: [0,0] for char_id in chardict}
 					else:
 						p_info[abs_id]['characters'] = {}
+
 				# store their current main // make a slot for it
 				if 'main' not in p_info[abs_id]:
 					p_info[abs_id]['main'] = None
 
-				# only update socials once, to avoid making calls for every entrant
-				if 'name_display' not in p_info[abs_id]:
-					p_info[abs_id]['name_display'] = None
-				if to_update_socials:
-					update_social_media(dicts,abs_id,v)
+				# handle external account connections and authorizations
+				if to_update_socials and user.authorizations is not None:
+					#for key in ['twitter','twitch','reddit','youtube','smashboards','ssbwiki','discord','name_display','color']:
+					#for key in ['TWITTER','TWITCH','MIXER','DISCORD']:
+					for key in user.authorizations.keys():
+						auth_info = user.authorizations[key]
+						if key == 'id':
+							key = 'auth_id'
+						p_info[abs_id][key] = auth_info
 
 				# store ranking data, with initial values if needed
 				if 'elo' not in skills or 'elo-rnk' not in skills:
@@ -317,7 +338,6 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 								'mainrank']:
 						skills[key] = {}
 				if 'elo' not in p_info[abs_id]:
-					#p_info[abs_id]['elo'] = 1500.
 					p_info[abs_id]['elo'] = float(args.elo_init_value)
 					p_info[abs_id]['elo_peak'] = p_info[abs_id]['elo']
 					skills['elo'][abs_id] = {}
@@ -326,7 +346,6 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 					skills['elo_del'][abs_id] = {}
 				# glicko stores a tuple with (rating,RD,volatility)
 				if 'glicko' not in p_info[abs_id]:
-					#p_info[abs_id]['glicko'] = (1500.,350.,0.06)
 					p_info[abs_id]['glicko'] = (float(args.glicko_init_value),float(args.glicko_init_rd),float(args.glicko_init_sigma))
 					p_info[abs_id]['glicko_peak'] = p_info[abs_id]['glicko'][0]
 					skills['glicko'][abs_id] = {}
@@ -357,7 +376,6 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 					skills['trueskill-pct'][abs_id] = {}
 					skills['trueskill_del'][abs_id] = {}
 				if 'glixare' not in p_info[abs_id]:
-					#p_info[abs_id]['glicko'] = (1500.,350.,0.06)
 					p_info[abs_id]['glixare'] = 0
 					p_info[abs_id]['glixare_peak'] = p_info[abs_id]['glixare']
 					skills['glixare'][abs_id] = {}
@@ -376,17 +394,12 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 				if abs_id not in skills['perf']:
 					skills['perf'][abs_id] = {}
 
-			#print(ids[abs_id])
-	#else:
-		#print(t_id)
-		#print(tourneys)
-		#print(tourneys[t_id])
 	return True
 
 # stores win/loss records, updates player skills/rankings if enabled
 # ranking period in months (only used by sigmoid ranking)
 def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_update_sigmoids=True,ranking_period=2):
-	t_id,t_name,t_slug,t_ss,t_type,t_date,t_startdate,t_region,t_size,t_images,t_coords,t_bracket,t_social = t_info
+	t_id,t_name,t_slug,t_ss,t_date,t_startdate,t_region,t_size,t_images,t_coords,t_bracket,t_hashtag = t_info
 	tourneys,ids,p_info,records,skills,meta = dicts
 	old_p_info = dcopy(p_info)
 	glicko_matches = {}
@@ -403,6 +416,12 @@ def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_up
 
 	# convert all entrant ids in set data to abs ids
 	for set_id in sets:
+		if set_id == 7120371:
+			print(ids['t_'+str(t_id)])
+			print(set_id)
+			print(sets[set_id])
+			print(sets[set_id]['w_id'] in ids['t_'+str(t_id)])
+			print(ids['t_'+str(t_id)][sets[set_id]['w_id']])
 		if 'w_id' in sets[set_id] and type(sets[set_id]['w_id']) is int:
 			sets[set_id]['w_id'] = ids['t_'+str(t_id)][sets[set_id]['w_id']]
 		if 'l_id' in sets[set_id] and type(sets[set_id]['l_id']) is int:
@@ -575,14 +594,14 @@ def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_up
 
 # stores tourney meta info and marks tournament as imported
 def store_tourney(slug,t_info,group_names,entrants,sets,dicts):
-	t_id,t_name,t_slug,t_ss,t_type,t_date,t_startdate,t_region,t_size,t_images,t_coords,t_bracket,t_social = t_info
+	t_id,t_name,t_slug,t_ss,t_date,t_startdate,t_region,t_size,t_images,t_coords,t_bracket,t_hashtag = t_info
 	tourneys,ids,p_info,records,skills,meta = dicts
 	tourneys[t_id] = {}
 	tourneys[t_id]['id'] = t_id
 	tourneys[t_id]['name'] = t_name
 	tourneys[t_id]['slug'] = t_slug
 	tourneys[t_id]['shortSlug'] = t_ss
-	tourneys[t_id]['type'] = t_type
+	#tourneys[t_id]['type'] = t_type
 	tourneys[t_id]['date'] = t_date
 	tourneys[t_id]['startDate'] = t_startdate
 	#tourneys[t_id]['region'] = t_region
@@ -592,9 +611,9 @@ def store_tourney(slug,t_info,group_names,entrants,sets,dicts):
 	tourneys[t_id]['url_prof'] = t_images[0]
 	tourneys[t_id]['url_banner'] = t_images[1]
 	tourneys[t_id]['active'] = True
-	tourneys[t_id]['email'] = t_social[0]
-	tourneys[t_id]['twitter'] = t_social[1]
-	tourneys[t_id]['hashtag'] = t_social[2]
+	#tourneys[t_id]['email'] = t_social[0]
+	#tourneys[t_id]['twitter'] = t_social[1]
+	#tourneys[t_id]['hashtag'] = t_social[2]
 
 	# store bracket structure/path
 	tourneys[t_id]['phases'] = t_bracket['phases']
@@ -606,7 +625,8 @@ def store_tourney(slug,t_info,group_names,entrants,sets,dicts):
 	# store list of attendees and set ids
 	tourneys[t_id]['attendees'] = {}
 	for e_id in entrants:
-		for abs_id in entrants[e_id][1]:
+		for user in entrants[e_id][1]:
+			abs_id = user.id
 			tourneys[t_id]['attendees'][abs_id] = {'id':abs_id,'e_id':e_id,'placing':records[abs_id]['placings'][t_id],'setsPlayed':[],'charactersUsed':{}}
 			if 'first_event' in p_info[abs_id] and p_info[abs_id]['first_event'] == t_id:
 				tourneys[t_id]['newEntrants'] += 1
@@ -654,7 +674,7 @@ def store_tourney(slug,t_info,group_names,entrants,sets,dicts):
 # stores db meta info
 def store_meta(dicts,t_info,year):
 	tourneys,ids,p_info,records,skills,meta = dicts
-	t_id,t_name,t_slug,t_ss,t_type,t_date,t_startdate,t_region,t_size,t_images,t_coords,t_bracket,t_social = t_info
+	t_id,t_name,t_slug,t_ss,t_date,t_startdate,t_region,t_size,t_images,t_coords,t_bracket,t_hashtag = t_info
 
 	# store basic info on the db
 	meta['gameId'] = db_game
@@ -730,9 +750,10 @@ def store_meta(dicts,t_info,year):
 	m = 0
 	for p_id in p_info:
 		n += 1
-		# check for account type (if nameDisplay is null, not a real user account)
-		if p_info[p_id]['name_display'] is None and p_id not in meta['emptyAccts']:
-			meta['emptyAccts'].append(p_id)
+		## check for account type (if nameDisplay is null, not a real user account)
+		## TODO: some kind of verified thingy
+		#if p_info[p_id]['name_display'] is None and p_id not in meta['emptyAccts']:
+		#	meta['emptyAccts'].append(p_id)
 		# check for activity level
 		if p_info[p_id]['active']:
 			m += 1
@@ -906,7 +927,7 @@ def delete_tourney(dicts,t_id,slug=None,clean_slugs=False,clean_tourneys=True,cl
 # cleans out tourneys over a year out from the currently importing one
 def clean_old_tourneys(dicts,t_info,rank_period=args.srank_ranking_period,delete_data=False):
 	tourneys,ids,p_info,records,skills,meta = dicts
-	t_id,t_name,t_slug,t_ss,t_type,t_date,t_startdate,t_region,t_size,t_images,t_coords,t_bracket,t_social = t_info
+	t_id,t_name,t_slug,t_ss,t_date,t_startdate,t_region,t_size,t_images,t_coords,t_bracket,t_hashtag = t_info
 	if v >= 6:
 		print('Cleaning tourneys over: %d months out from %s'%(rank_period,t_date))
 
