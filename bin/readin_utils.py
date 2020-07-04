@@ -17,8 +17,368 @@ import shutil
 import subprocess
 #from translation import baidu
 from arg_utils import *
+##SMASH.GG IMPORTS
+from smashggpy.models.PhaseGroup import PhaseGroup
+from smashggpy.models.Phase import Phase
+from smashggpy.models.Event import Event
+from smashggpy.models.Tournament import Tournament
+from smashggpy.models.User import User
+from smashggpy.models.Entrant import Entrant
+from smashggpy.models.GGSet import GGSet
+from smashggpy.common.Exceptions import DataMalformedException
+from smashggpy.common.Common import flatten, validate_data
+from smashggpy.util.NetworkInterface import NetworkInterface as NI
+from smashggpy.util.Logger import Logger
+from queries import SmashranksQueries as queries
 
-## OVERHEAD FUNCTIONS
+## SUBCLASS DEFINITIONS
+class SR_Phase(Phase):
+	def __init__(self, id, name, num_seeds, group_count, is_exhibition, phase_order, bracket_type):
+		super().__init__(id, name, num_seeds, group_count)
+		self.is_exhibition = is_exhibition
+		self.phase_order = phase_order
+		self.bracket_type = bracket_type
+		
+	@staticmethod
+	def parse(data):
+		assert (data is not None), 'Phase.parse cannot have None for data parameter'
+		if 'data' in data and 'phase' in data['data']:
+			raise DataMalformedException(data,
+										 'data is malformed for Phase.parse. '
+										 'Please give only what is contained in the '
+										 '"phase" property')
+
+		#assert ('isExhibition' in data), 'Phase.parse cannot have a None isExhibition property in data parameter'
+
+		phase_data = Phase.parse(data)
+		if 'isExhibition' in data:
+			ex_data = data['isExhibition']
+		else:
+			ex_data = False
+		return SR_Phase(
+			phase_data.id,
+			phase_data.name,
+			phase_data.num_seeds,
+			phase_data.group_count,
+			ex_data,
+			data['phaseOrder'],
+			data['bracketType']
+		)
+	
+	def get_phase_groups(self):
+		assert (self.id is not None), "phase id cannot be None when calling get_phase_groups"
+		Logger.info('Getting Phase Groups for Phase: {0}:{1}'.format(self.id, self.name))
+		data = NI.paginated_query(queries.phase_phase_groups, {'id': self.id})
+		#[validate_data(phase_data) for phase_data in data]
+
+		# Schema Validation
+		#[SR_Phase.validate_data(element['data'], self.id) for element in data]
+		#phase_data = [phase_data['data']['phase'] for phase_data in data]
+
+		#[SR_PhaseGroup.validate_data(element, self.id) for element in phase_data]
+		#phase_group_data = flatten([element['phaseGroups'] for element in phase_data])
+
+		return [SR_PhaseGroup.parse(phase_group) for phase_group in data]
+
+class SR_PhaseGroup(PhaseGroup):
+	def __init__(self, id, display_identifier, first_round_time, state, phase, wave, tiebreak_order, bracket_type, progressions, rounds):
+		super().__init__(id, display_identifier, first_round_time, state, phase, wave, tiebreak_order)
+		self.bracket_type = bracket_type
+		self.progressions = progressions
+		self.rounds = rounds
+
+	@staticmethod
+	def parse(data):
+		assert (data is not None), "PhaseGroup.parse cannot have None for data parameter"
+		if 'data' in data:
+			raise DataMalformedException(data,
+										 'data is malformed for PhaseGroup.parse. '
+										 'Please give only what is contained in the '
+										 '"phaseGroup" property')
+
+		phasegroup_data = PhaseGroup.parse(data)
+		return SR_PhaseGroup(
+			phasegroup_data.id,
+			phasegroup_data.display_identifier,
+			phasegroup_data.first_round_time,
+			phasegroup_data.state,
+			phasegroup_data.phase,
+			phasegroup_data.wave,
+			phasegroup_data.tiebreak_order,
+			data['bracketType'],
+			data['progressionsOut'],
+			data['rounds']
+		)
+		
+	def get_entrants(self):
+		assert (self.id is not None), 'phase group id cannot be None when calling get_entrants'
+		Logger.info('Getting Entrants for phase group: {0}:{1}'.format(self.id, self.display_identifier))
+		data = NI.paginated_query(queries.phase_group_entrants, {'id': self.id})
+		entrants = [SR_Entrant.parse(entrant_data) for entrant_data in data]
+		return entrants
+
+	def get_sets(self):
+		assert (self.id is not None), 'phase group id cannot be None when calling get_sets'
+		Logger.info('Getting Sets for phase group: {0}:{1}'.format(self.id, self.display_identifier))
+		data = NI.paginated_query(queries.phase_group_sets, {'id': self.id})
+		sets = [SR_GGSet.parse(set_data) for set_data in data]
+		return sets
+
+class SR_Event(Event):
+	def __init__(self, id, name, slug, state, start_at, num_entrants,
+				 check_in_buffer, check_in_duration, check_in_enabled,
+				 is_online, team_name_allowed, team_management_deadline):
+		super().__init__(id, name, slug, state, start_at, num_entrants, 
+							check_in_buffer, check_in_duration, check_in_enabled, 
+							is_online, team_name_allowed, team_management_deadline)
+
+	@staticmethod
+	def parse(data):
+		assert (data is not None), 'Event.parse cannot have None for data parameter'
+		if 'data' in data and 'event' in data['data']:
+			raise DataMalformedException(data,
+										 'data is malformed for Event.parse. '
+										 'Please give only what is contained in the '
+										 '"event" property')
+
+		event_data = Event.parse(data)
+		return SR_Event(
+			event_data.id,
+			event_data.name,
+			event_data.slug,
+			event_data.state,
+			event_data.start_at,
+			event_data.num_entrants,
+			event_data.check_in_buffer,
+			event_data.check_in_duration,
+			event_data.check_in_enabled,
+			event_data.is_online,
+			event_data.team_name_allowed,
+			event_data.team_management_deadline
+		)
+
+	def get_phases(self):
+		assert (self.id is not None), 'event id cannot be None if calling get_phases'
+		Logger.info('Getting Phases for Event: {0}:{1}'.format(self.id, self.name))
+		data = NI.query(queries.get_event_phases, {'id': self.id})
+		validate_data(data)
+
+		try:
+			event_data = data['data']['event']
+			if event_data is None:
+				raise NoEventDataException(self.identifier)
+
+			phases_data = event_data['phases']
+			if phases_data is None:
+				raise NoPhaseDataException(self.identifier)
+
+			return [SR_Phase.parse(phase_data) for phase_data in phases_data]
+		except AttributeError as e:
+			raise Exception("No phase data pulled back for event {} {}".format(self.id, self.name))
+
+	def get_phase_groups(self):
+		assert (self.id is not None), 'event id cannot be None if calling get_phase_groups'
+		Logger.info('Getting Phase Groups for Event: {0}:{1}'.format(self.id, self.name))
+		data = NI.query(queries.get_event_phase_groups, {'id': self.id})
+		validate_data(data)
+
+		try:
+			event_data = data['data']['event']
+			if event_data is None:
+				raise NoEventDataException(self.identifier)
+
+			phase_groups_data = event_data['phaseGroups']
+			if phase_groups_data is None:
+				raise NoPhaseGroupDataException(self.identifier)
+
+			return [SR_PhaseGroup.parse(phase_group_data) for phase_group_data in phase_groups_data]
+		except AttributeError as e:
+			raise Exception("No phase group data pulled back for event {}".format(self.identifier))
+
+class SR_Tournament(Tournament):
+	def __init__(self, id, name, slug, start_time, end_time, timezone, venue, organizer, hashtag, images):
+		super().__init__( id, name, slug, start_time, end_time, timezone, venue, organizer)
+		self.hashtag = hashtag
+		self.images = images
+
+	@staticmethod
+	def parse(data):
+		assert (data is not None), 'Tournament.parse must have a data parameter'
+		if 'data' in data and 'tournament' in data['data']:
+			raise DataMalformedException(data,
+										 'data is malformed for Tournament.parse. '
+										 'Please give only what is contained in the '
+										 '"tournament" property')
+
+		assert ('hashtag' in data), 'Tournament.parse must have hashtag in data parameter'
+		assert ('images' in data), 'Tournament.parse must have images in data parameter'
+
+		tournament_data = Tournament.parse(data)
+		return SR_Tournament(
+			tournament_data.id,
+			tournament_data.name,
+			tournament_data.slug,
+			tournament_data.start_time,
+			tournament_data.end_time,
+			tournament_data.timezone,
+			tournament_data.venue,
+			tournament_data.organizer,
+			data['hashtag'],
+			data['images']
+		)
+
+	def get_events(self):
+		assert (self.id is not None), "tournament id cannot be None if calling get_events"
+		data = NI.query(queries.get_tournament_events, {'id': self.id})
+		validate_data(data)
+
+		tournament_data = data['data']['tournament']
+		if tournament_data is None:
+			raise NoTournamentDataException(self.slug)
+
+		base_data = tournament_data['events']
+		if base_data is None:
+			raise NoEventDataException(self.slug)
+		return [SR_Event.parse(event_data) for event_data in base_data]
+
+class SR_User(User):
+	def __init__(self, id, name, slug, gender_pronoun, player, location, authorizations, images):
+		super().__init__(id, name, slug, gender_pronoun,
+				 player, location, authorizations)
+		self.images = images
+		
+	@staticmethod
+	def parse(data):
+		if data is not None:
+			user_data = User.parse(data)
+			return SR_User(
+				user_data.id,
+				user_data.name,
+				user_data.slug,
+				user_data.gender_pronoun,
+				user_data.player,
+				user_data.location,
+				user_data.authorizations,
+				data['images']
+			)
+		else:
+			return None
+
+class SR_Entrant(Entrant):
+	def __init__(self, id, name, event, skill, attendee_data,
+				 seed_id, seed_num, placement, is_bye):
+		super().__init__(id, name, event, skill, attendee_data)
+		self.seed_id = seed_id
+		self.seed_num = seed_num
+		self.placement = placement
+		self.is_bye = is_bye
+
+	def __eq__(self, other):
+		if other is None:
+			return False
+		if type(other) != type(self):
+			return False
+		return hash(other) == hash(self)
+
+	def __hash__(self):
+		return hash((self.id, self.name, self.event, self.skill, self.attendee_data,
+					 self.seed_id, self.seed_num, self.placement, self.is_bye))
+
+	@staticmethod
+	def parse(data):
+		assert (data is not None), 'Entrant.parse must not have a none data parameter'
+		assert ('id' in data), 'Entrant.parse must have an id property in seed parameter'
+		assert ('seedNum' in data), 'Entrant.parse must have a seedNum property in seed parameter'
+		assert ('placement' in data), 'Entrant.parse must have a placement property in seed parameter'
+		assert ('isBye' in data), 'Entrant.parse must have an isBye property in seed parameter'
+
+		entrant_data = Entrant.parse(data['entrant'])
+		return SR_Entrant(
+			entrant_data.id,
+			entrant_data.name,
+			entrant_data.event,
+			entrant_data.skill,
+			entrant_data.attendee_data,
+			data['id'],
+			data['seedNum'],
+			data['placement'],
+			data['isBye']
+		)
+
+class SR_GGSet(GGSet):
+
+	def __init__(self, id, event_id, phase_group_id, display_score, full_round_text, round, identifier, set_games_type,
+				 started_at, completed_at, winner_id, total_games, state, tag1, tag2, score1, score2, has_placeholder,
+				 entrant1, entrant2, loser_id, winner_placement, loser_placement, games, vod_URL):
+		super().__init__(id, event_id, phase_group_id, display_score, full_round_text, round, started_at, completed_at, winner_id, total_games, state, tag1, tag2, score1, score2)
+		self.entrant1 = entrant1
+		self.entrant2 = entrant2
+		self.tag1 = tag1
+		self.tag2 = tag2
+		self.loser_id = loser_id
+		self.winner_placement = winner_placement
+		self.loser_placement = loser_placement
+		self.games = games
+		self.identifier = identifier
+		self.vod_URL = vod_URL
+		self.set_games_type = set_games_type
+		self.has_placeholder = has_placeholder
+
+
+	def __eq__(self, other):
+		if other is None:
+			return False
+		if type(other) != type(self):
+			return False
+		return hash(other) == hash(self)
+
+	def __hash__(self):
+		return hash((self.id, self.event_id, self.phase_group_id, self.display_score, self.full_round_text, self.has_placeholder,
+					 self.round, self.started_at, self.completed_at, self.winner_id, self.total_games, self.identifier,
+					 self.state, self.tag1, self.tag2, self.score1, self.score2, self.loser_id, self.winner_placement, self.loser_placement))
+
+	def __str__(self):
+		return 'Set ({0}) :: {1} :: {2} {3} - {4} {5}' \
+			.format(self.id, self.full_round_text, self.tag1, self.score1, self.score2, self.tag2)
+
+	@staticmethod
+	def parse(data):
+		assert (data is not None), 'GGSet.parse cannot have a none data parameter'
+
+		display_score_parsed = GGSet.parse_display_score(data['displayScore'])
+		ggset_data = GGSet.parse(data)
+
+		entr1, entr2 = data['slots'][0]['entrant'], data['slots'][1]['entrant']
+		entr1['score'] = ggset_data.score1; entr2['score'] = ggset_data.score2
+		get_loser_id = lambda w_id: entr2['id'] if entr1['id'] == w_id else entr1['id']
+
+		return SR_GGSet(
+			ggset_data.id,
+			ggset_data.event_id,
+			ggset_data.phase_group_id,
+			ggset_data.display_score,
+			ggset_data.full_round_text,
+			ggset_data.round,
+			data['identifier'],
+			data['setGamesType'],
+			ggset_data.started_at,
+			ggset_data.completed_at,
+			ggset_data.winner_id,
+			ggset_data.total_games,
+			ggset_data.state,
+			ggset_data.player1,
+			ggset_data.player2,
+			ggset_data.score1,
+			ggset_data.score2,
+			data['hasPlaceholder'],
+			entr1,
+			entr2,
+			get_loser_id(ggset_data.winner_id),
+			data['wPlacement'],
+			data['lPlacement'],
+			data['games'],
+			data['vodUrl'],
+		)
 
 ## AUXILIARY FUNCTIONS
 # returns the full slug (needed to pull tourney data) given the short slug
@@ -72,22 +432,15 @@ def is_ladder(descr):
 	else:
 		return re.search('ladder',descr,re.IGNORECASE) or re.search('staircase',descr,re.IGNORECASE) or re.search('stairway',descr,re.IGNORECASE)
 
-# returns the full JSON data for a phase given its ID number
-def pull_phase(num):
-	link = 'https://api.smash.gg/phase_group/%d?expand[]=sets&expand[]=seeds'%num
-	#link = 'https://api.smash.gg/phase_group/%d?expand[]=sets&expand[]=seeds&expand[]=player'%num
-	tempdata = urlopen(link).read()
-	return tempdata.decode('UTF-8')
-
 # used to save datasets/hashtables
 def save_obj(t_id,phase,obj, name):
 	if not os.path.isdir('obj'):
 		os.mkdir('obj')
 	if not os.path.isdir('obj/%d'%t_id):
 		os.mkdir(str('obj/%d'%t_id))
-	if not os.path.isdir('obj/%d/%d'%(t_id,phase)):
-		os.mkdir(str('obj/%d/%d'%(t_id,phase)))
-	with open('obj/'+str(t_id)+'/'+str(phase)+'/'+name +'.pkl','wb') as f:
+	if not os.path.isdir('obj/%d/%d'%(t_id,phase.id)):
+		os.mkdir(str('obj/%d/%d'%(t_id,phase.id)))
+	with open('obj/'+str(t_id)+'/'+str(phase.id)+'/'+name +'.pkl','wb') as f:
 		pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
 	return True
 
@@ -493,7 +846,7 @@ def get_tournament_date(slug):
 def print_results(res,names,entrants,losses,characters,game=1,max_place=64,translate_cjk=True):
 	maxlen = 0
 
-	res_l = [item for item in res.items()]
+	res_l = [item for item in res.items() if item[0] in entrants.keys()]
 	res_s = sorted(res_l, key=lambda l: (0-l[1]['placing'],len(l[1]['path'])), reverse=True)
 
 	if game != 5:
@@ -608,7 +961,7 @@ def print_results(res,names,entrants,losses,characters,game=1,max_place=64,trans
 			#else:
 			#	lsbuff = '\t\t\t'
 			if len(playerstrings) == 1: #or len(playerstrings) >= 4:
-				print(('{:>%d.%d}'%(sp_slot,sp_slot)).format(sp),('{:<%d.%d}'%(tag_slot,tag_slot)).format(tag),('{:>%d.%d}'%(8*team_mult,8*team_mult)).format(' / '.join(str(n) for n in entrants[player[0]][1])), \
+				print(('{:>%d.%d}'%(sp_slot,sp_slot)).format(sp),('{:<%d.%d}'%(tag_slot,tag_slot)).format(tag),('{:>%d.%d}'%(8*team_mult,8*team_mult)).format(' / '.join(str(n.id) if n is not None else str(n) for n in entrants[player[0]][1])), \
 				'  {:<5.5}'.format(str(player[1]['placing'])),('{:<%d.%d}'%(roundslen+5,roundslen+5)).format('['+', '.join(str(i) for i in [names['groups'][group] for group in player[1]['path']])+']'),'{:<16.16}'.format(main_str),ls)
 			elif len(playerstrings) >= 4: #or len(playerstrings) >= 4:
 				team_name = entrants[player[0]][0][2]

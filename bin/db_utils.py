@@ -8,6 +8,7 @@ from timeit import default_timer as timer
 from copy import deepcopy as dcopy
 from math import *
 from trueskill import Rating as ts_Rating
+from smashggpy.util.QueryQueueDaemon import QueryQueueDaemon
 ## UTIL IMPORTS
 from arg_utils import *
 from readin import readin,set_readin_args
@@ -165,7 +166,11 @@ def read_tourneys(slugs,ver='default',year=None,base=None,current=False,to_updat
 			# ensure it's not before the last imported event (or that it's the first event in the db)
 			if len(date_list) <= 0 or (slug_date[0] > date_list[0][0]) or (slug_date[0] == date_list[0][0] and slug_date[1] >= date_list[0][1]):
 				if slug not in meta['slugs']:
-					readins = readin(slug)
+					try:
+						readins = readin(slug)
+					except Exception as e:
+						QueryQueueDaemon.kill_daemon()
+						raise e
 					if readins:
 						if current:
 							clean_old_tourneys((tourneys,ids,p_info,records,skills,meta),readins[0])

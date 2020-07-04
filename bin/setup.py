@@ -88,13 +88,34 @@ fb_key_path = ../lib/Firebase_API_Key.json 		# Path to Firebase API Key json fil
 	config_file.close()
 
 # generates files necessary for a clean install // establishes necessary directories
-# write blank smash.gg/firebase api key files
 # WIP
 def setup_dirs():
-	return None
+
+	# write blank smash.gg api key file
+	try:
+		config_file = open('../lib/API Token.txt','w')
+	except FileNotFoundError:
+		if not os.path.isdir('../lib/'):
+			os.mkdir('../lib/')
+		config_file = open('../lib/API Token.txt','x')
+	config_file.write('<INSERT SMASH.GG API TOKEN HERE>')
+	config_file.close()
+
+	# write blank firebase api key file
+	try:
+		config_file = open('../lib/Firebase_API_Key.json','w')
+	except FileNotFoundError:
+		if not os.path.isdir('../lib/'):
+			os.mkdir('../lib/')
+		config_file = open('../lib/Firebase_API_Key.json','x')
+	config_file.write('{\'INSERT FIREBASE API CREDENTIALS HERE\'}')
+	config_file.close()
+
+	return True
 
 
 if __name__ == '__main__':
-	print('I should set up something!')
+	print('Setting up directories...')
 	setup_dirs()
 	write_blank_config_file()
+	print('Note: WIP, some manual directory management may be required')

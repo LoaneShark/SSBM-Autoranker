@@ -563,6 +563,7 @@ def get_social_media(dicts,p_id,getAcctType=True):
 		pfile = urlopen(player_url).read()
 		pdata = json.loads(pfile.decode('UTF-8'))
 		#print('opened file')
+		print(pdata)
 		if args.verbosity >= 6:
 			print('Updating social media for:',p_info[p_id]['tag'],'|',p_id)
 
@@ -572,8 +573,6 @@ def get_social_media(dicts,p_id,getAcctType=True):
 			nameDisplay = player_data['nameDisplay']
 		else:
 			nameDisplay = None
-
-		print(player_data)
 
 		p_twitter = player_data['twitterHandle']
 		p_twitch = player_data['twitchStream']

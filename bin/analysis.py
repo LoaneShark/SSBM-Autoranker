@@ -126,8 +126,9 @@ def main():
 
 	#resume = get_resume(dicts,None,tags=['Iago','Jobbo','Jobboman','Crimock','CrimockLyte'])
 	#resume = get_resume(dicts,None,tags=['Draxsel','iModerz','TehGuitarLord','Joe-J','San','PikaPika!','K.I.D. Goggles','K.I.D.Goggles','Dom','Fun China'])
-	#resume = get_resume(dicts,None,tags=['Nairo','Axe','Iago'])
-	#resume = get_resume(dicts,None,tags=['Nightmare','N','Mafia','The Party','Hyuga','Ally'])
+	#resume = get_resume(dicts,None,tags=['VoiD','Axe','Iago'])
+	resume = get_resume(dicts,None,tags=['Nightmare','N','Mafia','Hyuga','Ally','D1','xD1x','Nairo','Keitaro','Cinnpie','Static Manny','Anti','DJ Nintendo','La Luna'])
+	resume = get_resume(dicts,None,tags=['Armada','ZeRo'])
 	#print_resume(dicts,resume,g_key='player',s_key='event')
 	#print(get_social_media(dicts,1004))
 	
@@ -156,7 +157,7 @@ def main():
 	#print_resume(dicts,resume,g_key='player',s_key='event')
 	#disp_all(dicts,key='elo',dispnum=10,min_activity=min_act,tier_tol=-1,plot_skills=False)
 	#if game_idx == 1386 or game_idx == 3:
-	if True:
+	if False:
 		print('ELO')
 		disp_elos(dicts)
 		print('GLICKO')
