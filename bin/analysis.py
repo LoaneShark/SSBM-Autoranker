@@ -127,7 +127,9 @@ def main():
 	#resume = get_resume(dicts,None,tags=['Iago','Jobbo','Jobboman','Crimock','CrimockLyte'])
 	#resume = get_resume(dicts,None,tags=['Draxsel','iModerz','TehGuitarLord','Joe-J','San','PikaPika!','K.I.D. Goggles','K.I.D.Goggles','Dom','Fun China'])
 	#resume = get_resume(dicts,None,tags=['VoiD','Axe','Iago'])
-	resume = get_resume(dicts,None,tags=['Nightmare','N','Mafia','Hyuga','Ally','D1','xD1x','Nairo','Keitaro','Cinnpie','Static Manny','Anti','DJ Nintendo','La Luna'])
+	resume = get_resume(dicts,None,tags=['Nightmare','N','Mafia','Hyuga','Ally','D1','xD1x','Nairo','Keitaro','Cinnpie','Static Manny','Anti','DJ Nintendo',\
+										 'La Luna','KPAN','Eikelmann','JTails','MacD','SkyWilliams','Gunblade','A Rookie','False','Girthquake','Jswiss',\
+										 'PBnJ','Pierce7D','Pugwest','RelaxAlax','SleepyK','Tyrant','Venia','Vro','ZeRo','JK','Rockcrock','LiloNStitchFace','Neha'])
 	resume = get_resume(dicts,None,tags=['Armada','ZeRo'])
 	#print_resume(dicts,resume,g_key='player',s_key='event')
 	#print(get_social_media(dicts,1004))

@@ -21,6 +21,7 @@ from readin_utils import *
 from smashggpy.util import Initializer
 from smashggpy.util.QueryQueueDaemon import QueryQueueDaemon
 from smashggpy.util.Query import Query
+from smashggpy.util.QueryQueue import QueryQueue
 from smashggpy.util.NetworkInterface import NetworkInterface as NI
 from queries import SmashranksQueries as queries
 
@@ -73,7 +74,7 @@ current_db = args.current_db
 def set_readin_args(r_args):
 	v = int(r_args.verbosity)
 	# verbosity for save/load statements
-	lv = 6
+	lv = 5
 	save_res = r_args.save
 	load_res = r_args.cache_results
 	force_first_event = r_args.force_first
@@ -107,6 +108,9 @@ def read_smashgg_api_key(path='../lib/API Token.txt'):
 	return api_token
 
 def smashgg_login(token):
+	print(QueryQueue.is_running())
+	if Initializer.__daemon_thread:
+		print('cowabunga')
 	Initializer.initialize(token,'error')
 	return True
 
@@ -121,11 +125,12 @@ def readin(tourney,t_type='slug'):
 		return None
 
 	# PM Pools have a db breaking bug
-	if slug == 'we-tech-those-3' and game == 2:
-		return None
+	#if slug == 'we-tech-those-3' and game == 2:
+	#	return None
 	# Ultimate Pools have a db breaking bug
-	if slug == 'the-kid-the-goat-and-the-mang0' and game == 1386:
-		return None
+	#if slug == 'the-kid-the-goat-and-the-mang0' and game == 1386:
+	#	return None
+
 	# Filter out EVO 2016 Melee Doubles when not applicable
 	if slug == 'evo-2016-melee-doubles' and args.teamsize != 2:
 		return None
@@ -137,11 +142,14 @@ def readin(tourney,t_type='slug'):
 
 		try:
 			out = read_tournament(slug)
+		except (KeyboardInterrupt, SystemExit) as e:
+			QueryQueueDaemon.kill_daemon()
+			raise e
 		except Exception as e:
 			logging.error(traceback.format_exc())
 			QueryQueueDaemon.kill_daemon()
+			raise e
 			return False
-
 
 		if out:
 			t_info = out
@@ -186,8 +194,15 @@ def read_tournament(slug):
 		t_region = (tdata.venue.state,tdata.venue.country_code)
 		t_coords = [tdata.venue.latitude,tdata.venue.longitude]
 		t_hashtag = tdata.hashtag
-		t_images = [sorted([t_img for t_img in tdata.images if t_img['type'] == 'profile'],key=lambda i: i['width'])[0],
-						sorted([t_img for t_img in tdata.images if t_img['type'] == 'banner'],key=lambda i: i['width'])[0]]
+		if tdata.images is not None and len(tdata.images) > 0:
+			t_images = [sorted([t_img for t_img in tdata.images if t_img is not None if t_img['type'] == 'profile'],key=lambda i: i['width']),
+						sorted([t_img for t_img in tdata.images if t_img is not None if t_img['type'] == 'banner'],key=lambda i: i['width'])]
+			if (t_images is None or len(t_images) <= 0):
+				t_images = [None,None]
+			else:
+				t_images = [t_image[0] if type(t_image) is list and len(t_image) > 0 else t_image for t_image in t_images]
+		else:
+			t_images = [None, None]
 
 		## Tourney Image Handling
 		if False:
@@ -220,7 +235,7 @@ def read_tournament(slug):
 		events = tdata.get_events()
 		event_ids = [event.id for event in events]
 		phase_dict = {event.id: event.get_phases() for event in events}
-		#events = [event for event in tdata.get_events() if event.videogame == game]
+		base_events = [event for event in events if event.videogame['id'] == game]
 		#event_ids = [[event['id'],(event['name'],event['description'])] for event in tdata['entities']['event'] if event['videogameId'] == game] #and min(event['entrantSizeMin'],4) == min(teamsize,4)]
 		#event_ids = [event['id'] for event in tdata['entities']['event'] if event['videogameId'] == game and event['entrantSizeMin'] == teamsize]
 		
@@ -243,7 +258,7 @@ def read_tournament(slug):
 			print('events pre filtering: ' + str([(event.id,event.name) for event in events]))
 
 		# filters out events that don't list the given game in description, to filter out stuff like low tiers/ironmans/crews etc
-		events = [event for event in events if has_game(event.name,game)]# or has_game(event.description,game)]
+		events = [event for event in base_events if has_game(event.name,game)]# or has_game(event.description,game)]
 		# filter out any events that are marked as exhibition
 		if True:
 			# returns true if an event is all exhibiton phases (not partially, to allow for brackets that feed into amateur/redemption brackets etc)
@@ -252,7 +267,7 @@ def read_tournament(slug):
 			events = [event for event in events if event.id not in exhibition_event_ids]
 		# catcher in case of poor event labeling (this happens for old events sometimes)
 		if len(events) < 1:
-			events = events = tdata.get_events()[0]
+			events = base_events
 
 		# filters out events that have 'amateur', 'ladder' or 'arcadian' in the description
 		amateur_event_ids = [event.id for event in events if is_amateur(event.name) ]#or is_amateur(event.description)]
@@ -317,8 +332,8 @@ def read_groups(t_id,t_bracket,translate_cjk=True):
 	sets = {}
 	end_buff = False
 
-	if load_res and v >= 3:
-		print('Loading cached files...')
+	if load_res and v >= 7:
+		print('Attempting to load cached files...')
 
 	for group in groups:
 		pstart = timer()
@@ -451,7 +466,7 @@ def read_entrants(group,group_phase,entrants,names,xpath):
 				propic = None
 				if player_images and len(player_images) >= 0:
 					for p_image in player_images:
-						if p_image['type'] == 'profile':
+						if p_image and p_image is not None and p_image['type'] == 'profile':
 							if p_image['height'] == 100:
 								propic = p_image['url']
 				else:
@@ -479,152 +494,172 @@ def read_sets(group,group_phase,t_id,wins,losses,xpath,sets,entrants):
 			grp_num_prog = 0
 
 	for match in setdata:
-		if v >= 7:
-			print('Reading', match)
-		e1,e2 = match.entrant1,match.entrant2
-		e1_id,e2_id = e1['id'],e2['id']
-		w_id,l_id = match.winner_id,match.loser_id
-		set_id = match.id
-		is_bye = False
-		get_loser_id = lambda x_id: e2_id if e1_id == x_id else e1_id
-		get_game_loser_id = lambda x_id: e2_id if e1_id == x_id else e1_id
-		'''
-		if group.rounds:
-			num_rounds = len(group.rounds)
-			is_GF = match.round >= num_rounds-1
-		else:
-			num_rounds = None
-			is_GF = False
-		print(is_GF)
-		print(match.round)
-		print(num_rounds)
-		print(group.rounds)
-		print(group.progressions)
-		print(group_phase.phase_order)
-		'''
-		is_GF = match.winner_placement == 1
-
-		# Filter out DQs
-		is_DQ = lambda e: e['score'] == -1 if not e['score'] == None else False
-		e1_DQ,e2_DQ = is_DQ(e1),is_DQ(e2)
-		if w_id == e1_id and l_id == e2_id:
-			w_DQ = e1_DQ
-			l_DQ = e2_DQ
-		elif w_id == e2_id and l_id == e1_id:
-			w_DQ = e2_DQ
-			l_DQ = e1_DQ
-		else:
-			w_DQ,l_DQ = False,False
-
-		# Move past byes
-		if w_id == None or l_id == None or w_id == l_id:
-			is_bye = True
-
-		sets[set_id] = {}
-		sets[set_id]['is_bye'] = is_bye
-		sets[set_id]['w_id'] = w_id
-		sets[set_id]['l_id'] = l_id
-		sets[set_id]['w_dq'] = w_DQ
-		sets[set_id]['l_dq'] = l_DQ
-		sets[set_id]['t_id'] = t_id
-		sets[set_id]['w_placement'] = match.winner_placement
-		sets[set_id]['l_placement'] = match.loser_placement
-		sets[set_id]['is_winners'] = match.round >= 0
-		sets[set_id]['round_num'] = match.round
-		sets[set_id]['round_text_long'] = match.full_round_text
-		sets[set_id]['has_placeholder'] = match.has_placeholder
-		if match.set_games_type >= 1:
-			sets[set_id]['total_games'] = match.total_games
-			sets[set_id]['best_of'] = -1
-		else:
-			sets[set_id]['total_games'] = len(match.games)
-			sets[set_id]['best_of'] = group.rounds[np.where(group.rounds['number'] == match.round)]['bestOf']
-		if v >= 8:
-			print(sets[set_id])
-
-
-		if not is_bye:
-			# populate character data if available
-			if match.games is not None and len(match.games) > 0:
-				if len(match.games) > 0:
-					sets[set_id]['games'] = {}
-				for game in sorted(match.games,key=lambda g: g['orderNum']):
-					game_id = game['id']
-					sets[set_id]['games'][game_id] = {}
-					if game['stage'] != None:
-						sets[set_id]['games'][game_id]['stage_id'] = game['stage']['id']
-					sets[set_id]['games'][game_id]['w_id'] = game['winnerId']
-					sets[set_id]['games'][game_id]['l_id'] = get_game_loser_id(game['winnerId'])
-
-					# if there are selections made
-					if 'selections' in game and type(game['selections']) is not type(None):
-						# and both entrants have selections
-						if len(game['selections']) >= 2 and all([game_e_id in [g_sel['id'] for g_sel in game['selections']] for game_e_id in [e1_id,e2_id]]):
-							sets[set_id]['games'][game_id]['characters'] = {}
-							# store character selection for each entrant
-							for selection in game['selections']:
-								if 'CHARACTER' == selection['selectionType']:
-									game_char_id = selection['selectionValue']
-									sets[set_id]['games'][game_id]['characters'][game_e_id] = game_char_id
-									'''
-									if game_e_id not in characters:
-										characters[game_e_id] = {}
-									if game_char_id not in characters[game_e_id]:
-										characters[game_e_id][game_char_id] = [0,0]
-									# store wins and losses separately
-									if game_e_id == w_id:
-										characters[game_e_id][game_char_id][0] += 1
-									else:
-										characters[game_e_id][game_char_id][1] += 1'''
-
-			# Don't count DQs for win/loss records (still do for placings)
-			if not (w_DQ or l_DQ):
-				if v >= 7:
-					print(set_id,group_id,match.identifier,[w_id,l_id],[e1_id,e2_id])
-				if w_id not in wins:
-					wins[w_id] = [(l_id,[set_id,group_id])]
-				else:
-					wins[w_id].extend([(l_id,[set_id,group_id])])
-				if l_id not in losses:
-					losses[l_id] = [(w_id,[set_id,group_id])]
-				else:
-					losses[l_id].extend([(w_id,[set_id,group_id])])
-			else:
-				if v >= 7:
-					print(set_id,group_id,match.identifier,[w_id,'DQ'],[e1_id,e2_id])
-
-			# update final placement if it is further than their current one (people can't regress in bracket except for in GF)
-			## update: isGF currently deprecated
-			if not match.winner_placement == None:
-				if type(xpath[w_id]['placing']) is list:
-					xpath[w_id]['placing'] = match.winner_placement
-				elif match.winner_placement < xpath[w_id]['placing'] or is_GF:
-					xpath[w_id]['placing'] = match.winner_placement
-			elif not match.winner_placement == None:
-				if type(xpath[w_id]['placing']) is list:
-					xpath[w_id]['placing'] = match.winner_placement
-				elif match.winner_placement < xpath[w_id]['placing'] or is_GF:
-					xpath[w_id]['placing'] = match.winner_placement
-			else:
-				if v >= 7:
-					print('Error: Could not update winner placement (%d)'%w_id)
-
-			if not match.loser_placement == None:
-				if type(xpath[l_id]['placing']) is list:
-					xpath[l_id]['placing'] = match.loser_placement
-				elif match.loser_placement < xpath[l_id]['placing'] or is_GF:
-					xpath[l_id]['placing'] = match.loser_placement
-			elif not match.loser_placement == None:
-				if type(xpath[l_id]['placing']) is list:
-					xpath[l_id]['placing'] = match.loser_placement
-				elif match.loser_placement < xpath[l_id]['placing'] or is_GF:
-					xpath[l_id]['placing'] = match.loser_placement
-			else:
-				if v >= 7:
-					print('Error: Could not update loser placement (%d)'%l_id)
-		else:
+		# only want completed sets
+		# state ==> 1: unstarted,    2: started,   3: completed,    6: called
+		if match.state in [3]:
 			if v >= 7:
-				print(set_id,group_id,match.identifier,['bye','bye'],[e1_id,e2_id])
+				print('Reading', match)
+			e1,e2 = match.entrant1,match.entrant2
+			e1_id,e2_id = e1['id'],e2['id']
+			w_id,l_id = match.winner_id,match.loser_id
+			set_id = match.id
+			is_bye = False
+			get_game_loser_id = lambda x_id: e2_id if e1_id == x_id else e1_id
+			'''
+			if group.rounds:
+				num_rounds = len(group.rounds)
+				is_GF = match.round >= num_rounds-1
+			else:
+				num_rounds = None
+				is_GF = False
+			print(is_GF)
+			print(match.round)
+			print(num_rounds)
+			print(group.rounds)
+			print(group.progressions)
+			print(group_phase.phase_order)
+			'''
+			is_GF = match.winner_placement == 1
+
+			# Filter out DQs
+			is_DQ = lambda e: e['score'] == -1 if not e['score'] == None else False
+			e1_DQ,e2_DQ = is_DQ(e1),is_DQ(e2)
+			if w_id == e1_id and l_id == e2_id:
+				w_DQ = e1_DQ
+				l_DQ = e2_DQ
+			elif w_id == e2_id and l_id == e1_id:
+				w_DQ = e2_DQ
+				l_DQ = e1_DQ
+			else:
+				w_DQ,l_DQ = False,False
+
+			# Move past byes
+			if w_id == None or l_id == None or w_id == l_id:
+				is_bye = True
+
+			sets[set_id] = {}
+			sets[set_id]['is_bye'] = is_bye
+			sets[set_id]['w_id'] = w_id
+			sets[set_id]['l_id'] = l_id
+			sets[set_id]['w_dq'] = w_DQ
+			sets[set_id]['l_dq'] = l_DQ
+			sets[set_id]['t_id'] = t_id
+			sets[set_id]['w_placement'] = match.winner_placement
+			sets[set_id]['l_placement'] = match.loser_placement
+			sets[set_id]['is_winners'] = match.round >= 0
+			sets[set_id]['round_num'] = match.round
+			sets[set_id]['round_text_long'] = match.full_round_text
+			sets[set_id]['has_placeholder'] = match.has_placeholder
+			sets[set_id]['vod'] = match.vod_URL
+
+			# count the games manually and determine "bestOf", if games are populated
+			# (this is bc totalGames/bestOf fields on smash.gg are inconsistent/often wrong)
+			if match.games and not (is_bye or w_DQ or l_DQ) and len(match.games) >= 1:
+				sets[set_id]['total_games'] = len(match.games)
+				if match.set_games_type == 1:
+					sets[set_id]['best_of'] = (len(match.games)*2.)-1.
+				else:
+					sets[set_id]['best_of'] = -1
+			# set_games_type = 1  indicates that match.total_games is the "bestOf" amount
+			elif match.set_games_type >= 1:
+				sets[set_id]['best_of'] = match.total_games
+				if match.games:
+					sets[set_id]['total_games'] = len(match.games)
+				else:
+					sets[set_id]['total_games'] = (float(match.total_games)+1.)/2.
+			# else try and determine "bestOf" from group data/rounds if populated
+			elif group.rounds:
+				sets[set_id]['total_games'] = match.total_games
+				sets[set_id]['best_of'] = group.rounds[np.where(group.rounds['number'] == match.round)]['bestOf']
+			# fill with negative values otherwise
+			else:
+				sets[set_id]['total_games'] = -1
+				sets[set_id]['best_of'] = -1
+			if v >= 8:
+				print(sets[set_id])
+
+			if not is_bye:
+				# populate character data if available
+				if match.games is not None and len(match.games) > 0:
+					if len(match.games) > 0:
+						sets[set_id]['games'] = {}
+					for game in sorted(match.games,key=lambda g: g['orderNum']):
+						game_id = game['id']
+						sets[set_id]['games'][game_id] = {}
+						if game['stage'] != None:
+							sets[set_id]['games'][game_id]['stage_id'] = game['stage']['id']
+						sets[set_id]['games'][game_id]['w_id'] = game['winnerId']
+						sets[set_id]['games'][game_id]['l_id'] = get_game_loser_id(game['winnerId'])
+
+						# if there are selections made
+						if 'selections' in game and type(game['selections']) is not type(None):
+							# and both entrants have selections
+							if len(game['selections']) >= 2 and all([game_e_id in [g_sel['id'] for g_sel in game['selections']] for game_e_id in [e1_id,e2_id]]):
+								sets[set_id]['games'][game_id]['characters'] = {}
+								# store character selection for each entrant
+								for selection in game['selections']:
+									if 'CHARACTER' == selection['selectionType']:
+										game_char_id = selection['selectionValue']
+										sets[set_id]['games'][game_id]['characters'][game_e_id] = game_char_id
+										'''
+										if game_e_id not in characters:
+											characters[game_e_id] = {}
+										if game_char_id not in characters[game_e_id]:
+											characters[game_e_id][game_char_id] = [0,0]
+										# store wins and losses separately
+										if game_e_id == w_id:
+											characters[game_e_id][game_char_id][0] += 1
+										else:
+											characters[game_e_id][game_char_id][1] += 1'''
+
+				# Don't count DQs for win/loss records (still do for placings)
+				if not (w_DQ or l_DQ):
+					if v >= 7:
+						print(set_id,group_id,match.identifier,[w_id,l_id],[e1_id,e2_id])
+					if w_id not in wins:
+						wins[w_id] = [(l_id,[set_id,group_id])]
+					else:
+						wins[w_id].extend([(l_id,[set_id,group_id])])
+					if l_id not in losses:
+						losses[l_id] = [(w_id,[set_id,group_id])]
+					else:
+						losses[l_id].extend([(w_id,[set_id,group_id])])
+				else:
+					if v >= 7:
+						print(set_id,group_id,match.identifier,[w_id,'DQ'],[e1_id,e2_id])
+
+				# update final placement if it is further than their current one (people can't regress in bracket except for in GF)
+				## update: isGF currently deprecated
+				if not match.winner_placement == None:
+					if type(xpath[w_id]['placing']) is list:
+						xpath[w_id]['placing'] = match.winner_placement
+					elif match.winner_placement < xpath[w_id]['placing'] or is_GF:
+						xpath[w_id]['placing'] = match.winner_placement
+				elif not match.winner_placement == None:
+					if type(xpath[w_id]['placing']) is list:
+						xpath[w_id]['placing'] = match.winner_placement
+					elif match.winner_placement < xpath[w_id]['placing'] or is_GF:
+						xpath[w_id]['placing'] = match.winner_placement
+				else:
+					if v >= 7:
+						print('Error: Could not update winner placement (%d)'%w_id)
+
+				if not match.loser_placement == None:
+					if type(xpath[l_id]['placing']) is list:
+						xpath[l_id]['placing'] = match.loser_placement
+					elif match.loser_placement < xpath[l_id]['placing'] or is_GF:
+						xpath[l_id]['placing'] = match.loser_placement
+				elif not match.loser_placement == None:
+					if type(xpath[l_id]['placing']) is list:
+						xpath[l_id]['placing'] = match.loser_placement
+					elif match.loser_placement < xpath[l_id]['placing'] or is_GF:
+						xpath[l_id]['placing'] = match.loser_placement
+				else:
+					if v >= 7:
+						print('Error: Could not update loser placement (%d)'%l_id)
+			else:
+				if v >= 7:
+					print(set_id,group_id,match.identifier,['bye','bye'],[e1_id,e2_id])
 
 	# populate overall final bracket placements if not already provided
 	for e_id in sorted([e_x for e_x in entrants if type(xpath[e_x]['placing']) is list],key=lambda p_id: xpath[p_id]['placing'][0]):
@@ -643,6 +678,23 @@ def read_sets(group,group_phase,t_id,wins,losses,xpath,sets,entrants):
 def read_user(entrant,translate_cjk=False):
 	entrant_id = entrant.id
 	attendees = entrant.attendee_data
+	if entrant.id in [2232043,730281]:
+		print(entrant)
+	for attendee in attendees:
+		if attendee.user is None:
+			temp_tag = attendee.gamer_tag
+			if attendee.verified:
+				temp_tag += ' (UNVERIFIED)'
+			attendee.user = {'id':int(''.join([str(attendee.player['id']),str(attendee.id)])), 
+							 'name':temp_tag,
+							 'slug':None,
+							 'genderPronoun':None,
+							 'player':attendee.player,
+							 'location':None,
+							 'authorizations':None,
+							 'images':[None,None]
+							 }
+
 	users = [SR_User.parse(attendee.user) for attendee in attendees]
 
 	if translate_cjk:
@@ -651,7 +703,8 @@ def read_user(entrant,translate_cjk=False):
 				#'『' '』'
 				user.player['gamerTag'] = '<'+transliterate(user.player['gamerTag'])+'>'
 
-	prefixes = [user.player['prefix'] if user is not None else None for user in users]
+	prefixes = [attendee.player['prefix'] if attendee.player is not None else attendee.prefix for user in users]
+
 	if len(attendees) > 1:
 		team_name = entrant.name
 	else:

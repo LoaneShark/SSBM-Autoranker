@@ -32,15 +32,18 @@ checkedInAt
 verified
 connectedAccounts
 contactInfo{{
-    {0}
+  {0}
 }}
 user {{
   {1}
 }}
-events{{
-    id
+player {{
+  {2}
 }}
-""".format(schema.attendee_contact_info_schema, schema.user_schema)
+events{{
+  id
+}}
+""".format(schema.attendee_contact_info_schema, schema.user_schema, schema.player_schema)
 
 schema.entrant_schema = """
 id
@@ -230,7 +233,7 @@ query PhasePhaseGroups($id: ID!, $page: Int, $perPage: Int, $sortBy: String, $en
 phase_group_entrants = """
 query PhaseGroupEntrants($id: ID!, $page: Int, $perPage: Int, $sortBy: String, $filter: SeedPageFilter){{
     phaseGroup(id: $id){{
-        paginatedSeeds(
+        seeds(
             query: {{
                 page: $page,
                 perPage: $perPage,
@@ -316,8 +319,8 @@ query TournamentQuery($slug: String) {
 
 
 SR_user_query = """
-query UserInfo {
-  player($id: ID!) {
+query UserInfo($id: ID!) {
+  player(id: $id) {
     id
     user {
       id
@@ -358,4 +361,95 @@ query UserInfo {
     }
   }
 }
+"""
+
+SR_set_query = """
+query debugSet($id: ID!){
+  set(id: $id){
+    id
+    displayScore
+    identifier
+    fullRoundText
+    createdAt
+    startedAt
+    completedAt
+    hasPlaceholder
+    round
+    wPlacement
+    lPlacement
+    winnerId
+    setGamesType
+    totalGames
+    slots(includeByes: true){
+      id
+      entrant {
+        id
+        name
+        participants{
+          user {
+            id
+            name
+          }
+        }
+      }
+      seed {
+        id
+        seedNum
+        placement
+      }
+      slotIndex
+    }
+    games{
+      id
+      orderNum
+      winnerId
+      stage {
+        id
+        name
+      }
+      selections {
+        id
+        entrant{
+          id
+        }
+        orderNum
+        selectionType
+        selectionValue
+      }
+    }
+    event{
+      id
+      name
+    }
+    phaseGroup{
+      id
+      displayIdentifier
+    }
+  }
+}
+"""
+
+SR_phase_group_query = """
+query debugPhaseGroup($id: ID!) {
+    phaseGroup(id: $id){
+      id
+      displayIdentifier
+      bracketType
+      numRounds
+      state
+      phase{
+        id
+        name
+        event {
+          id
+          name
+        }
+      }
+      rounds{
+        id
+        number
+        bestOf
+      }
+    }
+  }
 """

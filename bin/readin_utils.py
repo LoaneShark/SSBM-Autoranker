@@ -24,6 +24,7 @@ from smashggpy.models.Event import Event
 from smashggpy.models.Tournament import Tournament
 from smashggpy.models.User import User
 from smashggpy.models.Entrant import Entrant
+from smashggpy.models.Attendee import Attendee
 from smashggpy.models.GGSet import GGSet
 from smashggpy.common.Exceptions import DataMalformedException
 from smashggpy.common.Common import flatten, validate_data
@@ -127,10 +128,12 @@ class SR_PhaseGroup(PhaseGroup):
 class SR_Event(Event):
 	def __init__(self, id, name, slug, state, start_at, num_entrants,
 				 check_in_buffer, check_in_duration, check_in_enabled,
-				 is_online, team_name_allowed, team_management_deadline):
+				 is_online, team_name_allowed, team_management_deadline,
+				 videogame):
 		super().__init__(id, name, slug, state, start_at, num_entrants, 
 							check_in_buffer, check_in_duration, check_in_enabled, 
 							is_online, team_name_allowed, team_management_deadline)
+		self.videogame = videogame
 
 	@staticmethod
 	def parse(data):
@@ -154,7 +157,8 @@ class SR_Event(Event):
 			event_data.check_in_enabled,
 			event_data.is_online,
 			event_data.team_name_allowed,
-			event_data.team_management_deadline
+			event_data.team_management_deadline,
+			data['videogame']
 		)
 
 	def get_phases(self):
@@ -292,6 +296,11 @@ class SR_Entrant(Entrant):
 		return hash((self.id, self.name, self.event, self.skill, self.attendee_data,
 					 self.seed_id, self.seed_num, self.placement, self.is_bye))
 
+	def __str__(self):
+		return {'id':self.id,'name':self.name,'event':self.event,'skill':self.skill,
+				'seed_id':self.seed_id,'seed_num':self.seed_num,'placement':placement,'is_bye':self.is_bye}
+
+
 	@staticmethod
 	def parse(data):
 		assert (data is not None), 'Entrant.parse must not have a none data parameter'
@@ -301,16 +310,42 @@ class SR_Entrant(Entrant):
 		assert ('isBye' in data), 'Entrant.parse must have an isBye property in seed parameter'
 
 		entrant_data = Entrant.parse(data['entrant'])
+		attendee_data = [SR_Attendee.parse(part_data) for part_data in data['entrant']['participants']]
 		return SR_Entrant(
 			entrant_data.id,
 			entrant_data.name,
 			entrant_data.event,
 			entrant_data.skill,
-			entrant_data.attendee_data,
+			attendee_data,
 			data['id'],
 			data['seedNum'],
 			data['placement'],
 			data['isBye']
+		)
+
+class SR_Attendee(Attendee):
+
+	def __init__(self, id, gamer_tag, prefix, verified, user, connected_accounts,
+				 contact_info, event_ids, player):
+		super().__init__(id, gamer_tag, prefix, verified, user, connected_accounts,
+				 contact_info, event_ids)
+		self.player = player 
+
+	@staticmethod
+	def parse(data):
+		assert (data is not None), 'Attendee.parse must not have a none data parameter'
+
+		attendee_data = Attendee.parse(data)
+		return SR_Attendee(
+			attendee_data.id,
+			attendee_data.gamer_tag,
+			attendee_data.prefix,
+			attendee_data.verified,
+			attendee_data.user,
+			attendee_data.connected_accounts,
+			attendee_data.contact_info,
+			attendee_data.event_ids,
+			data['player']
 		)
 
 class SR_GGSet(GGSet):
@@ -321,8 +356,6 @@ class SR_GGSet(GGSet):
 		super().__init__(id, event_id, phase_group_id, display_score, full_round_text, round, started_at, completed_at, winner_id, total_games, state, tag1, tag2, score1, score2)
 		self.entrant1 = entrant1
 		self.entrant2 = entrant2
-		self.tag1 = tag1
-		self.tag2 = tag2
 		self.loser_id = loser_id
 		self.winner_placement = winner_placement
 		self.loser_placement = loser_placement
@@ -353,12 +386,15 @@ class SR_GGSet(GGSet):
 	def parse(data):
 		assert (data is not None), 'GGSet.parse cannot have a none data parameter'
 
+		#if data['id'] == 20811793:
+		#	print(data)
+
 		display_score_parsed = GGSet.parse_display_score(data['displayScore'])
 		ggset_data = GGSet.parse(data)
 
 		entr1, entr2 = data['slots'][0]['entrant'], data['slots'][1]['entrant']
 		entr1['score'] = ggset_data.score1; entr2['score'] = ggset_data.score2
-		get_loser_id = lambda w_id: int(entr2['id']) if int(entr1['id']) == int(w_id) else int(entr1['id'])
+		get_loser_id = lambda w_id: None if w_id is None else int(entr2['id']) if int(entr1['id']) == int(w_id) else int(entr1['id'])
 
 		return SR_GGSet(
 			ggset_data.id,
@@ -371,7 +407,7 @@ class SR_GGSet(GGSet):
 			data['setGamesType'],
 			ggset_data.started_at,
 			ggset_data.completed_at,
-			int(ggset_data.winner_id),
+			ggset_data.winner_id,
 			ggset_data.total_games,
 			ggset_data.state,
 			ggset_data.player1,

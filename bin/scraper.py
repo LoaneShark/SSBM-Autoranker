@@ -135,7 +135,7 @@ def table_index(doc,game,year):
 
 		if game_ids[int(c_year[1])] == name:
 			if int(c_year[0]) == year:
-				return i+3
+				return i+2
 				break
 			if int(c_year[0]) > year:
 				return None

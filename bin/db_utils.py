@@ -218,181 +218,193 @@ def store_players(entrants,names,t_info,dicts,translate_cjk=True):
 		#	return store_crews(entrants,names,t_info,dicts)
 		# store all entrant/player-specific info from this tournament
 		for e_id in entrants:
+			print(e_id)
+			if e_id == 2232043:
+				print(e_id)
+				print(entrants[e_id])
+				print(entrants[e_id][1][0].id)
 			#e_id = entrant[2]
 			for user in entrants[e_id][1]:
-				abs_id = user.id
-				to_update_socials = False
 				idx = entrants[e_id][1].index(user)
-				# store matrix to get entrant ids for each tourney given absolute id'
-				# (and also to get the reverse)
-				if abs_id not in ids:
-					ids[abs_id] = {}
-				ids[abs_id][t_id] = e_id
 				if 't_'+str(t_id) not in ids:
 					ids['t_'+str(t_id)] = {}
-				ids['t_'+str(t_id)][e_id] = abs_id
+				if user is not None and user.id is not None:
+					abs_id = user.id
+					to_update_socials = False
+					# store matrix to get entrant ids for each tourney given absolute id'
+					# (and also to get the reverse)
+					if abs_id not in ids:
+						ids[abs_id] = {}
+					ids[abs_id][t_id] = e_id
+					ids['t_'+str(t_id)][e_id] = abs_id
 
-				# store dict for each player with keys for:
-				# team, tag, firstname, lastname, state, country
-				if abs_id not in p_info:
-					p_info[abs_id] = {}
-					to_update_socials = True
-					p_info[abs_id]['status'] = handle_player_status(abs_id,'active')
-					p_info[abs_id]['first_event'] = t_id
+					# store dict for each player with keys for:
+					# team, tag, firstname, lastname, state, country
+					if abs_id not in p_info:
+						p_info[abs_id] = {}
+						to_update_socials = True
+						p_info[abs_id]['status'] = handle_player_status(abs_id,'active')
+						p_info[abs_id]['first_event'] = t_id
 
-				# basic User info
-				p_info[abs_id]['active'] = True
-				p_info[abs_id]['id'] = abs_id
-				p_info[abs_id]['teamsize'] = args.teamsize
-				p_info[abs_id]['name'] = user.name
-				p_info[abs_id]['slug'] = user.slug
-				p_info[abs_id]['pronouns'] = user.gender_pronoun
+					# basic User info
+					p_info[abs_id]['active'] = True
+					p_info[abs_id]['id'] = abs_id
+					p_info[abs_id]['teamsize'] = args.teamsize
+					p_info[abs_id]['name'] = user.name
+					p_info[abs_id]['slug'] = user.slug
+					p_info[abs_id]['pronouns'] = user.gender_pronoun
 
-				# handle tag and sponsor
-				if names[e_id][0][idx] == None:
-					if 'team' not in p_info[abs_id]:
+					# handle tag and sponsor
+					if names[e_id][0][idx] == None:
+						if 'team' not in p_info[abs_id]:
+							p_info[abs_id]['team'] = names[e_id][0][idx]
+					else:
 						p_info[abs_id]['team'] = names[e_id][0][idx]
-				else:
-					p_info[abs_id]['team'] = names[e_id][0][idx]
-				if 'aliases' not in p_info[abs_id]:
-					p_info[abs_id]['aliases'] = []
-				p_tag = names[e_id][1][idx]
-				trans_tag = p_tag
-				if p_tag not in p_info[abs_id]['aliases']:
-					p_info[abs_id]['aliases'].extend([p_tag])
-					if p_tag != None and any([is_cjk(tag_c) for tag_c in p_tag]):
-						trans_tag_base = transliterate(p_tag)
-						trans_tag = '<'+transliterate(p_tag)+'>'
-						if trans_tag not in p_info[abs_id]['aliases']:
-							p_info[abs_id]['aliases'].extend([trans_tag])
-							p_info[abs_id]['en_tag'] = trans_tag_base
-					else:
-						p_info[abs_id]['en_tag'] = trans_tag
-				if translate_cjk:
-					p_info[abs_id]['tag'] = trans_tag
-				else:
-					p_info[abs_id]['tag'] = p_tag
-
-				# handle region
-				if user.location is not None:
-					for key in ['id','city','country','countryId','state','stateId']:
-						info = user.location[key]
-						if key == 'id':
-							key = 'location_id'
-						if key in p_info[abs_id]:
-							if not info in ['N/A','',"",None]:
-								p_info[abs_id][key] = info
+					if 'aliases' not in p_info[abs_id]:
+						p_info[abs_id]['aliases'] = []
+					p_tag = names[e_id][1][idx]
+					trans_tag = p_tag
+					if p_tag not in p_info[abs_id]['aliases']:
+						p_info[abs_id]['aliases'].extend([p_tag])
+						if p_tag != None and any([is_cjk(tag_c) for tag_c in p_tag]):
+							trans_tag_base = transliterate(p_tag)
+							trans_tag = '<'+transliterate(p_tag)+'>'
+							if trans_tag not in p_info[abs_id]['aliases']:
+								p_info[abs_id]['aliases'].extend([trans_tag])
+								p_info[abs_id]['en_tag'] = trans_tag_base
 						else:
-							p_info[abs_id][key] = info
-					if 'region' not in p_info[abs_id] or p_info[abs_id]['region'] == None:
-						p_info[abs_id]['region'] = {}
-						for r_i in range(0,6):
-							p_info[abs_id]['region'][r_i] = get_region(dicts,abs_id,granularity=r_i,to_calc=True)
-							p_info[abs_id]['region_'+str(r_i)] = get_region(dicts,abs_id,granularity=r_i,to_calc=True) # store it separately too for firebase querying
+							p_info[abs_id]['en_tag'] = trans_tag
+					if translate_cjk:
+						p_info[abs_id]['tag'] = trans_tag
 					else:
-						if p_info[abs_id]['region'] == {} or any([r_idx not in p_info[abs_id]['region'] for r_idx in range(0,6)]) or any([p_info[abs_id]['region'][r_idx] == 'N/A' for r_idx in range(0,6)]):
-							#p_info[abs_id]['region'] = get_region(dicts,abs_id,granularity=2,to_calc=True)
+						p_info[abs_id]['tag'] = p_tag
+
+					# handle region
+					if user.location is not None:
+						for key in ['id','city','country','countryId','state','stateId']:
+							info = user.location[key]
+							if key == 'id':
+								key = 'location_id'
+							if key in p_info[abs_id]:
+								if not info in ['N/A','',"",None]:
+									p_info[abs_id][key] = info
+							else:
+								p_info[abs_id][key] = info
+						if 'region' not in p_info[abs_id] or p_info[abs_id]['region'] == None:
+							p_info[abs_id]['region'] = {}
 							for r_i in range(0,6):
 								p_info[abs_id]['region'][r_i] = get_region(dicts,abs_id,granularity=r_i,to_calc=True)
 								p_info[abs_id]['region_'+str(r_i)] = get_region(dicts,abs_id,granularity=r_i,to_calc=True) # store it separately too for firebase querying
-				else:
-					p_info[abs_id]['region'] = {}
-					for r_i in range(0,6):
-						p_info[abs_id]['region'][r_i] = None
-						p_info[abs_id]['region_'+str(r_i)] = None # store it separately too for firebase querying
-
-
-				# store smash.gg profile picture url
-				p_info[abs_id]['propic'] = entrants[e_id][4]
-
-				# store W/L record per character
-				if 'characters' not in p_info[abs_id]:
-					chardict = load_dict('characters',None,loc='../lib')
-					if db_game in chardict:
-						chardict = chardict[db_game]
-						p_info[abs_id]['characters'] = {char_id: [0,0] for char_id in chardict}
+						else:
+							if p_info[abs_id]['region'] == {} or any([r_idx not in p_info[abs_id]['region'] for r_idx in range(0,6)]) or any([p_info[abs_id]['region'][r_idx] == 'N/A' for r_idx in range(0,6)]):
+								#p_info[abs_id]['region'] = get_region(dicts,abs_id,granularity=2,to_calc=True)
+								for r_i in range(0,6):
+									p_info[abs_id]['region'][r_i] = get_region(dicts,abs_id,granularity=r_i,to_calc=True)
+									p_info[abs_id]['region_'+str(r_i)] = get_region(dicts,abs_id,granularity=r_i,to_calc=True) # store it separately too for firebase querying
 					else:
-						p_info[abs_id]['characters'] = {}
+						p_info[abs_id]['region'] = {}
+						for r_i in range(0,6):
+							p_info[abs_id]['region'][r_i] = None
+							p_info[abs_id]['region_'+str(r_i)] = None # store it separately too for firebase querying
 
-				# store their current main // make a slot for it
-				if 'main' not in p_info[abs_id]:
-					p_info[abs_id]['main'] = None
 
-				# handle external account connections and authorizations
-				if to_update_socials and user.authorizations is not None:
-					#for key in ['twitter','twitch','reddit','youtube','smashboards','ssbwiki','discord','name_display','color']:
-					#for key in ['TWITTER','TWITCH','MIXER','DISCORD']:
-					for key in user.authorizations.keys():
-						auth_info = user.authorizations[key]
-						if key == 'id':
-							key = 'auth_id'
-						p_info[abs_id][key] = auth_info
+					# store smash.gg profile picture url
+					p_info[abs_id]['propic'] = entrants[e_id][4]
 
-				# store ranking data, with initial values if needed
-				if 'elo' not in skills or 'elo-rnk' not in skills:
-					for key in ['elo','elo-rnk','elo-pct','elo_del',\
-								'glicko','glicko-rnk','glicko-pct','glicko_del',\
-								'srank','srank-rnk','srank-pct','srank_del','srank_sig',\
-								'trueskill','trueskill-rnk','trueskill-pct','trueskill_del',\
-								'glixare','glixare-rnk','glixare-pct','glixare_del', 'perf',\
-								'mainrank']:
-						skills[key] = {}
-				if 'elo' not in p_info[abs_id]:
-					p_info[abs_id]['elo'] = float(args.elo_init_value)
-					p_info[abs_id]['elo_peak'] = p_info[abs_id]['elo']
-					skills['elo'][abs_id] = {}
-					skills['elo-rnk'][abs_id] = {}
-					skills['elo-pct'][abs_id] = {}
-					skills['elo_del'][abs_id] = {}
-				# glicko stores a tuple with (rating,RD,volatility)
-				if 'glicko' not in p_info[abs_id]:
-					p_info[abs_id]['glicko'] = (float(args.glicko_init_value),float(args.glicko_init_rd),float(args.glicko_init_sigma))
-					p_info[abs_id]['glicko_peak'] = p_info[abs_id]['glicko'][0]
-					skills['glicko'][abs_id] = {}
-					skills['glicko-rnk'][abs_id] = {}
-					skills['glicko-pct'][abs_id] = {}
-					skills['glicko_del'][abs_id] = {}
-				if 'srank' not in p_info[abs_id]:
-					p_info[abs_id]['srank'] = int(1)
-					#p_info[abs_id]['srank'] = 0.5
-					p_info[abs_id]['srank_sig'] = (0.5,0.,1.,4.)
-					p_info[abs_id]['srank_last'] = int(1)
-					p_info[abs_id]['srank_peak'] = int(1)
-					skills['srank'][abs_id] = {}
-					skills['srank-rnk'][abs_id] = {}
-					skills['srank-pct'][abs_id] = {}
-					skills['srank_del'][abs_id] = {}
-					skills['srank_sig'][abs_id] = {}
-				if 'trueskill' not in p_info[abs_id]:
-					p_info[abs_id]['trueskill'] = {'mu':args.trueskill_init_mu,'sigma':args.trueskill_init_sigma,'expose':0.}
-					p_info[abs_id]['trueskill_peak'] = p_info[abs_id]['trueskill']
-					if 'trueskill' not in skills:
-						skills['trueskill'] = {}
-						skills['trueskill-rnk'] = {}
-						skills['trueskill-pct'] = {}
-						skills['trueskill_del'] = {}
-					skills['trueskill'][abs_id] = {}
-					skills['trueskill-rnk'][abs_id] = {}
-					skills['trueskill-pct'][abs_id] = {}
-					skills['trueskill_del'][abs_id] = {}
-				if 'glixare' not in p_info[abs_id]:
-					p_info[abs_id]['glixare'] = 0
-					p_info[abs_id]['glixare_peak'] = p_info[abs_id]['glixare']
-					skills['glixare'][abs_id] = {}
-					skills['glixare-rnk'][abs_id] = {}
-					skills['glixare-pct'][abs_id] = {}
-					skills['glixare_del'][abs_id] = {}
-				if 'sets_played' not in p_info[abs_id]:
-					p_info[abs_id]['sets_played'] = 0
-				if 'events_entered' not in p_info[abs_id]:
-					p_info[abs_id]['events_entered'] = 0
-				p_info[abs_id]['events_entered'] += 1
-				if 'last_event' not in p_info[abs_id]:
-					p_info[abs_id]['last_event'] = None
-				p_info[abs_id]['prev_event'] = p_info[abs_id]['last_event']
-				p_info[abs_id]['last_event'] = t_id
-				if abs_id not in skills['perf']:
-					skills['perf'][abs_id] = {}
+					# store W/L record per character
+					if 'characters' not in p_info[abs_id]:
+						chardict = load_dict('characters',None,loc='../lib')
+						if db_game in chardict:
+							chardict = chardict[db_game]
+							p_info[abs_id]['characters'] = {char_id: [0,0] for char_id in chardict}
+						else:
+							p_info[abs_id]['characters'] = {}
+
+					# store their current main // make a slot for it
+					if 'main' not in p_info[abs_id]:
+						p_info[abs_id]['main'] = None
+
+					# handle external account connections and authorizations
+					if to_update_socials and user.authorizations is not None:
+						#for key in ['twitter','twitch','reddit','youtube','smashboards','ssbwiki','discord','name_display','color']:
+						#for key in ['TWITTER','TWITCH','MIXER','DISCORD']:
+						for key in user.authorizations.keys():
+							auth_info = user.authorizations[key]
+							if key == 'id':
+								key = 'auth_id'
+							p_info[abs_id][key] = auth_info
+
+					# store ranking data, with initial values if needed
+					if 'elo' not in skills or 'elo-rnk' not in skills:
+						for key in ['elo','elo-rnk','elo-pct','elo_del',\
+									'glicko','glicko-rnk','glicko-pct','glicko_del',\
+									'srank','srank-rnk','srank-pct','srank_del','srank_sig',\
+									'trueskill','trueskill-rnk','trueskill-pct','trueskill_del',\
+									'glixare','glixare-rnk','glixare-pct','glixare_del', 'perf',\
+									'mainrank']:
+							skills[key] = {}
+					if 'elo' not in p_info[abs_id]:
+						p_info[abs_id]['elo'] = float(args.elo_init_value)
+						p_info[abs_id]['elo_peak'] = p_info[abs_id]['elo']
+						skills['elo'][abs_id] = {}
+						skills['elo-rnk'][abs_id] = {}
+						skills['elo-pct'][abs_id] = {}
+						skills['elo_del'][abs_id] = {}
+					# glicko stores a tuple with (rating,RD,volatility)
+					if 'glicko' not in p_info[abs_id]:
+						p_info[abs_id]['glicko'] = (float(args.glicko_init_value),float(args.glicko_init_rd),float(args.glicko_init_sigma))
+						p_info[abs_id]['glicko_peak'] = p_info[abs_id]['glicko'][0]
+						skills['glicko'][abs_id] = {}
+						skills['glicko-rnk'][abs_id] = {}
+						skills['glicko-pct'][abs_id] = {}
+						skills['glicko_del'][abs_id] = {}
+					if 'srank' not in p_info[abs_id]:
+						p_info[abs_id]['srank'] = int(1)
+						#p_info[abs_id]['srank'] = 0.5
+						p_info[abs_id]['srank_sig'] = (0.5,0.,1.,4.)
+						p_info[abs_id]['srank_last'] = int(1)
+						p_info[abs_id]['srank_peak'] = int(1)
+						skills['srank'][abs_id] = {}
+						skills['srank-rnk'][abs_id] = {}
+						skills['srank-pct'][abs_id] = {}
+						skills['srank_del'][abs_id] = {}
+						skills['srank_sig'][abs_id] = {}
+					if 'trueskill' not in p_info[abs_id]:
+						p_info[abs_id]['trueskill'] = {'mu':args.trueskill_init_mu,'sigma':args.trueskill_init_sigma,'expose':0.}
+						p_info[abs_id]['trueskill_peak'] = p_info[abs_id]['trueskill']
+						if 'trueskill' not in skills:
+							skills['trueskill'] = {}
+							skills['trueskill-rnk'] = {}
+							skills['trueskill-pct'] = {}
+							skills['trueskill_del'] = {}
+						skills['trueskill'][abs_id] = {}
+						skills['trueskill-rnk'][abs_id] = {}
+						skills['trueskill-pct'][abs_id] = {}
+						skills['trueskill_del'][abs_id] = {}
+					if 'glixare' not in p_info[abs_id]:
+						p_info[abs_id]['glixare'] = 0
+						p_info[abs_id]['glixare_peak'] = p_info[abs_id]['glixare']
+						skills['glixare'][abs_id] = {}
+						skills['glixare-rnk'][abs_id] = {}
+						skills['glixare-pct'][abs_id] = {}
+						skills['glixare_del'][abs_id] = {}
+					if 'sets_played' not in p_info[abs_id]:
+						p_info[abs_id]['sets_played'] = 0
+					if 'events_entered' not in p_info[abs_id]:
+						p_info[abs_id]['events_entered'] = 0
+					p_info[abs_id]['events_entered'] += 1
+					if 'last_event' not in p_info[abs_id]:
+						p_info[abs_id]['last_event'] = None
+					p_info[abs_id]['prev_event'] = p_info[abs_id]['last_event']
+					p_info[abs_id]['last_event'] = t_id
+					if abs_id not in skills['perf']:
+						skills['perf'][abs_id] = {}
+				else:
+					ids['t_'+str(t_id)][e_id] = None
+
+	else:
+		if v >= 5:
+			print('Skipping',t_name,': already in DB')
 
 	return True
 
@@ -416,12 +428,14 @@ def store_records(wins,losses,paths,sets,t_info,dicts,to_update_ranks=True,to_up
 
 	# convert all entrant ids in set data to abs ids
 	for set_id in sets:
-		if set_id == 7120371:
-			print(ids['t_'+str(t_id)])
-			print(set_id)
+		#print (set_id)
+		if (not sets[set_id]['w_id'] in ids['t_'+str(t_id)]) or (ids['t_'+str(t_id)][sets[set_id]['w_id']] is None) or \
+		   (not sets[set_id]['l_id'] in ids['t_'+str(t_id)]) or (ids['t_'+str(t_id)][sets[set_id]['l_id']] is None):
+			print('t_'+str(t_id))
+			print('crash set_id',set_id)
 			print(sets[set_id])
-			print(sets[set_id]['w_id'] in ids['t_'+str(t_id)])
-			print(ids['t_'+str(t_id)][sets[set_id]['w_id']])
+			print(ids['t_'+str(t_id)][sets[set_id]['w_id']]) 
+			print(ids['t_'+str(t_id)][sets[set_id]['l_id']]) ### crahes here for some reason
 		if 'w_id' in sets[set_id] and type(sets[set_id]['w_id']) is int:
 			sets[set_id]['w_id'] = ids['t_'+str(t_id)][sets[set_id]['w_id']]
 		if 'l_id' in sets[set_id] and type(sets[set_id]['l_id']) is int:
@@ -626,10 +640,11 @@ def store_tourney(slug,t_info,group_names,entrants,sets,dicts):
 	tourneys[t_id]['attendees'] = {}
 	for e_id in entrants:
 		for user in entrants[e_id][1]:
-			abs_id = user.id
-			tourneys[t_id]['attendees'][abs_id] = {'id':abs_id,'e_id':e_id,'placing':records[abs_id]['placings'][t_id],'setsPlayed':[],'charactersUsed':{}}
-			if 'first_event' in p_info[abs_id] and p_info[abs_id]['first_event'] == t_id:
-				tourneys[t_id]['newEntrants'] += 1
+			if user is not None:
+				abs_id = user.id
+				tourneys[t_id]['attendees'][abs_id] = {'id':abs_id,'e_id':e_id,'placing':records[abs_id]['placings'][t_id],'setsPlayed':[],'charactersUsed':{}}
+				if 'first_event' in p_info[abs_id] and p_info[abs_id]['first_event'] == t_id:
+					tourneys[t_id]['newEntrants'] += 1
 
 	tourneys[t_id]['setIds'] = []
 	for set_id in sets:
