@@ -96,14 +96,14 @@ table.dataTable{
     <![endif]-->
   </head>
   <body>
-    <div class="container" style="width:65vw">
+    <div class="container d-block">
       <header>
         {% include navigation.html %}
       </header>
       <section>
         {% include page_heading.html %}
       </section>
-      <section>
+      <section class="page-section">
 
       {{ content }}
 
@@ -205,6 +205,8 @@ table.dataTable{
             var eloVal = Math.round(PlayerSnapshot.child('elo').val());
             var glickoVal = Math.round(PlayerSnapshot.child('glicko').val()[0]);
             var srankVal = Math.round(PlayerSnapshot.child('srank').val()*1000.)/1000.;
+            var trueskillVal = Math.round(PlayerSnapshot.child('trueskill/expose').val()*10.0)/10.0;
+            var glixareVal = Math.round(PlayerSnapshot.child('glixare').val()*10.0)/10.0;
 
             var eloRnkVal = PlayerSnapshot.child('elo-rnk').val();
             var eloRnkText = ''+eloRnkVal+'<sup>'+ordinalSuffixOf(eloRnkVal)+'</sup>';
@@ -212,6 +214,10 @@ table.dataTable{
             var glickoRnkText = ''+glickoRnkVal+'<sup>'+ordinalSuffixOf(glickoRnkVal)+'</sup>';
             var srankRnkVal = PlayerSnapshot.child('srank-rnk').val();
             var srankRnkText = ''+srankRnkVal+'<sup>'+ordinalSuffixOf(srankRnkVal)+'</sup>';
+            var trueskillRnkVal = PlayerSnapshot.child('trueskill-rnk').val();
+            var trueskillRnkText = ''+trueskillRnkVal+'<sup>'+ordinalSuffixOf(trueskillRnkVal)+'</sup>';
+            var glixareRnkVal = PlayerSnapshot.child('glixare-rnk').val();
+            var glixareRnkText = ''+glixareRnkVal+'<sup>'+ordinalSuffixOf(glixareRnkVal)+'</sup>';
 
             if (PlayerSnapshot.child('mainrank').exists()){
               var mainrankVal = PlayerSnapshot.child('mainrank').val();
@@ -220,7 +226,7 @@ table.dataTable{
               var mainrankVal = 'N/A';
               var mainrankText = 'N/A';
             }
-            populateSkills(PlayerSnapshot, playerId, eloVal, eloRnkVal, glickoVal, glickoRnkVal, srankVal, srankRnkVal, mainrankVal, mainrankText)
+            populateSkills(PlayerSnapshot, playerId, eloVal, eloRnkVal, glickoVal, glickoRnkVal, srankVal, srankRnkVal, mainrankVal, mainrankText, trueskillVal, trueskillRnkVal, glixareVal, glixareRnkVal)
 
             // populate fields that require records lookup (h2h and sigmoid winprobs)
             var playerRecordStr = '/' + gameId + '_2016_' + (curr_year-2016)+ '_c' + '/records/'+playerId;
@@ -278,10 +284,14 @@ table.dataTable{
                       $('#player_elo').html(eloRnkText);
                       $('#player_glicko').html(glickoRnkText);
                       $('#player_srank').html(srankRnkText);
+                      $('#player_trueskill').html(trueskillRnkText);
+                      $('#player_glixare').html(glixareRnkText);
                     } else {
                       $('#player_elo').html(eloVal);
                       $('#player_glicko').html(glickoVal);
                       $('#player_srank').html(srankVal);
+                      $('#player_trueskill').html(trueskillVal);
+                      $('#player_glixare').html(glixareVal);
                     }
                   } else if (this.id == 'srank_switch'){
                     if ($(this).prop('checked')){

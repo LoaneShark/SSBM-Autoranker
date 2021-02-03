@@ -113,6 +113,9 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 			if (type == 'glicko'){
 				skillval = skillval[0];
 			}
+			else if (type == 'trueskill'){
+				skillval = skillval['expose'];
+			}
 			var t_date = tourneySnapshot.child(t_id.toString()).child('date').val();
 			var t_name = tourneySnapshot.child(t_id.toString()).child('name').val();
 			var t_index = tourneySnapshot.child(t_id.toString()).child('index').val();
@@ -163,7 +166,7 @@ function skillChart(skillHistory,tourneySnapshot,placementSnapshot,gameId,type='
 	if (type == 'srank'){
 		initialSkillset.push({'t':initialDate,'y':srankOldSkill,'label':'','present':false});
 		initialSkillset.push({'t':firstEvent.t,'y':firstEvent.y,'label':'','present':true});
-	} else if (type == 'elo' || type == 'glicko' || type == 'trueskill'){
+	} else if (type == 'elo' || type == 'glicko' || type == 'trueskill' || type == 'glixare'){
 		initialSkillset.push({'t':initialDate,'y':1500,'label':'','present':false})
 		initialSkillset.push({'t':firstEvent.t,'y':firstEvent.y,'label':'','present':true});
 	}
@@ -618,6 +621,9 @@ function chartLabelFromType(type='elo',gameId){
 		case 'trueskill':
 			return 'TrueSkill';
 			break;
+		case 'glixare':
+			return 'Glixare';
+			break;
 	}
 }
 
@@ -642,6 +648,12 @@ function chartColorsFromType(type='elo'){
 					3:['rgb(242, 96, 96, 1)','rgb(252, 106, 106, 1)']};
 			break;
 		case 'trueskill':
+			return {0:['rgb(204, 204, 10, 1)','rgb(214, 214, 20, 1)'],
+					1:['rgb(204, 204, 10, 0.5)','rgb(214, 214, 20, 0.5)'],
+					2:['rgb(204, 204, 10, 0.5)','rgb(214, 214, 20, 0.5)'],
+					3:['rgb(204, 204, 10, 1)','rgb(214, 214, 20, 1)']};
+			break;
+		case 'glixare':
 			return {0:['rgb(204, 204, 10, 1)','rgb(214, 214, 20, 1)'],
 					1:['rgb(204, 204, 10, 0.5)','rgb(214, 214, 20, 0.5)'],
 					2:['rgb(204, 204, 10, 0.5)','rgb(214, 214, 20, 0.5)'],
@@ -686,6 +698,12 @@ function getYAxisBounds(gameId,skillType){
 	} else if (skillType == 'srank'){
 		var minVal = -0.05
 		var maxVal = 1.05
+	} else if (skillType == 'trueskill'){
+		var minVal = -1
+		var maxVal = 101
+	} else if (skillType == 'glixare'){
+		var minVal = -1
+		var maxVal = 101
 	} else {
 		var minVal = 1000
 		var maxVal = 2500

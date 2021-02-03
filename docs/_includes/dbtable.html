@@ -19,6 +19,8 @@
 					<col width='19%' /> <!-- s-rank   -->
 					<col width='10%' /> <!-- elo      -->
 					<col width='16%' /> <!-- glicko   -->
+					<col width='16%' /> <!-- elo      -->
+					<col width='16%' /> <!-- glicko   -->
 				</colgroup>
 				<thead>
 					<tr class='header'>
@@ -50,6 +52,8 @@
 						</th>
 						<th>ELO</th>
 						<th>Glicko-2</th>
+						<th>TrueSkill</th>
+						<th>Glixare</th>
 					</tr>
 				</thead>
 				<!-- table body -->
@@ -62,6 +66,8 @@
 							<td markdown='span' id={{'srank_' | append: i}}></td>
 							<td markdown='span' id={{'elo_' | append: i}}></td>
 							<td markdown='span' id={{'glicko_' | append: i}}></td>
+							<td markdown='span' id={{'etrueskill_' | append: i}}></td>
+							<td markdown='span' id={{'glixare_' | append: i}}></td>
 						</tr>
 					{% endfor %}
 				</tbody>
@@ -230,9 +236,9 @@
 					columnDefs: [
 								{targets: 0, className: 'text-right'},
 								{targets: 1, data: null, render: function(dataCol){
-									return '<a href="/games/'+gameTitle.toLowerCase()+'/players/#'+dataCol[6]+'">'+dataCol[1]+'</a>'
+									return '<a href="/games/'+gameTitle.toLowerCase()+'/players/#'+dataCol[8]+'">'+dataCol[1]+'</a>'
 								}},
-								{targets: 2, type: 'num'}
+								//{targets: 2, type: 'num'}
 								]
 				});
 				$('#current-tab').tab('show')

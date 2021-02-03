@@ -50,5 +50,5 @@ gem 'RedCloth'
 
 ## security dependencies
 gem 'rubyzip', '>= 2.2.0'
-
 gem 'nokogiri', '>= 1.10.7'
+gem 'activesupport', '>= 4.1.11'
